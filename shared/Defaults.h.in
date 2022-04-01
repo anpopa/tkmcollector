@@ -5,11 +5,9 @@
 
 namespace tkm {
 
-class Defaults
-{
+class Defaults {
 public:
-  enum class Default
-  {
+  enum class Default {
     Version,
     ConfPath,
     RuntimeDirectory,
@@ -21,8 +19,7 @@ public:
     ControlSocket
   };
 
-  enum class Arg
-  {
+  enum class Arg {
     Id,
     RequestId,
     Forced,
@@ -35,26 +32,26 @@ public:
     DevicePort
   };
 
-  enum class Val
-  {
-    True,
-    False,
-    StatusOkay,
-    StatusError,
-    StatusBusy
-  };
+  enum class Val { True, False, StatusOkay, StatusError, StatusBusy };
 
-  Defaults()
-  {
-    m_table.insert(std::pair<Default, std::string>(Default::Version, "@GIT_SHA1@"));
-    m_table.insert(std::pair<Default, std::string>(Default::ConfPath, "@TKM_COLELCTOR_CONFIG_FILE@"));
-    m_table.insert(std::pair<Default, std::string>(Default::RuntimeDirectory, "/tmp/tkm-collector"));
+  Defaults() {
+    m_table.insert(
+        std::pair<Default, std::string>(Default::Version, "@GIT_SHA1@"));
+    m_table.insert(std::pair<Default, std::string>(
+        Default::ConfPath, "@TKM_COLELCTOR_CONFIG_FILE@"));
+    m_table.insert(std::pair<Default, std::string>(Default::RuntimeDirectory,
+                                                   "/tmp/tkm-collector"));
     m_table.insert(std::pair<Default, std::string>(Default::DBType, "sqlite"));
-    m_table.insert(std::pair<Default, std::string>(Default::DBUserName, "anon"));
-    m_table.insert(std::pair<Default, std::string>(Default::DBUserPassword, "anon"));
-    m_table.insert(std::pair<Default, std::string>(Default::DBServerAddress, "localhost"));
-    m_table.insert(std::pair<Default, std::string>(Default::DBServerPort, "5432"));
-    m_table.insert(std::pair<Default, std::string>(Default::ControlSocket, ".tkm-control.sock"));
+    m_table.insert(
+        std::pair<Default, std::string>(Default::DBUserName, "anon"));
+    m_table.insert(
+        std::pair<Default, std::string>(Default::DBUserPassword, "anon"));
+    m_table.insert(
+        std::pair<Default, std::string>(Default::DBServerAddress, "localhost"));
+    m_table.insert(
+        std::pair<Default, std::string>(Default::DBServerPort, "5432"));
+    m_table.insert(std::pair<Default, std::string>(Default::ControlSocket,
+                                                   ".tkm-control.sock"));
 
     m_args.insert(std::pair<Arg, std::string>(Arg::Id, "Id"));
     m_args.insert(std::pair<Arg, std::string>(Arg::Forced, "Forced"));
@@ -62,7 +59,8 @@ public:
     m_args.insert(std::pair<Arg, std::string>(Arg::What, "What"));
     m_args.insert(std::pair<Arg, std::string>(Arg::DeviceId, "DeviceId"));
     m_args.insert(std::pair<Arg, std::string>(Arg::DeviceName, "DeviceName"));
-    m_args.insert(std::pair<Arg, std::string>(Arg::DeviceAddress, "DeviceAddress"));
+    m_args.insert(
+        std::pair<Arg, std::string>(Arg::DeviceAddress, "DeviceAddress"));
     m_args.insert(std::pair<Arg, std::string>(Arg::DevicePort, "DevicePort"));
 
     m_vals.insert(std::pair<Val, std::string>(Val::True, "True"));
@@ -72,9 +70,9 @@ public:
     m_vals.insert(std::pair<Val, std::string>(Val::StatusBusy, "Busy"));
   }
 
-  auto getFor(Default key) -> std::string& { return m_table.at(key); }
-  auto argFor(Arg key) -> std::string& { return m_args.at(key); }
-  auto valFor(Val key) -> std::string& { return m_vals.at(key); }
+  auto getFor(Default key) -> std::string & { return m_table.at(key); }
+  auto argFor(Arg key) -> std::string & { return m_args.at(key); }
+  auto valFor(Val key) -> std::string & { return m_vals.at(key); }
 
 private:
   std::map<Default, std::string> m_table;
