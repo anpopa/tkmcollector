@@ -85,6 +85,16 @@ Connection::Connection()
                     ControlApp()->getDispatcher()->pushRequest(rq);
                     break;
                 }
+                case tkm::msg::collector::Message_Type_SessionList: {
+                    Dispatcher::Request rq {.action = Dispatcher::Action::SessionList};
+                    tkm::msg::collector::SessionList sessionList;
+
+                    msg.data().UnpackTo(&sessionList);
+                    rq.bulkData = std::make_any<tkm::msg::collector::SessionList>(sessionList);
+
+                    ControlApp()->getDispatcher()->pushRequest(rq);
+                    break;
+                }
                 default:
                     logError() << "Unknown response type";
                     status = false;

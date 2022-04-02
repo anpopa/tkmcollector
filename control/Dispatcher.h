@@ -25,6 +25,7 @@ public:
         InitDatabase,
         QuitCollector,
         GetDevices,
+        GetSessions,
         AddDevice,
         RemoveDevice,
         ConnectDevice,
@@ -33,6 +34,7 @@ public:
         StopCollecting,
         CollectorStatus,
         DeviceList,
+        SessionList,
         Quit
     };
 

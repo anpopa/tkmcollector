@@ -22,6 +22,7 @@ public:
         InitDatabase,
         QuitCollector,
         GetDevices,
+        GetSessions,
         AddDevice,
         RemoveDevice,
         ConnectDevice,

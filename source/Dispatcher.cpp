@@ -20,7 +20,7 @@ static auto doInitDatabase(const shared_ptr<Dispatcher> &mgr, const Dispatcher::
 static auto doQuitCollector(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
     -> bool;
 static auto doGetDevices(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool;
-static auto doGetProjects(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool;
+static auto doGetSessions(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool;
 static auto doAddDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool;
 static auto doRemoveDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
     -> bool;
@@ -54,6 +54,8 @@ auto Dispatcher::requestHandler(const Request &rq) -> bool
         return doQuitCollector(getShared(), rq);
     case Dispatcher::Action::GetDevices:
         return doGetDevices(getShared(), rq);
+    case Dispatcher::Action::GetSessions:
+        return doGetSessions(getShared(), rq);
     case Dispatcher::Action::AddDevice:
         return doAddDevice(getShared(), rq);
     case Dispatcher::Action::RemoveDevice:
@@ -144,6 +146,15 @@ static auto doStopCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatcher
 {
     // TODO: Stop session for device
     return true;
+}
+
+static auto doGetSessions(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool
+{
+    IDatabase::Request dbrq {.client = rq.client,
+                             .action = IDatabase::Action::GetSessions,
+                             .args = rq.args,
+                             .bulkData = rq.bulkData};
+    return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
 static auto doQuit(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool

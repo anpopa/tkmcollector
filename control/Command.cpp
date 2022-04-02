@@ -61,8 +61,8 @@ Command::Command()
                     rq.args.emplace(tkm::Defaults::Arg::Forced,
                                     request.args.at(tkm::Defaults::Arg::Forced));
                 }
-                rq.args.emplace(Defaults::Arg::DeviceName,
-                                request.args.at(Defaults::Arg::DeviceName));
+                rq.args.emplace(Defaults::Arg::DeviceHash,
+                                request.args.at(Defaults::Arg::DeviceHash));
 
                 ControlApp()->getDispatcher()->pushRequest(rq);
                 break;
@@ -74,8 +74,8 @@ Command::Command()
                     rq.args.emplace(tkm::Defaults::Arg::Forced,
                                     request.args.at(tkm::Defaults::Arg::Forced));
                 }
-                rq.args.emplace(Defaults::Arg::DeviceName,
-                                request.args.at(Defaults::Arg::DeviceName));
+                rq.args.emplace(Defaults::Arg::DeviceHash,
+                                request.args.at(Defaults::Arg::DeviceHash));
 
                 ControlApp()->getDispatcher()->pushRequest(rq);
                 break;
@@ -87,8 +87,8 @@ Command::Command()
                     rq.args.emplace(tkm::Defaults::Arg::Forced,
                                     request.args.at(tkm::Defaults::Arg::Forced));
                 }
-                rq.args.emplace(Defaults::Arg::DeviceName,
-                                request.args.at(Defaults::Arg::DeviceName));
+                rq.args.emplace(Defaults::Arg::DeviceHash,
+                                request.args.at(Defaults::Arg::DeviceHash));
 
                 ControlApp()->getDispatcher()->pushRequest(rq);
                 break;
@@ -100,8 +100,8 @@ Command::Command()
                     rq.args.emplace(tkm::Defaults::Arg::Forced,
                                     request.args.at(tkm::Defaults::Arg::Forced));
                 }
-                rq.args.emplace(Defaults::Arg::DeviceName,
-                                request.args.at(Defaults::Arg::DeviceName));
+                rq.args.emplace(Defaults::Arg::DeviceHash,
+                                request.args.at(Defaults::Arg::DeviceHash));
 
                 ControlApp()->getDispatcher()->pushRequest(rq);
                 break;
@@ -113,8 +113,21 @@ Command::Command()
                     rq.args.emplace(tkm::Defaults::Arg::Forced,
                                     request.args.at(tkm::Defaults::Arg::Forced));
                 }
-                rq.args.emplace(Defaults::Arg::DeviceName,
-                                request.args.at(Defaults::Arg::DeviceName));
+                rq.args.emplace(Defaults::Arg::DeviceHash,
+                                request.args.at(Defaults::Arg::DeviceHash));
+
+                ControlApp()->getDispatcher()->pushRequest(rq);
+                break;
+            }
+            case Command::Action::GetSessions: {
+                Dispatcher::Request rq {.action = Dispatcher::Action::GetSessions};
+
+                if (request.args.count(Defaults::Arg::Forced)) {
+                    rq.args.emplace(tkm::Defaults::Arg::Forced,
+                                    request.args.at(tkm::Defaults::Arg::Forced));
+                }
+                rq.args.emplace(Defaults::Arg::DeviceHash,
+                                request.args.at(Defaults::Arg::DeviceHash));
 
                 ControlApp()->getDispatcher()->pushRequest(rq);
                 break;

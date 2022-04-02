@@ -26,6 +26,8 @@ static auto doInitDatabase(const shared_ptr<SQLiteDatabase> &db, const IDatabase
     -> bool;
 static auto doGetDevices(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
     -> bool;
+static auto doGetSessions(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
+    -> bool;
 static auto doAddDevice(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq) -> bool;
 static auto doRemoveDevice(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
     -> bool;
@@ -92,7 +94,36 @@ static auto sqlite_callback(void *data, int argc, char **argv, char **colname) -
         auto pld = static_cast<std::vector<tkm::msg::collector::DeviceData> *>(query->raw);
         tkm::msg::collector::DeviceData device {};
         for (int i = 0; i < argc; i++) {
-            // TODO: Add device data
+            if (strncmp(colname[i], tkmQuery.m_deviceColumn.at(Query::DeviceColumn::Id).c_str(), 60)
+                == 0) {
+                device.set_id(std::stol(argv[i]));
+            } else if (strncmp(colname[i],
+                               tkmQuery.m_deviceColumn.at(Query::DeviceColumn::Hash).c_str(),
+                               60)
+                       == 0) {
+                device.set_hash(argv[i]);
+            } else if (strncmp(colname[i],
+                               tkmQuery.m_deviceColumn.at(Query::DeviceColumn::Name).c_str(),
+                               60)
+                       == 0) {
+                device.set_name(argv[i]);
+            } else if (strncmp(colname[i],
+                               tkmQuery.m_deviceColumn.at(Query::DeviceColumn::Address).c_str(),
+                               60)
+                       == 0) {
+                device.set_address(argv[i]);
+            } else if (strncmp(colname[i],
+                               tkmQuery.m_deviceColumn.at(Query::DeviceColumn::Port).c_str(),
+                               60)
+                       == 0) {
+                device.set_port(std::stoi(argv[i]));
+            } else if (strncmp(colname[i],
+                               tkmQuery.m_deviceColumn.at(Query::DeviceColumn::State).c_str(),
+                               60)
+                       == 0) {
+                device.set_state(
+                    static_cast<tkm::msg::collector::DeviceData_State>(std::stoi(argv[i])));
+            }
         }
         pld->emplace_back(device);
         break;
@@ -105,6 +136,39 @@ static auto sqlite_callback(void *data, int argc, char **argv, char **colname) -
                 *pld = std::stol(argv[i]);
             }
         }
+        break;
+    }
+    case SQLiteDatabase::QueryType::GetSessions: {
+        auto pld = static_cast<std::vector<tkm::msg::collector::SessionData> *>(query->raw);
+        tkm::msg::collector::SessionData session {};
+        for (int i = 0; i < argc; i++) {
+            if (strncmp(
+                    colname[i], tkmQuery.m_sessionColumn.at(Query::SessionColumn::Id).c_str(), 60)
+                == 0) {
+                session.set_id(std::stol(argv[i]));
+            } else if (strncmp(colname[i],
+                               tkmQuery.m_sessionColumn.at(Query::SessionColumn::Hash).c_str(),
+                               60)
+                       == 0) {
+                session.set_hash(argv[i]);
+            } else if (strncmp(colname[i],
+                               tkmQuery.m_sessionColumn.at(Query::SessionColumn::Name).c_str(),
+                               60)
+                       == 0) {
+                session.set_name(argv[i]);
+            } else if (strncmp(colname[i],
+                               tkmQuery.m_sessionColumn.at(Query::SessionColumn::Started).c_str(),
+                               60)
+                       == 0) {
+                session.set_started(std::stol(argv[i]));
+            } else if (strncmp(colname[i],
+                               tkmQuery.m_sessionColumn.at(Query::SessionColumn::Ended).c_str(),
+                               60)
+                       == 0) {
+                session.set_ended(std::stol(argv[i]));
+            }
+        }
+        pld->emplace_back(session);
         break;
     }
     default:
@@ -132,6 +196,8 @@ auto SQLiteDatabase::requestHandler(const Request &rq) -> bool
         return doAddDevice(getShared(), rq);
     case IDatabase::Action::RemoveDevice:
         return doRemoveDevice(getShared(), rq);
+    case IDatabase::Action::GetSessions:
+        return doGetSessions(getShared(), rq);
     default:
         break;
     }
@@ -201,8 +267,6 @@ static auto doGetDevices(const shared_ptr<SQLiteDatabase> &db, const IDatabase::
             tmpDev->CopyFrom(dev);
         }
 
-        // As response to client registration request we ask client to send
-        // descriptor
         message.set_type(tkm::msg::collector::Message_Type_DeviceList);
         message.mutable_data()->PackFrom(devList);
         envelope.mutable_mesg()->PackFrom(message);
@@ -211,8 +275,61 @@ static auto doGetDevices(const shared_ptr<SQLiteDatabase> &db, const IDatabase::
         envelope.set_origin(msg::Envelope_Recipient_Collector);
 
         if (!rq.client->writeEnvelope(envelope)) {
-            logWarn() << "Fail to send user list to client " << rq.client->getFD();
-            mrq.args.emplace(Defaults::Arg::Reason, "Failed to send user list");
+            logWarn() << "Fail to send device list to client " << rq.client->getFD();
+            mrq.args.emplace(Defaults::Arg::Reason, "Failed to send device list");
+        } else {
+            mrq.args.emplace(Defaults::Arg::Reason, "List provided");
+        }
+    } else {
+        mrq.args.emplace(Defaults::Arg::Reason, "Query failed");
+        logError() << "Query error for getUsers";
+    }
+
+    mrq.args.emplace(Defaults::Arg::Status,
+                     status == true ? tkmDefaults.valFor(Defaults::Val::StatusOkay)
+                                    : tkmDefaults.valFor(Defaults::Val::StatusError));
+
+    return CollectorApp()->getDispatcher()->pushRequest(mrq);
+}
+
+static auto doGetSessions(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
+    -> bool
+{
+    Dispatcher::Request mrq {.client = rq.client, .action = Dispatcher::Action::SendStatus};
+
+    if (rq.args.count(Defaults::Arg::RequestId)) {
+        mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
+    }
+
+    logDebug() << "Handling DB GetSessions request from client: " << rq.client->getName();
+    const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
+
+    SQLiteDatabase::Query query {.type = SQLiteDatabase::QueryType::GetSessions};
+    auto querySessionList = std::vector<tkm::msg::collector::SessionData>();
+    query.raw = &querySessionList;
+
+    auto status
+        = db->runQuery(tkmQuery.getSessions(Query::Type::SQLite3, deviceData.hash()), query);
+    if (status) {
+        tkm::msg::Envelope envelope;
+        tkm::msg::collector::Message message;
+        tkm::msg::collector::SessionList sessionList;
+
+        for (auto &session : querySessionList) {
+            auto tmpSession = sessionList.add_session();
+            tmpSession->CopyFrom(session);
+        }
+
+        message.set_type(tkm::msg::collector::Message_Type_SessionList);
+        message.mutable_data()->PackFrom(sessionList);
+        envelope.mutable_mesg()->PackFrom(message);
+
+        envelope.set_target(msg::Envelope_Recipient_Any);
+        envelope.set_origin(msg::Envelope_Recipient_Collector);
+
+        if (!rq.client->writeEnvelope(envelope)) {
+            logWarn() << "Fail to send session list to client " << rq.client->getFD();
+            mrq.args.emplace(Defaults::Arg::Reason, "Failed to send session list");
         } else {
             mrq.args.emplace(Defaults::Arg::Reason, "List provided");
         }

@@ -22,6 +22,7 @@ static auto doQuit(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request 
 static auto doInitDatabase(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
     -> bool;
 static auto doGetDevices(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool;
+static auto doGetSessions(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool;
 static auto doAddDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool;
 static auto doRemoveDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
     -> bool;
@@ -38,6 +39,7 @@ static auto doQuitCollector(const shared_ptr<Dispatcher> &mgr, const Dispatcher:
 static auto doCollectorStatus(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
     -> bool;
 static auto doDeviceList(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool;
+static auto doSessionList(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool;
 
 void Dispatcher::enableEvents()
 {
@@ -64,6 +66,10 @@ auto Dispatcher::requestHandler(const Request &request) -> bool
         return doInitDatabase(getShared(), request);
     case Dispatcher::Action::GetDevices:
         return doGetDevices(getShared(), request);
+    case Dispatcher::Action::GetSessions:
+        return doGetSessions(getShared(), request);
+    case Dispatcher::Action::AddDevice:
+        return doAddDevice(getShared(), request);
     case Dispatcher::Action::RemoveDevice:
         return doRemoveDevice(getShared(), request);
     case Dispatcher::Action::ConnectDevice:
@@ -80,6 +86,8 @@ auto Dispatcher::requestHandler(const Request &request) -> bool
         return doCollectorStatus(getShared(), request);
     case Dispatcher::Action::DeviceList:
         return doDeviceList(getShared(), request);
+    case Dispatcher::Action::SessionList:
+        return doSessionList(getShared(), request);
     case Dispatcher::Action::Quit:
         return doQuit(getShared(), request);
     default:
@@ -351,6 +359,31 @@ static auto doStopCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatcher
     return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
+static auto doGetSessions(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool
+{
+    tkm::msg::Envelope requestEnvelope;
+    tkm::msg::collector::Request requestMessage;
+    tkm::msg::collector::DeviceData deviceData;
+
+    requestMessage.set_id("GetSessions");
+    requestMessage.set_type(tkm::msg::collector::Request_Type_GetSessions);
+    if (rq.args.count(Defaults::Arg::Forced)) {
+        if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
+            requestMessage.set_forced(tkm::msg::collector::Request_Forced_Enforced);
+        }
+    }
+
+    deviceData.set_hash(rq.args.at(Defaults::Arg::DeviceHash));
+    requestMessage.mutable_data()->PackFrom(deviceData);
+
+    requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
+    requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Collector);
+    requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Control);
+
+    logDebug() << "Request get sessions for device: " << rq.args.at(Defaults::Arg::DeviceHash);
+    return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
+}
+
 static auto doQuitCollector(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
     -> bool
 {
@@ -438,6 +471,38 @@ static auto doDeviceList(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Re
             break;
         }
         if (i < deviceList.device_size() - 1) {
+            std::cout << std::endl;
+        }
+    }
+
+    return true;
+}
+
+static auto doSessionList(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool
+{
+    std::cout << "--------------------------------------------------" << std::endl;
+
+    const auto &sessionList = std::any_cast<tkm::msg::collector::SessionList>(rq.bulkData);
+    for (int i = 0; i < sessionList.session_size(); i++) {
+        const tkm::msg::collector::SessionData &sessionData = sessionList.session(i);
+        std::cout << "Id\t: " << sessionData.hash() << std::endl;
+        std::cout << "Name\t: " << sessionData.name() << std::endl;
+        std::cout << "Started\t: " << sessionData.started() << std::endl;
+        std::cout << "Ended\t: " << sessionData.ended() << std::endl;
+        std::cout << "State\t: ";
+        switch (sessionData.state()) {
+        case tkm::msg::collector::SessionData_State_Progress:
+            std::cout << "Progress" << std::endl;
+            break;
+        case tkm::msg::collector::SessionData_State_Complete:
+            std::cout << "Complete" << std::endl;
+            break;
+        case tkm::msg::collector::SessionData_State_Unknown:
+        default:
+            std::cout << "Unknown" << std::endl;
+            break;
+        }
+        if (i < sessionList.session_size() - 1) {
             std::cout << std::endl;
         }
     }

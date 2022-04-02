@@ -20,6 +20,7 @@ public:
         Create,
         DropTables,
         GetDevices,
+        GetSessions,
         AddDevice,
         RemDevice,
         HasDevice,

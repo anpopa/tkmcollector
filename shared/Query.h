@@ -27,6 +27,17 @@ public:
     auto getDevice(Query::Type type, const std::string &hash) -> std::string;
     auto hasDevice(Query::Type type, const std::string &hash) -> std::string;
 
+    // Session management
+    auto getSessions(Query::Type type, const std::string &deviceHash) -> std::string;
+    auto addSession(Query::Type type,
+                    const std::string &hash,
+                    const std::string &name,
+                    uint64_t started,
+                    const std::string &deviceHash) -> std::string;
+    auto remSession(Query::Type type, const std::string &hash) -> std::string;
+    auto getSession(Query::Type type, const std::string &hash) -> std::string;
+    auto hasSession(Query::Type type, const std::string &hash) -> std::string;
+
 public:
     enum class DeviceColumn {
         Id,      // int: Primary key
@@ -45,7 +56,25 @@ public:
         std::make_pair(DeviceColumn::State, "State"),
     };
 
+    enum class SessionColumn {
+        Id,      // int: Primary key
+        Hash,    // str: Unique device hash
+        Name,    // str: Device name
+        Device,  // int: Device id key
+        Started, // int: Start timestamp
+        Ended,   // int: Start timestamp
+    };
+    const std::map<SessionColumn, std::string> m_sessionColumn {
+        std::make_pair(SessionColumn::Id, "Id"),
+        std::make_pair(SessionColumn::Hash, "Hash"),
+        std::make_pair(SessionColumn::Name, "Name"),
+        std::make_pair(SessionColumn::Started, "Started"),
+        std::make_pair(SessionColumn::Ended, "Ended"),
+        std::make_pair(SessionColumn::Device, "Device"),
+    };
+
     const std::string m_devicesTableName = "tkmDevices";
+    const std::string m_sessionsTableName = "tkmSessions";
 };
 
 static Query tkmQuery {};

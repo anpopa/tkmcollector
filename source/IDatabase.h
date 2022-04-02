@@ -23,6 +23,7 @@ public:
         Connect,
         Disconnect,
         GetDevices,
+        GetSessions,
         AddDevice,
         RemoveDevice
     };

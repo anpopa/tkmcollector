@@ -32,6 +32,7 @@ auto main(int argc, char **argv) -> int
     bool init_database = false;
     bool quit = false;
     bool list_devices = false;
+    bool list_sessions = false;
     bool add_device = false;
     bool remove_device = false;
     bool connect_device = false;
@@ -46,6 +47,7 @@ auto main(int argc, char **argv) -> int
                                 {"initDatabase", no_argument, nullptr, 'i'},
                                 {"quit", no_argument, nullptr, 'q'},
                                 {"listDevices", no_argument, nullptr, 'l'},
+                                {"listSessions", no_argument, nullptr, 'j'},
                                 {"addDevice", no_argument, nullptr, 'a'},
                                 {"remDevice", no_argument, nullptr, 'r'},
                                 {"config", required_argument, nullptr, 'o'},
@@ -59,7 +61,7 @@ auto main(int argc, char **argv) -> int
                                 {"stopCollecting", required_argument, nullptr, 'x'},
                                 {nullptr, 0, nullptr, 0}};
 
-    while ((c = getopt_long(argc, argv, "hfiqlarocdsxI:N:A:P:", longopts, &long_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hfiqljarocdsxI:N:A:P:", longopts, &long_index)) != -1) {
         switch (c) {
         case 'o':
             config_path = optarg;
@@ -75,6 +77,9 @@ auto main(int argc, char **argv) -> int
             break;
         case 'l':
             list_devices = true;
+            break;
+        case 'j':
+            list_sessions = true;
             break;
         case 'a':
             add_device = true;
@@ -114,9 +119,93 @@ auto main(int argc, char **argv) -> int
         }
     }
 
+    // Check for valid options
+    if (!add_device && !remove_device && !connect_device && !disconnect_device && !start_collecting
+        && !stop_collecting && !init_database && !quit && !list_devices && !list_sessions
+        && !help) {
+        cout << "Please select one top level option" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    if (add_device
+        && (remove_device || connect_device || disconnect_device || start_collecting
+            || stop_collecting || init_database || quit || list_devices || list_sessions)) {
+        cout << "Add device option cannot be used with other top level options" << endl;
+        exit(EXIT_FAILURE);
+    }
+    if (remove_device
+        && (add_device || connect_device || disconnect_device || start_collecting || stop_collecting
+            || init_database || quit || list_devices || list_sessions)) {
+        cout << "Remove device option cannot be used with other top level options" << endl;
+        exit(EXIT_FAILURE);
+    }
+    if (connect_device
+        && (add_device || remove_device || disconnect_device || start_collecting || stop_collecting
+            || init_database || quit || list_devices || list_sessions)) {
+        cout << "Connect device option cannot be used with other top level options" << endl;
+        exit(EXIT_FAILURE);
+    }
+    if (disconnect_device
+        && (add_device || remove_device || connect_device || start_collecting || stop_collecting
+            || init_database || quit || list_devices || list_sessions)) {
+        cout << "Disconnect device option cannot be used with other top level options" << endl;
+        exit(EXIT_FAILURE);
+    }
+    if (start_collecting
+        && (add_device || remove_device || connect_device || disconnect_device || stop_collecting
+            || init_database || quit || list_devices || list_sessions)) {
+        cout << "Start connecting option cannot be used with other top level options" << endl;
+        exit(EXIT_FAILURE);
+    }
+    if (stop_collecting
+        && (add_device || remove_device || connect_device || disconnect_device || start_collecting
+            || init_database || quit || list_devices || list_sessions)) {
+        cout << "Start connecting option cannot be used with other top level options" << endl;
+        exit(EXIT_FAILURE);
+    }
+    if (init_database
+        && (add_device || remove_device || connect_device || disconnect_device || start_collecting
+            || stop_collecting || quit || list_devices || list_sessions)) {
+        cout << "Stop connecting option cannot be used with other top level options" << endl;
+        exit(EXIT_FAILURE);
+    }
+    if (quit
+        && (add_device || remove_device || connect_device || disconnect_device || start_collecting
+            || stop_collecting || init_database || list_devices || list_sessions)) {
+        cout << "Quit collector option cannot be used with other top level options" << endl;
+        exit(EXIT_FAILURE);
+    }
+    if (list_devices
+        && (add_device || remove_device || connect_device || disconnect_device || start_collecting
+            || stop_collecting || init_database || quit || list_sessions)) {
+        cout << "List devices option cannot be used with other top level options" << endl;
+        exit(EXIT_FAILURE);
+    }
+    if (list_sessions
+        && (add_device || remove_device || connect_device || disconnect_device || start_collecting
+            || stop_collecting || init_database || quit || list_devices)) {
+        cout << "List sessions option cannot be used with other top level options" << endl;
+        exit(EXIT_FAILURE);
+    }
+
     if (quit) {
         if (!force) {
             cout << "Quit collector can only be used with force option" << endl;
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (add_device) {
+        if (!device_name || !device_address || !device_port) {
+            cout << "Please provide the complete device data" << endl;
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (remove_device || connect_device || disconnect_device || start_collecting || stop_collecting
+        || list_sessions) {
+        if (!device_id) {
+            cout << "Please provide the device hash id" << endl;
             exit(EXIT_FAILURE);
         }
     }
@@ -133,6 +222,9 @@ auto main(int argc, char **argv) -> int
         cout << "     --initDatabase, -i        <noarg>   Initialize database\n";
         cout << "  Devices:\n";
         cout << "     --listDevices, -l         <noarg>   Get list of devices from database\n";
+        cout << "     --listSessions, -j        <noarg>   Get list of sessions for device\n";
+        cout << "        Require:\n";
+        cout << "         --Id, -I              <string>  Device ID\n";
         cout << "     --addDevice,  -a          <noarg>   Add a new device to the database\n";
         cout << "        Require:\n";
         cout << "         --Name, -N            <string>  Device name\n";
@@ -195,6 +287,16 @@ auto main(int argc, char **argv) -> int
             rq.args.emplace(tkm::Defaults::Arg::DeviceName, device_name);
             rq.args.emplace(tkm::Defaults::Arg::DeviceAddress, device_address);
             rq.args.emplace(tkm::Defaults::Arg::DevicePort, device_port);
+            if (force) {
+                rq.args.emplace(tkm::Defaults::Arg::Forced,
+                                tkm::tkmDefaults.valFor(tkm::Defaults::Val::True));
+            }
+            app.getCommand()->addRequest(rq);
+        }
+
+        if (list_sessions) {
+            Command::Request rq {.action = Command::Action::GetSessions};
+            rq.args.emplace(tkm::Defaults::Arg::DeviceHash, device_id);
             if (force) {
                 rq.args.emplace(tkm::Defaults::Arg::Forced,
                                 tkm::tkmDefaults.valFor(tkm::Defaults::Val::True));
