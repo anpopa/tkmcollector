@@ -18,9 +18,10 @@ if(WITH_SQLITE3)
 endif()
 
 add_executable(${BINARY_NAME} ${BINARY_SRC})
-target_link_libraries(${BINARY_NAME} 
-                      ${SQLite3_LIBRARIES}
-                      ${OPENSSL_CRYPTO_LIBRARY} 
-                      BSWInfra 
-                      TaskMonitorInterfaces)
+target_link_libraries(${BINARY_NAME} BSWInfra TaskMonitorInterfaces)
+
+if(WITH_SQLITE3)
+    target_link_libraries(${BINARY_NAME} ${SQLite3_LIBRARIES})
+endif()
+
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION bin)

@@ -86,8 +86,10 @@ include_directories(${CMAKE_BINARY_DIR}/shared)
 find_package          (PkgConfig REQUIRED)
 find_package		  (Threads REQUIRED)
 
-find_package      (SQLite3 REQUIRED)
-include_directories(${SQLITE3_INCLUDE_DIR})
+if(WITH_SQLITE3)
+    find_package      (SQLite3 REQUIRED)
+    include_directories(${SQLITE3_INCLUDE_DIR})
+endif()
 
 # Build
 add_subdirectory(source)

@@ -12,181 +12,186 @@
 using std::shared_ptr;
 using std::string;
 
-namespace tkm::collector {
+namespace tkm::collector
+{
 
-static auto doInitDatabase(const shared_ptr<Dispatcher> &mgr,
-                           const Dispatcher::Request &rq) -> bool;
-static auto doTerminateCollector(const shared_ptr<Dispatcher> &mgr,
-                                 const Dispatcher::Request &rq) -> bool;
-static auto doGetDevices(const shared_ptr<Dispatcher> &mgr,
-                         const Dispatcher::Request &rq) -> bool;
-static auto doGetProjects(const shared_ptr<Dispatcher> &mgr,
-                          const Dispatcher::Request &rq) -> bool;
-static auto doAddDevice(const shared_ptr<Dispatcher> &mgr,
-                        const Dispatcher::Request &rq) -> bool;
-static auto doRemoveDevice(const shared_ptr<Dispatcher> &mgr,
-                           const Dispatcher::Request &rq) -> bool;
-static auto doConnectDevice(const shared_ptr<Dispatcher> &mgr,
-                            const Dispatcher::Request &rq) -> bool;
-static auto doDisconnectDevice(const shared_ptr<Dispatcher> &mgr,
-                               const Dispatcher::Request &rq) -> bool;
-static auto doStartDeviceSession(const shared_ptr<Dispatcher> &mgr,
-                                 const Dispatcher::Request &rq) -> bool;
-static auto doStopDeviceSession(const shared_ptr<Dispatcher> &mgr,
-                                const Dispatcher::Request &rq) -> bool;
-static auto doQuit(const shared_ptr<Dispatcher> &mgr,
-                   const Dispatcher::Request &rq) -> bool;
-static auto doSendStatus(const shared_ptr<Dispatcher> &mgr,
-                         const Dispatcher::Request &rq) -> bool;
+static auto doInitDatabase(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
+    -> bool;
+static auto doQuitCollector(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
+    -> bool;
+static auto doGetDevices(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool;
+static auto doGetProjects(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool;
+static auto doAddDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool;
+static auto doRemoveDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
+    -> bool;
+static auto doConnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
+    -> bool;
+static auto doDisconnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
+    -> bool;
+static auto doStartCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
+    -> bool;
+static auto doStopCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
+    -> bool;
+static auto doQuit(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool;
+static auto doSendStatus(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool;
 
-void Dispatcher::enableEvents() { CollectorApp()->addEventSource(m_queue); }
-
-auto Dispatcher::pushRequest(Request &rq) -> bool { return m_queue->push(rq); }
-
-auto Dispatcher::requestHandler(const Request &rq) -> bool {
-  switch (rq.action) {
-  case Dispatcher::Action::InitDatabase:
-    return doInitDatabase(getShared(), rq);
-  case Dispatcher::Action::TerminateCollector:
-    return doTerminateCollector(getShared(), rq);
-  case Dispatcher::Action::GetDevices:
-    return doGetDevices(getShared(), rq);
-  case Dispatcher::Action::AddDevice:
-    return doAddDevice(getShared(), rq);
-  case Dispatcher::Action::RemoveDevice:
-    return doRemoveDevice(getShared(), rq);
-  case Dispatcher::Action::ConnectDevice:
-    return doConnectDevice(getShared(), rq);
-  case Dispatcher::Action::DisconnectDevice:
-    return doDisconnectDevice(getShared(), rq);
-  case Dispatcher::Action::StartDeviceSession:
-    return doStartDeviceSession(getShared(), rq);
-  case Dispatcher::Action::StopDeviceSession:
-    return doStopDeviceSession(getShared(), rq);
-  case Dispatcher::Action::SendStatus:
-    return doSendStatus(getShared(), rq);
-  case Dispatcher::Action::Quit:
-    return doQuit(getShared(), rq);
-  default:
-    break;
-  }
-
-  logError() << "Unknown action request";
-  return false;
+void Dispatcher::enableEvents()
+{
+    CollectorApp()->addEventSource(m_queue);
 }
 
-static auto doInitDatabase(const shared_ptr<Dispatcher> &mgr,
-                           const Dispatcher::Request &rq) -> bool {
-  IDatabase::Request dbrq{.client = rq.client,
-                          .action = IDatabase::Action::InitDatabase,
-                          .args = rq.args};
-  return CollectorApp()->getDatabase()->pushRequest(dbrq);
+auto Dispatcher::pushRequest(Request &rq) -> bool
+{
+    return m_queue->push(rq);
 }
 
-static auto doTerminateCollector(const shared_ptr<Dispatcher> &mgr,
-                                 const Dispatcher::Request &rq) -> bool {
-  // TODO: Do some cleanup like closing all client connections
-  Dispatcher::Request quitRq{.action = Dispatcher::Action::Quit};
-  return mgr->pushRequest(quitRq);
-}
-
-static auto doGetDevices(const shared_ptr<Dispatcher> &mgr,
-                         const Dispatcher::Request &rq) -> bool {
-  IDatabase::Request dbrq{.client = rq.client,
-                          .action = IDatabase::Action::GetDevices,
-                          .args = rq.args};
-  return CollectorApp()->getDatabase()->pushRequest(dbrq);
-}
-
-static auto doAddDevice(const shared_ptr<Dispatcher> &mgr,
-                        const Dispatcher::Request &rq) -> bool {
-  IDatabase::Request dbrq{.client = rq.client,
-                          .action = IDatabase::Action::AddDevice,
-                          .args = rq.args,
-                          .bulkData = rq.bulkData};
-  return CollectorApp()->getDatabase()->pushRequest(dbrq);
-}
-
-static auto doRemoveDevice(const shared_ptr<Dispatcher> &mgr,
-                           const Dispatcher::Request &rq) -> bool {
-  IDatabase::Request dbrq{.client = rq.client,
-                          .action = IDatabase::Action::RemoveDevice,
-                          .args = rq.args,
-                          .bulkData = rq.bulkData};
-  return CollectorApp()->getDatabase()->pushRequest(dbrq);
-}
-
-static auto doConnectDevice(const shared_ptr<Dispatcher> &mgr,
-                            const Dispatcher::Request &rq) -> bool {
-  // TODO: Connect device
-  return true;
-}
-
-static auto doDisconnectDevice(const shared_ptr<Dispatcher> &mgr,
-                               const Dispatcher::Request &rq) -> bool {
-  // TODO: Disconnect device
-  return true;
-}
-
-static auto doStartDeviceSession(const shared_ptr<Dispatcher> &mgr,
-                                 const Dispatcher::Request &rq) -> bool {
-  // TODO: Start session for device
-  return true;
-}
-
-static auto doStopDeviceSession(const shared_ptr<Dispatcher> &mgr,
-                                const Dispatcher::Request &rq) -> bool {
-  // TODO: Stop session for device
-  return true;
-}
-
-static auto doQuit(const shared_ptr<Dispatcher> &mgr,
-                   const Dispatcher::Request &rq) -> bool {
-  exit(EXIT_SUCCESS);
-}
-
-static auto doSendStatus(const shared_ptr<Dispatcher> &mgr,
-                         const Dispatcher::Request &rq) -> bool {
-  if (rq.client == nullptr) {
-    logDebug() << "No client set for send status";
-    return true;
-  }
-
-  tkm::msg::Envelope envelope;
-  tkm::msg::collector::Message message;
-  tkm::msg::collector::Status status;
-
-  if (rq.args.count(Defaults::Arg::RequestId)) {
-    status.set_requestid(rq.args.at(Defaults::Arg::RequestId));
-  }
-
-  if (rq.args.count(Defaults::Arg::Status)) {
-    if (rq.args.at(Defaults::Arg::Status) ==
-        tkmDefaults.valFor(Defaults::Val::StatusOkay)) {
-      status.set_what(tkm::msg::collector::Status_What_OK);
-    } else if (rq.args.at(Defaults::Arg::Status) ==
-               tkmDefaults.valFor(Defaults::Val::StatusBusy)) {
-      status.set_what(tkm::msg::collector::Status_What_Busy);
-    } else {
-      status.set_what(tkm::msg::collector::Status_What_Error);
+auto Dispatcher::requestHandler(const Request &rq) -> bool
+{
+    switch (rq.action) {
+    case Dispatcher::Action::InitDatabase:
+        return doInitDatabase(getShared(), rq);
+    case Dispatcher::Action::QuitCollector:
+        return doQuitCollector(getShared(), rq);
+    case Dispatcher::Action::GetDevices:
+        return doGetDevices(getShared(), rq);
+    case Dispatcher::Action::AddDevice:
+        return doAddDevice(getShared(), rq);
+    case Dispatcher::Action::RemoveDevice:
+        return doRemoveDevice(getShared(), rq);
+    case Dispatcher::Action::ConnectDevice:
+        return doConnectDevice(getShared(), rq);
+    case Dispatcher::Action::DisconnectDevice:
+        return doDisconnectDevice(getShared(), rq);
+    case Dispatcher::Action::StartCollecting:
+        return doStartCollecting(getShared(), rq);
+    case Dispatcher::Action::StopCollecting:
+        return doStopCollecting(getShared(), rq);
+    case Dispatcher::Action::SendStatus:
+        return doSendStatus(getShared(), rq);
+    case Dispatcher::Action::Quit:
+        return doQuit(getShared(), rq);
+    default:
+        break;
     }
-  }
 
-  if (rq.args.count(Defaults::Arg::Reason)) {
-    status.set_reason(rq.args.at(Defaults::Arg::Reason));
-  }
+    logError() << "Unknown action request";
+    return false;
+}
 
-  // As response to client registration request we ask client to send descriptor
-  message.set_type(tkm::msg::collector::Message_Type_Status);
-  message.mutable_data()->PackFrom(status);
-  envelope.mutable_mesg()->PackFrom(message);
+static auto doInitDatabase(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool
+{
+    IDatabase::Request dbrq {
+        .client = rq.client, .action = IDatabase::Action::InitDatabase, .args = rq.args};
+    return CollectorApp()->getDatabase()->pushRequest(dbrq);
+}
 
-  envelope.set_target(tkm::msg::Envelope_Recipient_Any);
-  envelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
+static auto doQuitCollector(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
+    -> bool
+{
+    // TODO: Do some cleanup like closing all client connections
+    Dispatcher::Request quitRq {.action = Dispatcher::Action::Quit};
+    return mgr->pushRequest(quitRq);
+}
 
-  logDebug() << "Send status " << rq.args.at(Defaults::Arg::Status) << " to "
-             << rq.client->getFD();
-  return rq.client->writeEnvelope(envelope);
+static auto doGetDevices(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool
+{
+    IDatabase::Request dbrq {
+        .client = rq.client, .action = IDatabase::Action::GetDevices, .args = rq.args};
+    return CollectorApp()->getDatabase()->pushRequest(dbrq);
+}
+
+static auto doAddDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool
+{
+    IDatabase::Request dbrq {.client = rq.client,
+                             .action = IDatabase::Action::AddDevice,
+                             .args = rq.args,
+                             .bulkData = rq.bulkData};
+    return CollectorApp()->getDatabase()->pushRequest(dbrq);
+}
+
+static auto doRemoveDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool
+{
+    IDatabase::Request dbrq {.client = rq.client,
+                             .action = IDatabase::Action::RemoveDevice,
+                             .args = rq.args,
+                             .bulkData = rq.bulkData};
+    return CollectorApp()->getDatabase()->pushRequest(dbrq);
+}
+
+static auto doConnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
+    -> bool
+{
+    // TODO: Connect device
+    return true;
+}
+
+static auto doDisconnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
+    -> bool
+{
+    // TODO: Disconnect device
+    return true;
+}
+
+static auto doStartCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
+    -> bool
+{
+    // TODO: Start session for device
+    return true;
+}
+
+static auto doStopCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
+    -> bool
+{
+    // TODO: Stop session for device
+    return true;
+}
+
+static auto doQuit(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool
+{
+    exit(EXIT_SUCCESS);
+}
+
+static auto doSendStatus(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool
+{
+    if (rq.client == nullptr) {
+        logDebug() << "No client set for send status";
+        return true;
+    }
+
+    tkm::msg::Envelope envelope;
+    tkm::msg::collector::Message message;
+    tkm::msg::collector::Status status;
+
+    if (rq.args.count(Defaults::Arg::RequestId)) {
+        status.set_requestid(rq.args.at(Defaults::Arg::RequestId));
+    }
+
+    if (rq.args.count(Defaults::Arg::Status)) {
+        if (rq.args.at(Defaults::Arg::Status) == tkmDefaults.valFor(Defaults::Val::StatusOkay)) {
+            status.set_what(tkm::msg::collector::Status_What_OK);
+        } else if (rq.args.at(Defaults::Arg::Status)
+                   == tkmDefaults.valFor(Defaults::Val::StatusBusy)) {
+            status.set_what(tkm::msg::collector::Status_What_Busy);
+        } else {
+            status.set_what(tkm::msg::collector::Status_What_Error);
+        }
+    }
+
+    if (rq.args.count(Defaults::Arg::Reason)) {
+        status.set_reason(rq.args.at(Defaults::Arg::Reason));
+    }
+
+    // As response to client registration request we ask client to send descriptor
+    message.set_type(tkm::msg::collector::Message_Type_Status);
+    message.mutable_data()->PackFrom(status);
+    envelope.mutable_mesg()->PackFrom(message);
+
+    envelope.set_target(tkm::msg::Envelope_Recipient_Any);
+    envelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
+
+    logDebug() << "Send status " << rq.args.at(Defaults::Arg::Status) << " to "
+               << rq.client->getFD();
+    return rq.client->writeEnvelope(envelope);
 }
 
 } // namespace tkm::collector
