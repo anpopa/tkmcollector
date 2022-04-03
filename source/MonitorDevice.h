@@ -32,7 +32,26 @@ namespace tkm::collector
 class MonitorDevice : public IDevice, public std::enable_shared_from_this<MonitorDevice>
 {
 public:
-    MonitorDevice() { m_connection = std::make_shared<Connection>(getShared()); }
+    explicit MonitorDevice(const tkm::msg::collector::DeviceData &data)
+    {
+        m_deviceData.CopyFrom(data);
+    }
+    ~MonitorDevice() = default;
+
+    bool createConnection()
+    {
+        if (m_connection != nullptr)
+            return false;
+
+        m_connection = std::make_shared<Connection>(getShared());
+        return true;
+    }
+    void enableConnection() { m_connection->enableEvents(); }
+    void deleteConnection()
+    {
+        m_connection->disconnect();
+        m_connection = nullptr;
+    }
 
     auto getShared() -> std::shared_ptr<MonitorDevice> { return shared_from_this(); }
     auto getConnection() -> std::shared_ptr<Connection> { return m_connection; }

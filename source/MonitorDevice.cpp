@@ -12,7 +12,6 @@
 #include <chrono>
 #include <ctime>
 #include <iostream>
-#include <json/json.h>
 #include <ostream>
 #include <string>
 #include <unistd.h>
@@ -67,6 +66,9 @@ auto MonitorDevice::pushRequest(Request &request) -> bool
 void MonitorDevice::notifyConnection(tkm::msg::collector::DeviceData_State state)
 {
     m_deviceData.set_state(state);
+    if (state == tkm::msg::collector::DeviceData_State_Disconnected) {
+        deleteConnection();
+    }
 }
 
 auto MonitorDevice::requestHandler(const Request &request) -> bool
@@ -97,17 +99,24 @@ auto MonitorDevice::requestHandler(const Request &request) -> bool
 static auto doConnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
     -> bool
 {
+    Dispatcher::Request mrq {.client = rq.client, .action = Dispatcher::Action::SendStatus};
+
+    if (rq.args.count(Defaults::Arg::RequestId)) {
+        mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
+    }
+
+    if (!mgr->createConnection()) {
+        logError() << "Connection to device failed";
+        mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
+        mrq.args.emplace(Defaults::Arg::Reason, "Failed to create connection object");
+        return CollectorApp()->getDispatcher()->pushRequest(mrq);
+    }
+    mgr->enableConnection();
+
     if (mgr->getConnection()->connect() < 0) {
-        Dispatcher::Request mrq {.client = rq.client, .action = Dispatcher::Action::SendStatus};
-
-        if (rq.args.count(Defaults::Arg::RequestId)) {
-            mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
-        }
-
+        logError() << "Connection to device failed";
         mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
         mrq.args.emplace(Defaults::Arg::Reason, "Connection Failed");
-
-        logError() << "Connection to device failed";
         return CollectorApp()->getDispatcher()->pushRequest(mrq);
     }
 

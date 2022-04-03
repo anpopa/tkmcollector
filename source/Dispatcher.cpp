@@ -128,9 +128,10 @@ static auto doConnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher:
         = CollectorApp()->getDeviceManager()->getDevice(deviceData.hash());
 
     if (device == nullptr) {
-        device = std::make_shared<MonitorDevice>();
-        device->getDeviceData().CopyFrom(deviceData);
+        logDebug() << "No device entry in manager for " << deviceData.hash();
+        device = std::make_shared<MonitorDevice>(deviceData);
         CollectorApp()->getDeviceManager()->addDevice(device);
+        device->enableEvents();
     }
 
     IDevice::Request drq {.client = rq.client,
