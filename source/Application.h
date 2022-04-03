@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <string>
 
+#include "DeviceManager.h"
 #include "Dispatcher.h"
 #include "IDatabase.h"
 #include "Options.h"
@@ -46,6 +47,7 @@ public:
     auto getDispatcher() -> std::shared_ptr<Dispatcher> { return m_dispatcher; }
     auto getDatabase() -> std::shared_ptr<IDatabase> { return m_database; }
     auto getOptions() -> std::shared_ptr<Options> { return m_options; }
+    auto getDeviceManager() -> std::shared_ptr<DeviceManager> { return m_deviceManager; }
 
 public:
     Application(Application const &) = delete;
@@ -56,6 +58,7 @@ private:
     std::shared_ptr<UDSServer> m_udsServer = nullptr;
     std::shared_ptr<Dispatcher> m_dispatcher = nullptr;
     std::shared_ptr<IDatabase> m_database = nullptr;
+    std::shared_ptr<DeviceManager> m_deviceManager = nullptr;
 
 private:
     static Application *appInstance;

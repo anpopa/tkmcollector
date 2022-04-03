@@ -251,7 +251,7 @@ static auto doRemoveDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::
     requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Collector);
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Control);
 
-    logDebug() << "Request remove device for: " << rq.args.at(Defaults::Arg::DeviceName);
+    logDebug() << "Request remove device for: " << rq.args.at(Defaults::Arg::DeviceHash);
     return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
@@ -277,7 +277,7 @@ static auto doConnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher:
     requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Collector);
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Control);
 
-    logDebug() << "Request connect device for: " << rq.args.at(Defaults::Arg::DeviceName);
+    logDebug() << "Request connect device for: " << rq.args.at(Defaults::Arg::DeviceHash);
     return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
@@ -303,7 +303,7 @@ static auto doDisconnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatch
     requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Collector);
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Control);
 
-    logDebug() << "Request disconnect device for: " << rq.args.at(Defaults::Arg::DeviceName);
+    logDebug() << "Request disconnect device for: " << rq.args.at(Defaults::Arg::DeviceHash);
     return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
@@ -329,7 +329,7 @@ static auto doStartCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatche
     requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Collector);
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Control);
 
-    logDebug() << "Request start collecting device for: " << rq.args.at(Defaults::Arg::DeviceName);
+    logDebug() << "Request start collecting device for: " << rq.args.at(Defaults::Arg::DeviceHash);
     return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
@@ -355,7 +355,7 @@ static auto doStopCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatcher
     requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Collector);
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Control);
 
-    logDebug() << "Request stop collecting device for: " << rq.args.at(Defaults::Arg::DeviceName);
+    logDebug() << "Request stop collecting device for: " << rq.args.at(Defaults::Arg::DeviceHash);
     return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 

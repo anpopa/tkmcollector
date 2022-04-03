@@ -407,13 +407,13 @@ static auto doRemoveDevice(const shared_ptr<SQLiteDatabase> &db, const IDatabase
     }
 
     logDebug() << "Handling DB RemoveUser request from client: " << rq.client->getName();
+    const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
 
     SQLiteDatabase::Query queryCheckExisting {.type = SQLiteDatabase::QueryType::HasDevice};
     queryCheckExisting.raw = &devId;
 
-    auto status = db->runQuery(
-        tkmQuery.hasDevice(Query::Type::SQLite3, rq.args.at(Defaults::Arg::DeviceHash)),
-        queryCheckExisting);
+    auto status = db->runQuery(tkmQuery.hasDevice(Query::Type::SQLite3, deviceData.hash()),
+                               queryCheckExisting);
     if (status) {
         if (devId == -1) {
             mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
@@ -421,8 +421,7 @@ static auto doRemoveDevice(const shared_ptr<SQLiteDatabase> &db, const IDatabase
         }
 
         SQLiteDatabase::Query query {.type = SQLiteDatabase::QueryType::RemDevice};
-        status = db->runQuery(
-            tkmQuery.remDevice(Query::Type::SQLite3, rq.args.at(Defaults::Arg::DeviceHash)), query);
+        status = db->runQuery(tkmQuery.remDevice(Query::Type::SQLite3, deviceData.hash()), query);
 
         if (!status) {
             mrq.args.emplace(Defaults::Arg::Reason, "Failed to remove device");

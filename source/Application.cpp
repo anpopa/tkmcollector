@@ -26,6 +26,9 @@ Application::Application(const string &name, const string &description, const st
     // Create Options
     m_options = std::make_shared<Options>(configFile);
 
+    // Create DeviceManager
+    m_deviceManager = std::make_shared<DeviceManager>();
+
     // Create runtime directory
     fs::path runDir(m_options->getFor(Options::Key::RuntimeDirectory));
     if (!fs::exists(runDir)) {

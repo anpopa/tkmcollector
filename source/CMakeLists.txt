@@ -9,6 +9,9 @@ set(BINARY_SRC
         UDSServer.cpp
         ControlClient.cpp
         Application.cpp
+        DeviceManager.cpp
+        Connection.cpp
+        MonitorDevice.cpp
         Main.cpp
         )
 
