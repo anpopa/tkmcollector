@@ -123,8 +123,22 @@ static auto doRemoveDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::
 static auto doConnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
     -> bool
 {
-    // TODO: Connect device
-    return true;
+    const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
+    std::shared_ptr<MonitorDevice> device
+        = CollectorApp()->getDeviceManager()->getDevice(deviceData.hash());
+
+    if (device == nullptr) {
+        device = std::make_shared<MonitorDevice>();
+        device->getDeviceData().CopyFrom(deviceData);
+        CollectorApp()->getDeviceManager()->addDevice(device);
+    }
+
+    IDevice::Request drq {.client = rq.client,
+                          .action = IDevice::Action::Connect,
+                          .args = rq.args,
+                          .bulkData = rq.bulkData};
+
+    return device->pushRequest(drq);
 }
 
 static auto doDisconnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
