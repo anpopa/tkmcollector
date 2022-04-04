@@ -1,3 +1,3 @@
-# Task Monitor ollector
+# Task Monitor Collector
 Data collector for taskmonitor
 
