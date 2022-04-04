@@ -65,12 +65,26 @@ void MonitorDevice::enableEvents()
     CollectorApp()->addEventSource(m_queue);
 }
 
+bool MonitorDevice::createConnection()
+{
+    if (m_connection != nullptr)
+        return false;
+
+    m_connection = std::make_shared<Connection>(getShared());
+    return true;
+}
+
 void MonitorDevice::deleteConnection()
 {
     if (m_connection != nullptr) {
         CollectorApp()->remEventSource(m_connection);
     }
     m_connection.reset();
+}
+
+void MonitorDevice::enableConnection()
+{ 
+    m_connection->enableEvents(); 
 }
 
 auto MonitorDevice::pushRequest(Request &request) -> bool

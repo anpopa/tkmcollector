@@ -14,7 +14,6 @@
 #include <map>
 #include <string>
 
-#include "Application.h"
 #include "Connection.h"
 #include "IDevice.h"
 #include "Options.h"
@@ -39,15 +38,8 @@ public:
     }
     ~MonitorDevice() = default;
 
-    bool createConnection() final
-    {
-        if (m_connection != nullptr)
-            return false;
-
-        m_connection = std::make_shared<Connection>(getShared());
-        return true;
-    }
-    void enableConnection() final { m_connection->enableEvents(); }
+    bool createConnection() final;
+    void enableConnection() final;
     void deleteConnection() final;
 
     auto getShared() -> std::shared_ptr<MonitorDevice> { return shared_from_this(); }
