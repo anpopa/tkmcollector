@@ -21,19 +21,20 @@ public:
                    const std::string &hash,
                    const std::string &name,
                    const std::string &address,
-                   int32_t port,
-                   int state) -> std::string;
+                   int32_t port) -> std::string;
     auto remDevice(Query::Type type, const std::string &hash) -> std::string;
     auto getDevice(Query::Type type, const std::string &hash) -> std::string;
     auto hasDevice(Query::Type type, const std::string &hash) -> std::string;
 
     // Session management
+    auto getSessions(Query::Type type) -> std::string;
     auto getSessions(Query::Type type, const std::string &deviceHash) -> std::string;
     auto addSession(Query::Type type,
                     const std::string &hash,
                     const std::string &name,
-                    uint64_t started,
+                    uint64_t start_timestamp,
                     const std::string &deviceHash) -> std::string;
+    auto endSession(Query::Type type, const std::string &hash) -> std::string;
     auto remSession(Query::Type type, const std::string &hash) -> std::string;
     auto getSession(Query::Type type, const std::string &hash) -> std::string;
     auto hasSession(Query::Type type, const std::string &hash) -> std::string;
@@ -57,19 +58,19 @@ public:
     };
 
     enum class SessionColumn {
-        Id,      // int: Primary key
-        Hash,    // str: Unique device hash
-        Name,    // str: Device name
-        Device,  // int: Device id key
-        Started, // int: Start timestamp
-        Ended,   // int: Start timestamp
+        Id,             // int: Primary key
+        Hash,           // str: Unique device hash
+        Name,           // str: Device name
+        Device,         // int: Device id key
+        StartTimestamp, // int: Start timestamp
+        EndTimestamp,   // int: End timestamp
     };
     const std::map<SessionColumn, std::string> m_sessionColumn {
         std::make_pair(SessionColumn::Id, "Id"),
         std::make_pair(SessionColumn::Hash, "Hash"),
         std::make_pair(SessionColumn::Name, "Name"),
-        std::make_pair(SessionColumn::Started, "Started"),
-        std::make_pair(SessionColumn::Ended, "Ended"),
+        std::make_pair(SessionColumn::StartTimestamp, "StartTimestamp"),
+        std::make_pair(SessionColumn::EndTimestamp, "EndTimestamp"),
         std::make_pair(SessionColumn::Device, "Device"),
     };
 

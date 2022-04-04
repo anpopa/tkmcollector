@@ -14,6 +14,7 @@
 #include <map>
 #include <string>
 
+#include "Application.h"
 #include "Connection.h"
 #include "IDevice.h"
 #include "Options.h"
@@ -38,7 +39,7 @@ public:
     }
     ~MonitorDevice() = default;
 
-    bool createConnection()
+    bool createConnection() final
     {
         if (m_connection != nullptr)
             return false;
@@ -46,18 +47,14 @@ public:
         m_connection = std::make_shared<Connection>(getShared());
         return true;
     }
-    void enableConnection() { m_connection->enableEvents(); }
-    void deleteConnection()
-    {
-        m_connection->disconnect();
-        m_connection = nullptr;
-    }
+    void enableConnection() final { m_connection->enableEvents(); }
+    void deleteConnection() final;
 
     auto getShared() -> std::shared_ptr<MonitorDevice> { return shared_from_this(); }
-    auto getConnection() -> std::shared_ptr<Connection> { return m_connection; }
+    auto getConnection() -> std::shared_ptr<Connection> & { return m_connection; }
     void enableEvents();
     auto pushRequest(Request &request) -> bool;
-    void notifyConnection(tkm::msg::collector::DeviceData_State state) final;
+    void updateState(tkm::msg::collector::DeviceData_State state) final;
 
 private:
     auto requestHandler(const Request &request) -> bool final;

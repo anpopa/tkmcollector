@@ -19,11 +19,15 @@ public:
         Check,
         Create,
         DropTables,
+        LoadDevices,
         GetDevices,
         GetSessions,
         AddDevice,
         RemDevice,
         HasDevice,
+        AddSession,
+        EndSession,
+        CleanSessions
     };
 
     typedef struct Query {

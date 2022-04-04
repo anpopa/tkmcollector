@@ -56,10 +56,10 @@ public:
     void setSession(const std::string &session) { m_session = session; }
     auto getSession() -> const std::string & { return m_session; }
 
-    auto getOptions() -> std::shared_ptr<Options> { return m_options; }
-    auto getDispatcher() -> std::shared_ptr<Dispatcher> { return m_dispatcher; }
-    auto getConnection() -> std::shared_ptr<Connection> { return m_connection; }
-    auto getCommand() -> std::shared_ptr<Command> { return m_command; }
+    auto getOptions() -> std::shared_ptr<Options> & { return m_options; }
+    auto getDispatcher() -> std::shared_ptr<Dispatcher> & { return m_dispatcher; }
+    auto getConnection() -> std::shared_ptr<Connection> & { return m_connection; }
+    auto getCommand() -> std::shared_ptr<Command> & { return m_command; }
 
 public:
     Application(Application const &) = delete;

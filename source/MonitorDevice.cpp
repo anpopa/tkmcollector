@@ -20,6 +20,7 @@
 #include "Defaults.h"
 #include "Dispatcher.h"
 #include "Helpers.h"
+#include "IDatabase.h"
 #include "MonitorDevice.h"
 
 #include "Collector.pb.h"
@@ -30,12 +31,10 @@ using std::string;
 
 namespace tkm::collector
 {
-
-static auto splitString(const std::string &s, char delim) -> std::vector<std::string>;
-static void printProcAcct(const tkm::msg::server::ProcAcct &acct, uint64_t ts);
-static void printProcEvent(const tkm::msg::server::ProcEvent &event, uint64_t ts);
-static void printSysProcStat(const tkm::msg::server::SysProcStat &sysProcStat, uint64_t ts);
-static void printSysProcPressure(const tkm::msg::server::SysProcPressure &sysProcPressure,
+static void writeProcAcct(const tkm::msg::server::ProcAcct &acct, uint64_t ts);
+static void writeProcEvent(const tkm::msg::server::ProcEvent &event, uint64_t ts);
+static void writeSysProcStat(const tkm::msg::server::SysProcStat &sysProcStat, uint64_t ts);
+static void writeSysProcPressure(const tkm::msg::server::SysProcPressure &sysProcPressure,
                                  uint64_t ts);
 
 static auto doConnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
@@ -48,9 +47,17 @@ static auto doRequestSession(const shared_ptr<MonitorDevice> &mgr, const Monitor
     -> bool;
 static auto doSetSession(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
     -> bool;
+static auto doStartCollecting(const shared_ptr<MonitorDevice> &mgr,
+                              const MonitorDevice::Request &rq) -> bool;
+static auto doStopCollecting(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
+    -> bool;
 static auto doStartStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
     -> bool;
+static auto doStopStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
+    -> bool;
 static auto doProcessData(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
+    -> bool;
+static auto doStatus(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
     -> bool;
 
 void MonitorDevice::enableEvents()
@@ -58,16 +65,29 @@ void MonitorDevice::enableEvents()
     CollectorApp()->addEventSource(m_queue);
 }
 
+void MonitorDevice::deleteConnection()
+{
+    if (m_connection != nullptr) {
+        CollectorApp()->remEventSource(m_connection);
+    }
+    m_connection.reset();
+}
+
 auto MonitorDevice::pushRequest(Request &request) -> bool
 {
     return m_queue->push(request);
 }
 
-void MonitorDevice::notifyConnection(tkm::msg::collector::DeviceData_State state)
+void MonitorDevice::updateState(tkm::msg::collector::DeviceData_State state)
 {
     m_deviceData.set_state(state);
+
     if (state == tkm::msg::collector::DeviceData_State_Disconnected) {
-        deleteConnection();
+        if (m_sessionData.hash().length() > 0) {
+            IDatabase::Request dbrq {.action = IDatabase::Action::EndSession};
+            dbrq.args.emplace(Defaults::Arg::SessionHash, m_sessionData.hash());
+            CollectorApp()->getDatabase()->pushRequest(dbrq);
+        }
     }
 }
 
@@ -84,10 +104,18 @@ auto MonitorDevice::requestHandler(const Request &request) -> bool
         return doRequestSession(getShared(), request);
     case MonitorDevice::Action::SetSession:
         return doSetSession(getShared(), request);
+    case MonitorDevice::Action::StartCollecting:
+        return doStartCollecting(getShared(), request);
+    case MonitorDevice::Action::StopCollecting:
+        return doStopCollecting(getShared(), request);
     case MonitorDevice::Action::StartStream:
         return doStartStream(getShared(), request);
+    case MonitorDevice::Action::StopStream:
+        return doStopStream(getShared(), request);
     case MonitorDevice::Action::ProcessData:
         return doProcessData(getShared(), request);
+    case MonitorDevice::Action::Status:
+        return doStatus(getShared(), request);
     default:
         break;
     }
@@ -115,6 +143,10 @@ static auto doConnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice:
 
     if (mgr->getConnection()->connect() < 0) {
         logError() << "Connection to device failed";
+
+        // Remove connection object
+        mgr->getConnection() = nullptr;
+
         mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
         mrq.args.emplace(Defaults::Arg::Reason, "Connection Failed");
         return CollectorApp()->getDispatcher()->pushRequest(mrq);
@@ -131,16 +163,14 @@ static auto doConnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice:
 static auto doSendDescriptor(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
     -> bool
 {
+    Dispatcher::Request mrq {.client = rq.client, .action = Dispatcher::Action::SendStatus};
     tkm::msg::client::Descriptor descriptor;
     descriptor.set_id("Collector");
 
     if (!sendClientDescriptor(mgr->getConnection()->getFD(), descriptor)) {
-        Dispatcher::Request mrq {.client = rq.client, .action = Dispatcher::Action::SendStatus};
-
         if (rq.args.count(Defaults::Arg::RequestId)) {
             mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
         }
-
         mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
         mrq.args.emplace(Defaults::Arg::Reason, "Failed to send descriptor");
 
@@ -148,9 +178,17 @@ static auto doSendDescriptor(const shared_ptr<MonitorDevice> &mgr, const Monitor
         return CollectorApp()->getDispatcher()->pushRequest(mrq);
     }
 
-    logDebug() << "Sent client descriptor";
-    MonitorDevice::Request nrq {.action = MonitorDevice::Action::RequestSession};
-    return mgr->pushRequest(nrq);
+    if (rq.args.count(Defaults::Arg::RequestId)) {
+        mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
+    }
+    mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
+    mrq.args.emplace(Defaults::Arg::Reason, "Connected");
+
+    // We consider the state to be connected after descriptor was sent
+    mgr->updateState(tkm::msg::collector::DeviceData_State_Connected);
+
+    logDebug() << "Client connected";
+    return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
 static auto doRequestSession(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
@@ -175,20 +213,20 @@ static auto doSetSession(const shared_ptr<MonitorDevice> &mgr, const MonitorDevi
 {
     const auto &sessionInfo = std::any_cast<tkm::msg::server::SessionInfo>(rq.bulkData);
 
-    logDebug() << "Server accepted: " << sessionInfo.id();
+    // Update our session data
+    logDebug() << "Session created: " << sessionInfo.id();
     mgr->getSessionData().set_hash(sessionInfo.id());
+    mgr->updateState(tkm::msg::collector::DeviceData_State_SessionSet);
 
-    Dispatcher::Request mrq {.client = rq.client, .action = Dispatcher::Action::SendStatus};
+    // Create session
+    IDatabase::Request dbrq {.action = IDatabase::Action::AddSession};
+    dbrq.args.emplace(Defaults::Arg::DeviceHash, mgr->getDeviceData().hash());
+    dbrq.args.emplace(Defaults::Arg::SessionHash, mgr->getSessionData().hash());
+    CollectorApp()->getDatabase()->pushRequest(dbrq);
 
-    if (rq.args.count(Defaults::Arg::RequestId)) {
-        mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
-    }
-    mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
-    mrq.args.emplace(Defaults::Arg::Reason, "Session created");
-
-    logError() << "Session created";
-    mgr->notifyConnection(tkm::msg::collector::DeviceData_State_Connected);
-    return CollectorApp()->getDispatcher()->pushRequest(mrq);
+    // Start data stream
+    MonitorDevice::Request nrq = {.action = MonitorDevice::Action::StartStream};
+    return mgr->pushRequest(nrq);
 }
 
 static auto doDisconnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
@@ -199,13 +237,19 @@ static auto doDisconnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevi
     if (rq.args.count(Defaults::Arg::RequestId)) {
         mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
     }
-    mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
-    mrq.args.emplace(Defaults::Arg::Reason, "Device disconnected");
 
-    mgr->getConnection()->disconnect();
+    if (mgr->getDeviceData().state() != tkm::msg::collector::DeviceData_State_Disconnected) {
+        mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
+        mrq.args.emplace(Defaults::Arg::Reason, "Device disconnected");
 
-    logError() << "Device disconnected";
-    mgr->notifyConnection(tkm::msg::collector::DeviceData_State_Disconnected);
+        // Delete the current connection
+        mgr->deleteConnection();
+    } else {
+        mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
+        mrq.args.emplace(Defaults::Arg::Reason, "Device not connected");
+    }
+
+    logDebug() << mrq.args.at(Defaults::Arg::Reason);
     return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
@@ -226,7 +270,82 @@ static auto doStartStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDev
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Client);
 
     logDebug() << "Request start stream";
+    mgr->getDeviceData().set_state(tkm::msg::collector::DeviceData_State_Collecting);
     return mgr->getConnection()->writeEnvelope(requestEnvelope);
+}
+
+static auto doStopStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &)
+    -> bool
+{
+    tkm::msg::Envelope requestEnvelope;
+    tkm::msg::client::Request requestMessage;
+    tkm::msg::client::StreamState streamState;
+
+    streamState.set_state(false);
+    requestMessage.set_id("StopStream");
+    requestMessage.set_type(tkm::msg::client::Request_Type_StreamState);
+    requestMessage.mutable_data()->PackFrom(streamState);
+
+    requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
+    requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Server);
+    requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Client);
+
+    logDebug() << "Request stop stream";
+    mgr->getDeviceData().set_state(tkm::msg::collector::DeviceData_State_Idle);
+    return mgr->getConnection()->writeEnvelope(requestEnvelope);
+}
+
+static auto doStartCollecting(const shared_ptr<MonitorDevice> &mgr,
+                              const MonitorDevice::Request &rq) -> bool
+{
+    Dispatcher::Request mrq {.client = rq.client, .action = Dispatcher::Action::SendStatus};
+
+    if (rq.args.count(Defaults::Arg::RequestId)) {
+        mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
+    }
+
+    if ((mgr->getDeviceData().state() == tkm::msg::collector::DeviceData_State_Connected)
+        || (mgr->getDeviceData().state() == tkm::msg::collector::DeviceData_State_Idle)) {
+        mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
+        mrq.args.emplace(Defaults::Arg::Reason, "Collecting requested");
+
+        MonitorDevice::Request nrq = {.action = MonitorDevice::Action::RequestSession};
+        mgr->pushRequest(nrq);
+    } else if (mgr->getDeviceData().state() == tkm::msg::collector::DeviceData_State_SessionSet) {
+        mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
+        mrq.args.emplace(Defaults::Arg::Reason, "Collecting requested");
+
+        MonitorDevice::Request nrq = {.action = MonitorDevice::Action::StartStream};
+        mgr->pushRequest(nrq);
+    } else {
+        mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
+        mrq.args.emplace(Defaults::Arg::Reason, "Device not connected");
+    }
+
+    return CollectorApp()->getDispatcher()->pushRequest(mrq);
+}
+
+static auto doStopCollecting(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
+    -> bool
+{
+    Dispatcher::Request mrq {.client = rq.client, .action = Dispatcher::Action::SendStatus};
+
+    if (rq.args.count(Defaults::Arg::RequestId)) {
+        mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
+    }
+
+    if (mgr->getDeviceData().state() == tkm::msg::collector::DeviceData_State_Collecting) {
+        mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
+        mrq.args.emplace(Defaults::Arg::Reason, "Collecting stop requested");
+
+        MonitorDevice::Request nrq = {.action = MonitorDevice::Action::StopStream};
+        mgr->pushRequest(nrq);
+    } else {
+        mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
+        mrq.args.emplace(Defaults::Arg::Reason, "Device not streaming");
+    }
+
+    return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
 static auto doProcessData(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
@@ -238,25 +357,25 @@ static auto doProcessData(const shared_ptr<MonitorDevice> &mgr, const MonitorDev
     case tkm::msg::server::Data_What_ProcAcct: {
         tkm::msg::server::ProcAcct procAcct;
         data.payload().UnpackTo(&procAcct);
-        printProcAcct(procAcct, data.timestamp());
+        writeProcAcct(procAcct, data.timestamp());
         break;
     }
     case tkm::msg::server::Data_What_ProcEvent: {
         tkm::msg::server::ProcEvent procEvent;
         data.payload().UnpackTo(&procEvent);
-        printProcEvent(procEvent, data.timestamp());
+        writeProcEvent(procEvent, data.timestamp());
         break;
     }
     case tkm::msg::server::Data_What_SysProcStat: {
         tkm::msg::server::SysProcStat sysProcStat;
         data.payload().UnpackTo(&sysProcStat);
-        printSysProcStat(sysProcStat, data.timestamp());
+        writeSysProcStat(sysProcStat, data.timestamp());
         break;
     }
     case tkm::msg::server::Data_What_SysProcPressure: {
         tkm::msg::server::SysProcPressure sysProcPressure;
         data.payload().UnpackTo(&sysProcPressure);
-        printSysProcPressure(sysProcPressure, data.timestamp());
+        writeSysProcPressure(sysProcPressure, data.timestamp());
         break;
     }
     default:
@@ -266,15 +385,49 @@ static auto doProcessData(const shared_ptr<MonitorDevice> &mgr, const MonitorDev
     return true;
 }
 
-static void printProcAcct(const tkm::msg::server::ProcAcct &acct, uint64_t ts) { }
+static auto doStatus(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq) -> bool
+{
+    const auto &serverStatus = std::any_cast<tkm::msg::server::Status>(rq.bulkData);
+    std::string what;
 
-static void printProcEvent(const tkm::msg::server::ProcEvent &event, uint64_t ts) { }
+    switch (serverStatus.what()) {
+    case tkm::msg::server::Status_What_OK:
+        what = tkmDefaults.valFor(Defaults::Val::StatusOkay);
+        break;
+    case tkm::msg::server::Status_What_Busy:
+        what = tkmDefaults.valFor(Defaults::Val::StatusBusy);
+        break;
+    case tkm::msg::server::Status_What_Error:
+    default:
+        what = tkmDefaults.valFor(Defaults::Val::StatusError);
+        break;
+    }
 
-static void printSysProcStat(const tkm::msg::server::SysProcStat &sysProcStat, uint64_t ts) { }
+    logDebug() << "Server status (" << serverStatus.requestid() << "): " << what
+               << " Reason: " << serverStatus.reason();
 
-static void printSysProcPressure(const tkm::msg::server::SysProcPressure &sysProcPressure,
+    return true;
+}
+
+static void writeProcAcct(const tkm::msg::server::ProcAcct &acct, uint64_t ts)
+{
+    logDebug() << "Received ProcAcct data";
+}
+
+static void writeProcEvent(const tkm::msg::server::ProcEvent &event, uint64_t ts)
+{
+    logDebug() << "Received ProcEvent data";
+}
+
+static void writeSysProcStat(const tkm::msg::server::SysProcStat &sysProcStat, uint64_t ts)
+{
+    logDebug() << "Received SysProcStat data";
+}
+
+static void writeSysProcPressure(const tkm::msg::server::SysProcPressure &sysProcPressure,
                                  uint64_t ts)
 {
+    logDebug() << "Received SysProcPressure data";
 }
 
 } // namespace tkm::collector

@@ -24,6 +24,8 @@ static auto doCheckDatabase(const shared_ptr<SQLiteDatabase> &db, const IDatabas
     -> bool;
 static auto doInitDatabase(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
     -> bool;
+static auto doLoadDevices(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
+    -> bool;
 static auto doGetDevices(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
     -> bool;
 static auto doGetSessions(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
@@ -39,6 +41,12 @@ static auto doStartDeviceSession(const shared_ptr<SQLiteDatabase> &db, const IDa
 static auto doStopDeviceSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
     -> bool;
 static auto doGetEntries(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
+    -> bool;
+static auto doAddSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
+    -> bool;
+static auto doEndSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
+    -> bool;
+static auto doCleanSessions(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
     -> bool;
 
 SQLiteDatabase::SQLiteDatabase()
@@ -89,7 +97,10 @@ static auto sqlite_callback(void *data, int argc, char **argv, char **colname) -
     case SQLiteDatabase::QueryType::DropTables:
     case SQLiteDatabase::QueryType::AddDevice:
     case SQLiteDatabase::QueryType::RemDevice:
+    case SQLiteDatabase::QueryType::AddSession:
+    case SQLiteDatabase::QueryType::EndSession:
         break;
+    case SQLiteDatabase::QueryType::LoadDevices:
     case SQLiteDatabase::QueryType::GetDevices: {
         auto pld = static_cast<std::vector<tkm::msg::collector::DeviceData> *>(query->raw);
         tkm::msg::collector::DeviceData device {};
@@ -138,6 +149,7 @@ static auto sqlite_callback(void *data, int argc, char **argv, char **colname) -
         }
         break;
     }
+    case SQLiteDatabase::QueryType::CleanSessions:
     case SQLiteDatabase::QueryType::GetSessions: {
         auto pld = static_cast<std::vector<tkm::msg::collector::SessionData> *>(query->raw);
         tkm::msg::collector::SessionData session {};
@@ -157,13 +169,15 @@ static auto sqlite_callback(void *data, int argc, char **argv, char **colname) -
                        == 0) {
                 session.set_name(argv[i]);
             } else if (strncmp(colname[i],
-                               tkmQuery.m_sessionColumn.at(Query::SessionColumn::Started).c_str(),
+                               tkmQuery.m_sessionColumn.at(Query::SessionColumn::StartTimestamp)
+                                   .c_str(),
                                60)
                        == 0) {
                 session.set_started(std::stol(argv[i]));
-            } else if (strncmp(colname[i],
-                               tkmQuery.m_sessionColumn.at(Query::SessionColumn::Ended).c_str(),
-                               60)
+            } else if (strncmp(
+                           colname[i],
+                           tkmQuery.m_sessionColumn.at(Query::SessionColumn::EndTimestamp).c_str(),
+                           60)
                        == 0) {
                 session.set_ended(std::stol(argv[i]));
             }
@@ -190,6 +204,8 @@ auto SQLiteDatabase::requestHandler(const Request &rq) -> bool
         return doConnect(getShared(), rq);
     case IDatabase::Action::Disconnect:
         return doDisconnect(getShared(), rq);
+    case IDatabase::Action::LoadDevices:
+        return doLoadDevices(getShared(), rq);
     case IDatabase::Action::GetDevices:
         return doGetDevices(getShared(), rq);
     case IDatabase::Action::AddDevice:
@@ -198,6 +214,12 @@ auto SQLiteDatabase::requestHandler(const Request &rq) -> bool
         return doRemoveDevice(getShared(), rq);
     case IDatabase::Action::GetSessions:
         return doGetSessions(getShared(), rq);
+    case IDatabase::Action::AddSession:
+        return doAddSession(getShared(), rq);
+    case IDatabase::Action::EndSession:
+        return doEndSession(getShared(), rq);
+    case IDatabase::Action::CleanSessions:
+        return doCleanSessions(getShared(), rq);
     default:
         break;
     }
@@ -242,6 +264,58 @@ static auto doInitDatabase(const shared_ptr<SQLiteDatabase> &db, const SQLiteDat
     return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
+static auto doLoadDevices(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
+    -> bool
+{
+    logDebug() << "Handling DB LoadDevices";
+
+    SQLiteDatabase::Query query {.type = SQLiteDatabase::QueryType::LoadDevices};
+    auto queryDeviceList = std::vector<tkm::msg::collector::DeviceData>();
+    query.raw = &queryDeviceList;
+
+    auto status = db->runQuery(tkmQuery.getDevices(Query::Type::SQLite3), query);
+    if (status) {
+        for (auto &deviceData : queryDeviceList) {
+            if (CollectorApp()->getDeviceManager()->getDevice(deviceData.hash()) != nullptr)
+                continue;
+
+            auto newDevice = std::make_shared<MonitorDevice>(deviceData);
+            CollectorApp()->getDeviceManager()->addDevice(newDevice);
+            newDevice->getDeviceData().set_state(tkm::msg::collector::DeviceData_State_Loaded);
+            newDevice->enableEvents();
+        }
+    } else {
+        logError() << "Failed to load devices";
+    }
+
+    return true;
+}
+
+static auto doCleanSessions(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
+    -> bool
+{
+    logDebug() << "Handling DB CleanSessions";
+
+    SQLiteDatabase::Query query {.type = SQLiteDatabase::QueryType::CleanSessions};
+    auto querySessionList = std::vector<tkm::msg::collector::SessionData>();
+    query.raw = &querySessionList;
+
+    auto status = db->runQuery(tkmQuery.getSessions(Query::Type::SQLite3), query);
+    if (status) {
+        for (auto &sessionData : querySessionList) {
+            if (sessionData.ended() == 0) {
+                IDatabase::Request dbrq {.action = IDatabase::Action::EndSession};
+                dbrq.args.emplace(Defaults::Arg::SessionHash, sessionData.hash());
+                db->pushRequest(dbrq);
+            }
+        }
+    } else {
+        logError() << "Failed to clean sessions";
+    }
+
+    return true;
+}
+
 static auto doGetDevices(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq) -> bool
 {
     Dispatcher::Request mrq {.client = rq.client, .action = Dispatcher::Action::SendStatus};
@@ -263,6 +337,12 @@ static auto doGetDevices(const shared_ptr<SQLiteDatabase> &db, const IDatabase::
         tkm::msg::collector::DeviceList devList;
 
         for (auto &dev : queryDevList) {
+            auto activeDevice = CollectorApp()->getDeviceManager()->getDevice(dev.hash());
+
+            if (activeDevice != nullptr) {
+                dev.set_state(activeDevice->getDeviceData().state());
+            }
+
             auto tmpDev = devList.add_device();
             tmpDev->CopyFrom(dev);
         }
@@ -316,6 +396,11 @@ static auto doGetSessions(const shared_ptr<SQLiteDatabase> &db, const IDatabase:
         tkm::msg::collector::SessionList sessionList;
 
         for (auto &session : querySessionList) {
+            if (session.ended() == 0) {
+                session.set_state(tkm::msg::collector::SessionData_State_Progress);
+            } else {
+                session.set_state(tkm::msg::collector::SessionData_State_Complete);
+            }
             auto tmpSession = sessionList.add_session();
             tmpSession->CopyFrom(session);
         }
@@ -354,7 +439,7 @@ static auto doAddDevice(const shared_ptr<SQLiteDatabase> &db, const IDatabase::R
         mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
     }
 
-    logDebug() << "Handling DB AddUser request from client: " << rq.client->getName();
+    logDebug() << "Handling DB AddDevice request from client: " << rq.client->getName();
     const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
 
     SQLiteDatabase::Query queryCheckExisting {.type = SQLiteDatabase::QueryType::HasDevice};
@@ -378,13 +463,13 @@ static auto doAddDevice(const shared_ptr<SQLiteDatabase> &db, const IDatabase::R
                                                  deviceData.hash(),
                                                  deviceData.name(),
                                                  deviceData.address(),
-                                                 deviceData.port(),
-                                                 deviceData.state()),
+                                                 deviceData.port()),
                               query);
         if (!status) {
             mrq.args.emplace(Defaults::Arg::Reason, "Failed to add device");
         } else {
             mrq.args.emplace(Defaults::Arg::Reason, "Device added");
+            CollectorApp()->getDeviceManager()->loadDevices();
         }
     } else {
         mrq.args.emplace(Defaults::Arg::Reason, "Cannot check existing device");
@@ -406,7 +491,7 @@ static auto doRemoveDevice(const shared_ptr<SQLiteDatabase> &db, const IDatabase
         mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
     }
 
-    logDebug() << "Handling DB RemoveUser request from client: " << rq.client->getName();
+    logDebug() << "Handling DB RemoveDevice request from client: " << rq.client->getName();
     const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
 
     SQLiteDatabase::Query queryCheckExisting {.type = SQLiteDatabase::QueryType::HasDevice};
@@ -438,13 +523,59 @@ static auto doRemoveDevice(const shared_ptr<SQLiteDatabase> &db, const IDatabase
     return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
+static auto doAddSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq) -> bool
+{
+    logDebug() << "Handling DB AddSession request";
+    if ((rq.args.count(Defaults::Arg::DeviceHash) == 0)
+        || (rq.args.count(Defaults::Arg::SessionHash) == 0)) {
+        logError() << "Invalid session data";
+        return true;
+    }
+
+    const std::string sessionName
+        = "Collector." + std::to_string(getpid()) + "." + std::to_string(time(NULL));
+
+    SQLiteDatabase::Query query {.type = SQLiteDatabase::QueryType::AddSession};
+    auto status = db->runQuery(tkmQuery.addSession(Query::Type::SQLite3,
+                                                   rq.args.at(Defaults::Arg::SessionHash),
+                                                   sessionName,
+                                                   time(NULL),
+                                                   rq.args.at(Defaults::Arg::DeviceHash)),
+                               query);
+    if (!status) {
+        logError() << "Query failed to add session";
+    }
+
+    return true;
+}
+
+static auto doEndSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq) -> bool
+{
+    logDebug() << "Handling DB EndSession request";
+    if ((rq.args.count(Defaults::Arg::SessionHash) == 0)) {
+        logError() << "Invalid session data";
+        return true;
+    }
+
+    SQLiteDatabase::Query query {.type = SQLiteDatabase::QueryType::EndSession};
+    auto status = db->runQuery(
+        tkmQuery.endSession(Query::Type::SQLite3, rq.args.at(Defaults::Arg::SessionHash)), query);
+    if (!status) {
+        logError() << "Query failed to mark end session";
+    }
+
+    return true;
+}
+
 static auto doConnect(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq) -> bool
 {
+    // No need for DB connect with SQLite
     return true;
 }
 
 static auto doDisconnect(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq) -> bool
 {
+    // No need for DB disconnect with SQLite
     return true;
 }
 

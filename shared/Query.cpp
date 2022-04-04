@@ -14,16 +14,15 @@ auto Query::createTables(Query::Type type) -> std::string
             << m_deviceColumn.at(DeviceColumn::Hash) << " TEXT NOT NULL, "
             << m_deviceColumn.at(DeviceColumn::Name) << " TEXT NOT NULL, "
             << m_deviceColumn.at(DeviceColumn::Address) << " TEXT NOT NULL, "
-            << m_deviceColumn.at(DeviceColumn::Port) << " INTEGER NOT NULL, "
-            << m_deviceColumn.at(DeviceColumn::State) << " INTEGER NOT NULL);";
+            << m_deviceColumn.at(DeviceColumn::Port) << " INTEGER NOT NULL);";
 
         // Sessions table
         out << "CREATE TABLE IF NOT EXISTS " << m_sessionsTableName << " ("
             << m_sessionColumn.at(SessionColumn::Id) << " INTEGER PRIMARY KEY, "
             << m_sessionColumn.at(SessionColumn::Name) << " TEXT NOT NULL, "
             << m_sessionColumn.at(SessionColumn::Hash) << " TEXT NOT NULL, "
-            << m_sessionColumn.at(SessionColumn::Started) << " INTEGER NOT NULL, "
-            << m_sessionColumn.at(SessionColumn::Ended) << " INTEGER NOT NULL, "
+            << m_sessionColumn.at(SessionColumn::StartTimestamp) << " INTEGER NOT NULL, "
+            << m_sessionColumn.at(SessionColumn::EndTimestamp) << " INTEGER NOT NULL, "
             << m_sessionColumn.at(SessionColumn::Device) << " INTEGER NOT NULL, "
             << "CONSTRAINT KFDevice FOREIGN KEY(" << m_sessionColumn.at(SessionColumn::Device)
             << ") REFERENCES " << m_devicesTableName << "(" << m_deviceColumn.at(DeviceColumn::Id)
@@ -60,8 +59,7 @@ auto Query::addDevice(Query::Type type,
                       const std::string &hash,
                       const std::string &name,
                       const std::string &address,
-                      int32_t port,
-                      int state) -> std::string
+                      int32_t port) -> std::string
 {
     std::stringstream out;
 
@@ -69,10 +67,8 @@ auto Query::addDevice(Query::Type type,
         out << "INSERT INTO " << m_devicesTableName << " (" << m_deviceColumn.at(DeviceColumn::Hash)
             << "," << m_deviceColumn.at(DeviceColumn::Name) << ","
             << m_deviceColumn.at(DeviceColumn::Address) << ","
-            << m_deviceColumn.at(DeviceColumn::Port) << ","
-            << m_deviceColumn.at(DeviceColumn::State) << ") VALUES ("
-            << "'" << hash << "', '" << name << "', '" << address << "', '" << port << "', '"
-            << state << "');";
+            << m_deviceColumn.at(DeviceColumn::Port) << ") VALUES ("
+            << "'" << hash << "', '" << name << "', '" << address << "', '" << port << "');";
     }
 
     return out.str();
@@ -117,6 +113,18 @@ auto Query::hasDevice(Query::Type type, const std::string &hash) -> std::string
     return out.str();
 }
 
+auto Query::getSessions(Query::Type type) -> std::string
+{
+    std::stringstream out;
+
+    if (type == Query::Type::SQLite3) {
+        out << "SELECT * "
+            << " FROM " << m_sessionsTableName << ";";
+    }
+
+    return out.str();
+}
+
 auto Query::getSessions(Query::Type type, const std::string &deviceHash) -> std::string
 {
     std::stringstream out;
@@ -135,7 +143,7 @@ auto Query::getSessions(Query::Type type, const std::string &deviceHash) -> std:
 auto Query::addSession(Query::Type type,
                        const std::string &hash,
                        const std::string &name,
-                       uint64_t started,
+                       uint64_t startTimestamp,
                        const std::string &deviceHash) -> std::string
 {
     std::stringstream out;
@@ -144,13 +152,30 @@ auto Query::addSession(Query::Type type,
         out << "INSERT INTO " << m_sessionsTableName << " ("
             << m_sessionColumn.at(SessionColumn::Hash) << ","
             << m_sessionColumn.at(SessionColumn::Name) << ","
-            << m_sessionColumn.at(SessionColumn::Started) << ","
-            << m_sessionColumn.at(SessionColumn::Ended) << ","
+            << m_sessionColumn.at(SessionColumn::StartTimestamp) << ","
+            << m_sessionColumn.at(SessionColumn::EndTimestamp) << ","
             << m_sessionColumn.at(SessionColumn::Device) << ") VALUES ('" << hash << "', '" << name
-            << "', '" << started << "', '0', "
+            << "', '" << startTimestamp << "', '"
+            << "0"
+            << "', "
             << "(SELECT " << m_deviceColumn.at(DeviceColumn::Id) << " FROM " << m_devicesTableName
             << " WHERE " << m_deviceColumn.at(DeviceColumn::Hash) << " IS "
             << "'" << deviceHash << "'));";
+    }
+
+    return out.str();
+}
+
+auto Query::endSession(Query::Type type, const std::string &hash) -> std::string
+{
+    std::stringstream out;
+
+    if (type == Query::Type::SQLite3) {
+        out << "UPDATE " << m_sessionsTableName << " SET "
+            << m_sessionColumn.at(SessionColumn::EndTimestamp) << " = "
+            << "'" << time(NULL) << "'"
+            << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+            << "'" << hash << "';";
     }
 
     return out.str();

@@ -69,6 +69,11 @@ Application::Application(const string &name, const string &description, const st
         Dispatcher::Request rq {.action = Dispatcher::Action::Quit};
         m_dispatcher->pushRequest(rq);
     }
+
+    // Load devices from database
+    m_deviceManager->loadDevices();
+    // Mark all in progress sessions as complete
+    m_deviceManager->cleanSessions();
 }
 
 } // namespace tkm::collector

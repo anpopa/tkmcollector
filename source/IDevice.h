@@ -37,7 +37,10 @@ public:
         SendDescriptor,
         RequestSession,
         SetSession,
+        StartCollecting,
+        StopCollecting,
         StartStream,
+        StopStream,
         ProcessData,
         Status,
     };
@@ -56,11 +59,15 @@ public:
             "DeviceQueue", [this](const Request &request) { return requestHandler(request); });
     }
 
+    virtual bool createConnection() = 0;
+    virtual void enableConnection() = 0;
+    virtual void deleteConnection() = 0;
+
     auto getDeviceData() -> tkm::msg::collector::DeviceData & { return m_deviceData; }
     auto getSessionData() -> tkm::msg::collector::SessionData & { return m_sessionData; }
 
     virtual auto pushRequest(Request &request) -> bool = 0;
-    virtual void notifyConnection(tkm::msg::collector::DeviceData_State state) = 0;
+    virtual void updateState(tkm::msg::collector::DeviceData_State state) = 0;
 
 protected:
     virtual auto requestHandler(const Request &request) -> bool = 0;

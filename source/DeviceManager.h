@@ -41,6 +41,9 @@ public:
     void operator=(DeviceManager const &) = delete;
 
     bool hasDevices(void) { return (m_devices.getSize() > 0); }
+    bool loadDevices(void);
+    bool cleanSessions(void);
+
     bool addDevice(std::shared_ptr<MonitorDevice> device);
     bool remDevice(std::shared_ptr<MonitorDevice> device);
     auto getDevice(const std::string &hash) -> std::shared_ptr<MonitorDevice>;

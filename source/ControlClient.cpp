@@ -153,7 +153,7 @@ static auto doRequestSession(const shared_ptr<ControlClient> &client,
         nrq.args.emplace(Defaults::Arg::Reason, "Failed to set session");
     } else {
         nrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
-        nrq.args.emplace(Defaults::Arg::Reason, "Session set");
+        nrq.args.emplace(Defaults::Arg::Reason, "Control client session set");
     }
 
     return CollectorApp()->getDispatcher()->pushRequest(nrq);

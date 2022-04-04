@@ -23,9 +23,14 @@ public:
         Connect,
         Disconnect,
         GetDevices,
-        GetSessions,
         AddDevice,
-        RemoveDevice
+        RemoveDevice,
+        LoadDevices,
+        GetSessions,
+        AddSession,
+        RemSession,
+        EndSession,
+        CleanSessions
     };
 
     typedef struct Request {

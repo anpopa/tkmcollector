@@ -112,10 +112,9 @@ Connection::Connection(std::shared_ptr<IDevice> device)
 
     // We are ready for events only after connect
     setPrepare([]() { return false; });
-    // If the event is removed we stop the main application
     setFinalize([this]() {
-        logInfo() << "Server closed connection. Terminate";
-        m_device->notifyConnection(tkm::msg::collector::DeviceData_State_Disconnected);
+        logInfo() << "Closed connection for device: " << m_device->getDeviceData().hash();
+        disconnect();
     });
 }
 
@@ -126,12 +125,14 @@ void Connection::enableEvents()
 
 Connection::~Connection()
 {
+    logDebug() << "Connection object destroyed for device: " << m_device->getDeviceData().hash();
     disconnect();
 }
 
 void Connection::disconnect()
 {
-    if (m_sockFd > 0) {
+    m_device->updateState(tkm::msg::collector::DeviceData_State_Disconnected);
+    if (m_sockFd >= 0) {
         ::close(m_sockFd);
         m_sockFd = -1;
     }

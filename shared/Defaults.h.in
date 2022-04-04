@@ -31,7 +31,8 @@ public:
         DeviceHash,
         DeviceName,
         DeviceAddress,
-        DevicePort
+        DevicePort,
+        SessionHash
     };
 
     enum class Val { True, False, StatusOkay, StatusError, StatusBusy };

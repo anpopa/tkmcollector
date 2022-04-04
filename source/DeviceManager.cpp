@@ -8,7 +8,10 @@
  * @details   Manage IDevice objects
  *-
  */
+
 #include "DeviceManager.h"
+#include "Application.h"
+#include "IDatabase.h"
 
 namespace tkm::collector
 {
@@ -59,6 +62,18 @@ auto DeviceManager::getDevice(const std::string &hash) -> std::shared_ptr<Monito
     });
 
     return retEntry;
+}
+
+bool DeviceManager::loadDevices(void)
+{
+    IDatabase::Request dbrq {.action = IDatabase::Action::LoadDevices};
+    return CollectorApp()->getDatabase()->pushRequest(dbrq);
+}
+
+bool DeviceManager::cleanSessions(void)
+{
+    IDatabase::Request dbrq {.action = IDatabase::Action::CleanSessions};
+    return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
 } // namespace tkm::collector

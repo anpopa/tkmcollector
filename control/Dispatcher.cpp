@@ -450,6 +450,9 @@ static auto doDeviceList(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Re
         std::cout << "Port\t: " << deviceData.port() << std::endl;
         std::cout << "State\t: ";
         switch (deviceData.state()) {
+        case tkm::msg::collector::DeviceData_State_Loaded:
+            std::cout << "Loaded" << std::endl;
+            break;
         case tkm::msg::collector::DeviceData_State_Connected:
             std::cout << "Connected" << std::endl;
             break;

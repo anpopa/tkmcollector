@@ -128,10 +128,13 @@ static auto doConnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher:
         = CollectorApp()->getDeviceManager()->getDevice(deviceData.hash());
 
     if (device == nullptr) {
+        Dispatcher::Request mrq {.client = rq.client, .action = Dispatcher::Action::SendStatus};
+
         logDebug() << "No device entry in manager for " << deviceData.hash();
-        device = std::make_shared<MonitorDevice>(deviceData);
-        CollectorApp()->getDeviceManager()->addDevice(device);
-        device->enableEvents();
+        mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
+        mrq.args.emplace(Defaults::Arg::Reason, "No such device");
+
+        return CollectorApp()->getDispatcher()->pushRequest(mrq);
     }
 
     IDevice::Request drq {.client = rq.client,
@@ -145,22 +148,76 @@ static auto doConnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher:
 static auto doDisconnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
     -> bool
 {
-    // TODO: Disconnect device
-    return true;
+    const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
+    std::shared_ptr<MonitorDevice> device
+        = CollectorApp()->getDeviceManager()->getDevice(deviceData.hash());
+
+    if (device == nullptr) {
+        Dispatcher::Request mrq {.client = rq.client, .action = Dispatcher::Action::SendStatus};
+
+        logDebug() << "No device entry in manager for " << deviceData.hash();
+        mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
+        mrq.args.emplace(Defaults::Arg::Reason, "No such device");
+
+        return CollectorApp()->getDispatcher()->pushRequest(mrq);
+    }
+
+    IDevice::Request drq {.client = rq.client,
+                          .action = IDevice::Action::Disconnect,
+                          .args = rq.args,
+                          .bulkData = rq.bulkData};
+
+    return device->pushRequest(drq);
 }
 
 static auto doStartCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
     -> bool
 {
-    // TODO: Start session for device
-    return true;
+    const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
+    std::shared_ptr<MonitorDevice> device
+        = CollectorApp()->getDeviceManager()->getDevice(deviceData.hash());
+
+    if (device == nullptr) {
+        Dispatcher::Request mrq {.client = rq.client, .action = Dispatcher::Action::SendStatus};
+
+        logDebug() << "No device entry in manager for " << deviceData.hash();
+        mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
+        mrq.args.emplace(Defaults::Arg::Reason, "No such device");
+
+        return CollectorApp()->getDispatcher()->pushRequest(mrq);
+    }
+
+    IDevice::Request drq {.client = rq.client,
+                          .action = IDevice::Action::StartCollecting,
+                          .args = rq.args,
+                          .bulkData = rq.bulkData};
+
+    return device->pushRequest(drq);
 }
 
 static auto doStopCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
     -> bool
 {
-    // TODO: Stop session for device
-    return true;
+    const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
+    std::shared_ptr<MonitorDevice> device
+        = CollectorApp()->getDeviceManager()->getDevice(deviceData.hash());
+
+    if (device == nullptr) {
+        Dispatcher::Request mrq {.client = rq.client, .action = Dispatcher::Action::SendStatus};
+
+        logDebug() << "No device entry in manager for " << deviceData.hash();
+        mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
+        mrq.args.emplace(Defaults::Arg::Reason, "No such device");
+
+        return CollectorApp()->getDispatcher()->pushRequest(mrq);
+    }
+
+    IDevice::Request drq {.client = rq.client,
+                          .action = IDevice::Action::StopCollecting,
+                          .args = rq.args,
+                          .bulkData = rq.bulkData};
+
+    return device->pushRequest(drq);
 }
 
 static auto doGetSessions(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq) -> bool
