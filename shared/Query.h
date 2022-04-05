@@ -4,6 +4,8 @@
 #include <sstream>
 #include <string>
 
+#include "Server.pb.h"
+
 namespace tkm
 {
 
@@ -39,6 +41,20 @@ public:
     auto getSession(Query::Type type, const std::string &hash) -> std::string;
     auto hasSession(Query::Type type, const std::string &hash) -> std::string;
 
+    // Add device data
+    auto addData(Query::Type type,
+                 const std::string &sessionHash,
+                 const tkm::msg::server::SysProcStat &sysProcStat,
+                 uint64_t ts) -> std::string;
+    auto addData(Query::Type type,
+                 const std::string &sessionHash,
+                 const tkm::msg::server::SysProcPressure &sysProcPressure,
+                 uint64_t ts) -> std::string;
+    auto addData(Query::Type type,
+                 const std::string &sessionHash,
+                 const tkm::msg::server::ProcAcct &procAcct,
+                 uint64_t ts) -> std::string;
+
 public:
     enum class DeviceColumn {
         Id,      // int: Primary key
@@ -61,9 +77,9 @@ public:
         Id,             // int: Primary key
         Hash,           // str: Unique device hash
         Name,           // str: Device name
-        Device,         // int: Device id key
         StartTimestamp, // int: Start timestamp
         EndTimestamp,   // int: End timestamp
+        Device,         // int: Device id key
     };
     const std::map<SessionColumn, std::string> m_sessionColumn {
         std::make_pair(SessionColumn::Id, "Id"),
@@ -74,8 +90,162 @@ public:
         std::make_pair(SessionColumn::Device, "Device"),
     };
 
+    enum class SysProcStatColumn {
+        Id,         // int: Primary key
+        Timestamp,  // int: Timestamp
+        CPUStatAll, // int: CPUStat.all
+        CPUStatUsr, // int: CPUStat.usr
+        CPUStatSys, // int: CPUStat.sys
+        SessionId,  // int: Session id key
+    };
+    const std::map<SysProcStatColumn, std::string> m_sysProcStatColumn {
+        std::make_pair(SysProcStatColumn::Id, "Id"),
+        std::make_pair(SysProcStatColumn::Timestamp, "Timestamp"),
+        std::make_pair(SysProcStatColumn::CPUStatAll, "CPUStatAll"),
+        std::make_pair(SysProcStatColumn::CPUStatUsr, "CPUStatUsr"),
+        std::make_pair(SysProcStatColumn::CPUStatSys, "CPUStatSys"),
+        std::make_pair(SysProcStatColumn::SessionId, "SessionId"),
+    };
+
+    enum class SysProcPressureColumn {
+        Id,            // int: Primary key
+        Timestamp,     // int: Timestamp
+        CPUSomeAvg10,  // str: cpu_some_avg10
+        CPUSomeAvg60,  // str: cpu_some_avg60
+        CPUSomeAvg300, // str: cpu_some_avg300
+        CPUSomeTotal,  // str: cpu_some_total
+        CPUFullAvg10,  // str: cpu_full_avg10
+        CPUFullAvg60,  // str: cpu_full_avg60
+        CPUFullAvg300, // str: cpu_full_avg300
+        CPUFullTotal,  // str: cpu_full_total
+        MEMSomeAvg10,  // str: mem_some_avg10
+        MEMSomeAvg60,  // str: mem_some_avg60
+        MEMSomeAvg300, // str: mem_some_avg300
+        MEMSomeTotal,  // str: mem_some_total
+        MEMFullAvg10,  // str: mem_full_avg10
+        MEMFullAvg60,  // str: mem_full_avg60
+        MEMFullAvg300, // str: mem_full_avg300
+        MEMFullTotal,  // str: mem_full_total
+        IOSomeAvg10,   // str: io_some_avg10
+        IOSomeAvg60,   // str: io_some_avg60
+        IOSomeAvg300,  // str: io_some_avg300
+        IOSomeTotal,   // str: io_some_total
+        IOFullAvg10,   // str: io_full_avg10
+        IOFullAvg60,   // str: io_full_avg60
+        IOFullAvg300,  // str: io_full_avg300
+        IOFullTotal,   // str: io_full_total
+        SessionId,     // int: Session id key
+    };
+    const std::map<SysProcPressureColumn, std::string> m_sysProcPressureColumn {
+        std::make_pair(SysProcPressureColumn::Id, "Id"),
+        std::make_pair(SysProcPressureColumn::Timestamp, "Timestamp"),
+        std::make_pair(SysProcPressureColumn::CPUSomeAvg10, "CPUSomeAvg10"),
+        std::make_pair(SysProcPressureColumn::CPUSomeAvg60, "CPUSomeAvg60"),
+        std::make_pair(SysProcPressureColumn::CPUSomeAvg300, "CPUSomeAvg300"),
+        std::make_pair(SysProcPressureColumn::CPUSomeTotal, "CPUSomeTotal"),
+        std::make_pair(SysProcPressureColumn::CPUFullAvg10, "CPUFullAvg10"),
+        std::make_pair(SysProcPressureColumn::CPUFullAvg60, "CPUFullAvg60"),
+        std::make_pair(SysProcPressureColumn::CPUFullAvg300, "CPUFullAvg300"),
+        std::make_pair(SysProcPressureColumn::CPUFullTotal, "CPUFullTotal"),
+        std::make_pair(SysProcPressureColumn::MEMSomeAvg10, "MEMSomeAvg10"),
+        std::make_pair(SysProcPressureColumn::MEMSomeAvg60, "MEMSomeAvg60"),
+        std::make_pair(SysProcPressureColumn::MEMSomeAvg300, "MEMSomeAvg300"),
+        std::make_pair(SysProcPressureColumn::MEMSomeTotal, "MEMSomeTotal"),
+        std::make_pair(SysProcPressureColumn::MEMFullAvg10, "MEMFullAvg10"),
+        std::make_pair(SysProcPressureColumn::MEMFullAvg60, "MEMFullAvg60"),
+        std::make_pair(SysProcPressureColumn::MEMFullAvg300, "MEMFullAvg300"),
+        std::make_pair(SysProcPressureColumn::MEMFullTotal, "MEMFullTotal"),
+        std::make_pair(SysProcPressureColumn::IOSomeAvg10, "IOSomeAvg10"),
+        std::make_pair(SysProcPressureColumn::IOSomeAvg60, "IOSomeAvg60"),
+        std::make_pair(SysProcPressureColumn::IOSomeAvg300, "IOSomeAvg300"),
+        std::make_pair(SysProcPressureColumn::IOSomeTotal, "IOSomeTotal"),
+        std::make_pair(SysProcPressureColumn::IOFullAvg10, "IOFullAvg10"),
+        std::make_pair(SysProcPressureColumn::IOFullAvg60, "IOFullAvg60"),
+        std::make_pair(SysProcPressureColumn::IOFullAvg300, "IOFullAvg300"),
+        std::make_pair(SysProcPressureColumn::IOFullTotal, "IOFullTotal"),
+        std::make_pair(SysProcPressureColumn::SessionId, "SessionId"),
+    };
+
+    enum class ProcAcctColumn {
+        Id,                    // int: Primary key
+        Timestamp,             // int: Timestamp
+        AcComm,                // str: ac_comm
+        AcUid,                 // int: ac_uid
+        AcGid,                 // int: ac_gid
+        AcPid,                 // int: ac_pid
+        AcPPid,                // int: ac_ppid
+        AcUTime,               // int: ac_utime
+        AcSTime,               // int: ac_stime
+        UserCpuPercent,        // int: user_cpu_percent
+        SysCpuPercent,         // int: sys_cpu_percent
+        CpuCount,              // int: cpu_count
+        CpuRunRealTotal,       // int: cpu_run_real_total
+        CpuRunVirtualTotal,    // int: cpu_run_virtual_total
+        CpuDelayTotal,         // int: cpu_delay_total
+        CpuDelayAverage,       // int: cpu_delay_average
+        CoreMem,               // int: coremem
+        VirtMem,               // int: virtmem
+        HiwaterRss,            // int: hiwater_rss
+        HiwaterVm,             // int: hiwater_vm
+        Nvcsw,                 // int: nvcsw
+        Nivcsw,                // int: nivcsw
+        SwapinCount,           // int: swapin_count
+        SwapinDelayTotal,      // int: swapin_delay_total
+        SwapinDelayAverage,    // int: swapin_delay_average
+        BlkIOCount,            // int: blkio_count
+        BlkIODelayTotal,       // int: blkio_delay_total
+        BlkIODelayAverage,     // int: blkio_delay_average
+        FreePagesCount,        // int: freepages_count
+        FreePagesDelayTotal,   // int: freepages_delay_total
+        FreePagesDelayAverage, // int: freepages_delay_average
+        ThrashingCount,        // int: thrashing_count
+        ThrashingDelayTotal,   // int: thrashing_delay_total
+        ThrashingDelayAverage, // int: thrashing_delay_average
+        SessionId,             // int: Session id key
+    };
+    const std::map<ProcAcctColumn, std::string> m_procAcctColumn {
+        std::make_pair(ProcAcctColumn::Id, "Id"),
+        std::make_pair(ProcAcctColumn::Timestamp, "Timestamp"),
+        std::make_pair(ProcAcctColumn::AcComm, "AcComm"),
+        std::make_pair(ProcAcctColumn::AcUid, "AcUid"),
+        std::make_pair(ProcAcctColumn::AcGid, "AcGid"),
+        std::make_pair(ProcAcctColumn::AcPid, "AcPid"),
+        std::make_pair(ProcAcctColumn::AcPPid, "AcPPid"),
+        std::make_pair(ProcAcctColumn::AcUTime, "AcUTime"),
+        std::make_pair(ProcAcctColumn::AcSTime, "AcSTime"),
+        std::make_pair(ProcAcctColumn::UserCpuPercent, "UserCpuPercent"),
+        std::make_pair(ProcAcctColumn::SysCpuPercent, "SysCpuPercent"),
+        std::make_pair(ProcAcctColumn::CpuCount, "CpuCount"),
+        std::make_pair(ProcAcctColumn::CpuRunRealTotal, "CpuRunRealTotal"),
+        std::make_pair(ProcAcctColumn::CpuRunVirtualTotal, "CpuRunVirtualTotal"),
+        std::make_pair(ProcAcctColumn::CpuDelayTotal, "CpuDelayTotal"),
+        std::make_pair(ProcAcctColumn::CpuDelayAverage, "CpuDelayAverage"),
+        std::make_pair(ProcAcctColumn::CoreMem, "CoreMem"),
+        std::make_pair(ProcAcctColumn::VirtMem, "VirtMem"),
+        std::make_pair(ProcAcctColumn::HiwaterRss, "HiwaterRss"),
+        std::make_pair(ProcAcctColumn::HiwaterVm, "HiwaterVm"),
+        std::make_pair(ProcAcctColumn::Nvcsw, "Nvcsw"),
+        std::make_pair(ProcAcctColumn::Nivcsw, "Nivcsw"),
+        std::make_pair(ProcAcctColumn::SwapinCount, "SwapinCount"),
+        std::make_pair(ProcAcctColumn::SwapinDelayTotal, "SwapinDelayTotal"),
+        std::make_pair(ProcAcctColumn::SwapinDelayAverage, "SwapinDelayAverage"),
+        std::make_pair(ProcAcctColumn::BlkIOCount, "BlkIOCount"),
+        std::make_pair(ProcAcctColumn::BlkIODelayTotal, "BlkIODelayTotal"),
+        std::make_pair(ProcAcctColumn::BlkIODelayAverage, "BlkIODelayAverage"),
+        std::make_pair(ProcAcctColumn::FreePagesCount, "FreePagesCount"),
+        std::make_pair(ProcAcctColumn::FreePagesDelayTotal, "FreePagesDelayTotal"),
+        std::make_pair(ProcAcctColumn::FreePagesDelayAverage, "FreePagesDelayAverage"),
+        std::make_pair(ProcAcctColumn::ThrashingCount, "ThrashingCount"),
+        std::make_pair(ProcAcctColumn::ThrashingDelayTotal, "ThrashingDelayTotal"),
+        std::make_pair(ProcAcctColumn::ThrashingDelayAverage, "ThrashingDelayAverage"),
+        std::make_pair(ProcAcctColumn::SessionId, "SessionId"),
+    };
+
     const std::string m_devicesTableName = "tkmDevices";
     const std::string m_sessionsTableName = "tkmSessions";
+    const std::string m_sysProcStatTableName = "tkmSysProcStat";
+    const std::string m_sysProcPressureTableName = "tkmSysProcPressure";
+    const std::string m_procAcctTableName = "tkmProcAcct";
 };
 
 static Query tkmQuery {};

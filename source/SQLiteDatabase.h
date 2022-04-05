@@ -27,7 +27,8 @@ public:
         HasDevice,
         AddSession,
         EndSession,
-        CleanSessions
+        CleanSessions,
+        AddData,
     };
 
     typedef struct Query {

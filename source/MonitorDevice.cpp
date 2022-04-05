@@ -31,12 +31,6 @@ using std::string;
 
 namespace tkm::collector
 {
-static void writeProcAcct(const tkm::msg::server::ProcAcct &acct, uint64_t ts);
-static void writeProcEvent(const tkm::msg::server::ProcEvent &event, uint64_t ts);
-static void writeSysProcStat(const tkm::msg::server::SysProcStat &sysProcStat, uint64_t ts);
-static void writeSysProcPressure(const tkm::msg::server::SysProcPressure &sysProcPressure,
-                                 uint64_t ts);
-
 static auto doConnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
     -> bool;
 static auto doDisconnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
@@ -83,8 +77,8 @@ void MonitorDevice::deleteConnection()
 }
 
 void MonitorDevice::enableConnection()
-{ 
-    m_connection->enableEvents(); 
+{
+    m_connection->enableEvents();
 }
 
 auto MonitorDevice::pushRequest(Request &request) -> bool
@@ -365,38 +359,10 @@ static auto doStopCollecting(const shared_ptr<MonitorDevice> &mgr, const Monitor
 static auto doProcessData(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
     -> bool
 {
-    const auto &data = std::any_cast<tkm::msg::server::Data>(rq.bulkData);
-
-    switch (data.what()) {
-    case tkm::msg::server::Data_What_ProcAcct: {
-        tkm::msg::server::ProcAcct procAcct;
-        data.payload().UnpackTo(&procAcct);
-        writeProcAcct(procAcct, data.timestamp());
-        break;
-    }
-    case tkm::msg::server::Data_What_ProcEvent: {
-        tkm::msg::server::ProcEvent procEvent;
-        data.payload().UnpackTo(&procEvent);
-        writeProcEvent(procEvent, data.timestamp());
-        break;
-    }
-    case tkm::msg::server::Data_What_SysProcStat: {
-        tkm::msg::server::SysProcStat sysProcStat;
-        data.payload().UnpackTo(&sysProcStat);
-        writeSysProcStat(sysProcStat, data.timestamp());
-        break;
-    }
-    case tkm::msg::server::Data_What_SysProcPressure: {
-        tkm::msg::server::SysProcPressure sysProcPressure;
-        data.payload().UnpackTo(&sysProcPressure);
-        writeSysProcPressure(sysProcPressure, data.timestamp());
-        break;
-    }
-    default:
-        break;
-    }
-
-    return true;
+    // Add entry to database
+    IDatabase::Request dbrq {.action = IDatabase::Action::AddData, .bulkData = rq.bulkData};
+    dbrq.args.emplace(Defaults::Arg::SessionHash, mgr->getSessionData().hash());
+    return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
 static auto doStatus(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq) -> bool
@@ -421,27 +387,6 @@ static auto doStatus(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::
                << " Reason: " << serverStatus.reason();
 
     return true;
-}
-
-static void writeProcAcct(const tkm::msg::server::ProcAcct &acct, uint64_t ts)
-{
-    logDebug() << "Received ProcAcct data";
-}
-
-static void writeProcEvent(const tkm::msg::server::ProcEvent &event, uint64_t ts)
-{
-    logDebug() << "Received ProcEvent data";
-}
-
-static void writeSysProcStat(const tkm::msg::server::SysProcStat &sysProcStat, uint64_t ts)
-{
-    logDebug() << "Received SysProcStat data";
-}
-
-static void writeSysProcPressure(const tkm::msg::server::SysProcPressure &sysProcPressure,
-                                 uint64_t ts)
-{
-    logDebug() << "Received SysProcPressure data";
 }
 
 } // namespace tkm::collector

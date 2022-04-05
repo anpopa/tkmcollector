@@ -4,6 +4,7 @@
 #include "Query.h"
 
 #include "Collector.pb.h"
+#include "Server.pb.h"
 
 #include <Envelope.pb.h>
 #include <Helpers.h>
@@ -48,6 +49,7 @@ static auto doEndSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::
     -> bool;
 static auto doCleanSessions(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
     -> bool;
+static auto doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq) -> bool;
 
 SQLiteDatabase::SQLiteDatabase()
 : IDatabase()
@@ -99,6 +101,7 @@ static auto sqlite_callback(void *data, int argc, char **argv, char **colname) -
     case SQLiteDatabase::QueryType::RemDevice:
     case SQLiteDatabase::QueryType::AddSession:
     case SQLiteDatabase::QueryType::EndSession:
+    case SQLiteDatabase::QueryType::AddData:
         break;
     case SQLiteDatabase::QueryType::LoadDevices:
     case SQLiteDatabase::QueryType::GetDevices: {
@@ -562,6 +565,66 @@ static auto doEndSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::
         tkmQuery.endSession(Query::Type::SQLite3, rq.args.at(Defaults::Arg::SessionHash)), query);
     if (!status) {
         logError() << "Query failed to mark end session";
+    }
+
+    return true;
+}
+
+static auto doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq) -> bool
+{
+    SQLiteDatabase::Query query {.type = SQLiteDatabase::QueryType::AddData};
+    const auto &data = std::any_cast<tkm::msg::server::Data>(rq.bulkData);
+    bool status = true;
+
+    if ((rq.args.count(Defaults::Arg::SessionHash) == 0)) {
+        logError() << "Invalid session data";
+        return true;
+    }
+
+    auto writeProcAcct = [&db, &rq, &status, &query](const std::string &sessionHash,
+                                                     const tkm::msg::server::ProcAcct &acct,
+                                                     uint64_t ts) {
+        status = db->runQuery(tkmQuery.addData(Query::Type::SQLite3, sessionHash, acct, ts), query);
+    };
+
+    auto writeSysProcStat
+        = [&db, &rq, &status, &query](const std::string &sessionHash,
+                                      const tkm::msg::server::SysProcStat &sysProcStat,
+                                      uint64_t ts) {
+              status = db->runQuery(
+                  tkmQuery.addData(Query::Type::SQLite3, sessionHash, sysProcStat, ts), query);
+          };
+
+    auto writeSysProcPressure
+        = [&db, &rq, &status, &query](const std::string &sessionHash,
+                                      const tkm::msg::server::SysProcPressure &sysProcPressure,
+                                      uint64_t ts) {
+              status = db->runQuery(
+                  tkmQuery.addData(Query::Type::SQLite3, sessionHash, sysProcPressure, ts), query);
+          };
+
+    switch (data.what()) {
+    case tkm::msg::server::Data_What_ProcAcct: {
+        tkm::msg::server::ProcAcct procAcct;
+        data.payload().UnpackTo(&procAcct);
+        writeProcAcct(rq.args.at(Defaults::Arg::SessionHash), procAcct, data.timestamp());
+        break;
+    }
+    case tkm::msg::server::Data_What_SysProcStat: {
+        tkm::msg::server::SysProcStat sysProcStat;
+        data.payload().UnpackTo(&sysProcStat);
+        writeSysProcStat(rq.args.at(Defaults::Arg::SessionHash), sysProcStat, data.timestamp());
+        break;
+    }
+    case tkm::msg::server::Data_What_SysProcPressure: {
+        tkm::msg::server::SysProcPressure sysProcPressure;
+        data.payload().UnpackTo(&sysProcPressure);
+        writeSysProcPressure(
+            rq.args.at(Defaults::Arg::SessionHash), sysProcPressure, data.timestamp());
+        break;
+    }
+    default:
+        break;
     }
 
     return true;

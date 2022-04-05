@@ -30,7 +30,8 @@ public:
         AddSession,
         RemSession,
         EndSession,
-        CleanSessions
+        CleanSessions,
+        AddData
     };
 
     typedef struct Request {
