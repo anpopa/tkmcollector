@@ -223,6 +223,8 @@ auto SQLiteDatabase::requestHandler(const Request &rq) -> bool
         return doEndSession(getShared(), rq);
     case IDatabase::Action::CleanSessions:
         return doCleanSessions(getShared(), rq);
+    case IDatabase::Action::AddData:
+        return doAddData(getShared(), rq);
     default:
         break;
     }
@@ -584,6 +586,7 @@ static auto doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Req
     auto writeProcAcct = [&db, &rq, &status, &query](const std::string &sessionHash,
                                                      const tkm::msg::server::ProcAcct &acct,
                                                      uint64_t ts) {
+        logDebug() << "Add ProcAcct entry for session: " << sessionHash;
         status = db->runQuery(tkmQuery.addData(Query::Type::SQLite3, sessionHash, acct, ts), query);
     };
 
@@ -591,6 +594,7 @@ static auto doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Req
         = [&db, &rq, &status, &query](const std::string &sessionHash,
                                       const tkm::msg::server::SysProcStat &sysProcStat,
                                       uint64_t ts) {
+              logDebug() << "Add SysProcStat entry for session: " << sessionHash;
               status = db->runQuery(
                   tkmQuery.addData(Query::Type::SQLite3, sessionHash, sysProcStat, ts), query);
           };
@@ -599,6 +603,7 @@ static auto doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Req
         = [&db, &rq, &status, &query](const std::string &sessionHash,
                                       const tkm::msg::server::SysProcPressure &sysProcPressure,
                                       uint64_t ts) {
+              logDebug() << "Add SysProcPressure entry for session: " << sessionHash;
               status = db->runQuery(
                   tkmQuery.addData(Query::Type::SQLite3, sessionHash, sysProcPressure, ts), query);
           };

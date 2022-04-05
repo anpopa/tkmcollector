@@ -115,6 +115,7 @@ auto Query::createTables(Query::Type type) -> std::string
             << m_procAcctColumn.at(ProcAcctColumn::ThrashingCount) << " INTEGER NOT NULL, "
             << m_procAcctColumn.at(ProcAcctColumn::ThrashingDelayTotal) << " INTEGER NOT NULL, "
             << m_procAcctColumn.at(ProcAcctColumn::ThrashingDelayAverage) << " INTEGER NOT NULL, "
+            << m_procAcctColumn.at(ProcAcctColumn::SessionId) << " INTEGER NOT NULL, "
             << "CONSTRAINT KFSession FOREIGN KEY(" << m_procAcctColumn.at(ProcAcctColumn::SessionId)
             << ") REFERENCES " << m_sessionsTableName << "("
             << m_sessionColumn.at(SessionColumn::Id) << ") ON DELETE CASCADE);";
