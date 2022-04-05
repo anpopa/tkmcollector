@@ -585,47 +585,47 @@ static auto doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Req
 
     auto writeProcAcct = [&db, &rq, &status, &query](const std::string &sessionHash,
                                                      const tkm::msg::server::ProcAcct &acct,
-                                                     uint64_t ts) {
+                                                     uint64_t ts, uint64_t recvTime) {
         logDebug() << "Add ProcAcct entry for session: " << sessionHash;
-        status = db->runQuery(tkmQuery.addData(Query::Type::SQLite3, sessionHash, acct, ts), query);
+        status = db->runQuery(tkmQuery.addData(Query::Type::SQLite3, sessionHash, acct, ts, recvTime), query);
     };
 
     auto writeSysProcStat
         = [&db, &rq, &status, &query](const std::string &sessionHash,
                                       const tkm::msg::server::SysProcStat &sysProcStat,
-                                      uint64_t ts) {
+                                      uint64_t ts, uint64_t recvTime) {
               logDebug() << "Add SysProcStat entry for session: " << sessionHash;
               status = db->runQuery(
-                  tkmQuery.addData(Query::Type::SQLite3, sessionHash, sysProcStat, ts), query);
+                  tkmQuery.addData(Query::Type::SQLite3, sessionHash, sysProcStat, ts, recvTime), query);
           };
 
     auto writeSysProcPressure
         = [&db, &rq, &status, &query](const std::string &sessionHash,
                                       const tkm::msg::server::SysProcPressure &sysProcPressure,
-                                      uint64_t ts) {
+                                      uint64_t ts, uint64_t recvTime) {
               logDebug() << "Add SysProcPressure entry for session: " << sessionHash;
               status = db->runQuery(
-                  tkmQuery.addData(Query::Type::SQLite3, sessionHash, sysProcPressure, ts), query);
+                  tkmQuery.addData(Query::Type::SQLite3, sessionHash, sysProcPressure, ts, recvTime), query);
           };
 
     switch (data.what()) {
     case tkm::msg::server::Data_What_ProcAcct: {
         tkm::msg::server::ProcAcct procAcct;
         data.payload().UnpackTo(&procAcct);
-        writeProcAcct(rq.args.at(Defaults::Arg::SessionHash), procAcct, data.timestamp());
+        writeProcAcct(rq.args.at(Defaults::Arg::SessionHash), procAcct, data.timestamp(), data.recvtime());
         break;
     }
     case tkm::msg::server::Data_What_SysProcStat: {
         tkm::msg::server::SysProcStat sysProcStat;
         data.payload().UnpackTo(&sysProcStat);
-        writeSysProcStat(rq.args.at(Defaults::Arg::SessionHash), sysProcStat, data.timestamp());
+        writeSysProcStat(rq.args.at(Defaults::Arg::SessionHash), sysProcStat, data.timestamp(), data.recvtime());
         break;
     }
     case tkm::msg::server::Data_What_SysProcPressure: {
         tkm::msg::server::SysProcPressure sysProcPressure;
         data.payload().UnpackTo(&sysProcPressure);
         writeSysProcPressure(
-            rq.args.at(Defaults::Arg::SessionHash), sysProcPressure, data.timestamp());
+            rq.args.at(Defaults::Arg::SessionHash), sysProcPressure, data.timestamp(), data.recvtime());
         break;
     }
     default:

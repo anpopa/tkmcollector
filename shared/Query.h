@@ -45,15 +45,15 @@ public:
     auto addData(Query::Type type,
                  const std::string &sessionHash,
                  const tkm::msg::server::SysProcStat &sysProcStat,
-                 uint64_t ts) -> std::string;
+                 uint64_t ts, uint64_t recvTime) -> std::string;
     auto addData(Query::Type type,
                  const std::string &sessionHash,
                  const tkm::msg::server::SysProcPressure &sysProcPressure,
-                 uint64_t ts) -> std::string;
+                 uint64_t ts, uint64_t recvTime) -> std::string;
     auto addData(Query::Type type,
                  const std::string &sessionHash,
                  const tkm::msg::server::ProcAcct &procAcct,
-                 uint64_t ts) -> std::string;
+                 uint64_t ts, uint64_t recvTime) -> std::string;
 
 public:
     enum class DeviceColumn {
@@ -93,6 +93,7 @@ public:
     enum class SysProcStatColumn {
         Id,         // int: Primary key
         Timestamp,  // int: Timestamp
+        RecvTime,   // int: Timestamp
         CPUStatAll, // int: CPUStat.all
         CPUStatUsr, // int: CPUStat.usr
         CPUStatSys, // int: CPUStat.sys
@@ -101,6 +102,7 @@ public:
     const std::map<SysProcStatColumn, std::string> m_sysProcStatColumn {
         std::make_pair(SysProcStatColumn::Id, "Id"),
         std::make_pair(SysProcStatColumn::Timestamp, "Timestamp"),
+        std::make_pair(SysProcStatColumn::RecvTime, "RecvTime"),
         std::make_pair(SysProcStatColumn::CPUStatAll, "CPUStatAll"),
         std::make_pair(SysProcStatColumn::CPUStatUsr, "CPUStatUsr"),
         std::make_pair(SysProcStatColumn::CPUStatSys, "CPUStatSys"),
@@ -110,35 +112,37 @@ public:
     enum class SysProcPressureColumn {
         Id,            // int: Primary key
         Timestamp,     // int: Timestamp
-        CPUSomeAvg10,  // str: cpu_some_avg10
-        CPUSomeAvg60,  // str: cpu_some_avg60
-        CPUSomeAvg300, // str: cpu_some_avg300
-        CPUSomeTotal,  // str: cpu_some_total
-        CPUFullAvg10,  // str: cpu_full_avg10
-        CPUFullAvg60,  // str: cpu_full_avg60
-        CPUFullAvg300, // str: cpu_full_avg300
-        CPUFullTotal,  // str: cpu_full_total
-        MEMSomeAvg10,  // str: mem_some_avg10
-        MEMSomeAvg60,  // str: mem_some_avg60
-        MEMSomeAvg300, // str: mem_some_avg300
-        MEMSomeTotal,  // str: mem_some_total
-        MEMFullAvg10,  // str: mem_full_avg10
-        MEMFullAvg60,  // str: mem_full_avg60
-        MEMFullAvg300, // str: mem_full_avg300
-        MEMFullTotal,  // str: mem_full_total
-        IOSomeAvg10,   // str: io_some_avg10
-        IOSomeAvg60,   // str: io_some_avg60
-        IOSomeAvg300,  // str: io_some_avg300
-        IOSomeTotal,   // str: io_some_total
-        IOFullAvg10,   // str: io_full_avg10
-        IOFullAvg60,   // str: io_full_avg60
-        IOFullAvg300,  // str: io_full_avg300
-        IOFullTotal,   // str: io_full_total
+        RecvTime,      // int: Receive timestamp
+        CPUSomeAvg10,  // float: cpu_some_avg10
+        CPUSomeAvg60,  // float: cpu_some_avg60
+        CPUSomeAvg300, // float: cpu_some_avg300
+        CPUSomeTotal,  // float: cpu_some_total
+        CPUFullAvg10,  // float: cpu_full_avg10
+        CPUFullAvg60,  // float: cpu_full_avg60
+        CPUFullAvg300, // float: cpu_full_avg300
+        CPUFullTotal,  // float: cpu_full_total
+        MEMSomeAvg10,  // float: mem_some_avg10
+        MEMSomeAvg60,  // float: mem_some_avg60
+        MEMSomeAvg300, // float: mem_some_avg300
+        MEMSomeTotal,  // float: mem_some_total
+        MEMFullAvg10,  // float: mem_full_avg10
+        MEMFullAvg60,  // float: mem_full_avg60
+        MEMFullAvg300, // float: mem_full_avg300
+        MEMFullTotal,  // float: mem_full_total
+        IOSomeAvg10,   // float: io_some_avg10
+        IOSomeAvg60,   // float: io_some_avg60
+        IOSomeAvg300,  // float: io_some_avg300
+        IOSomeTotal,   // float: io_some_total
+        IOFullAvg10,   // float: io_full_avg10
+        IOFullAvg60,   // float: io_full_avg60
+        IOFullAvg300,  // float: io_full_avg300
+        IOFullTotal,   // float: io_full_total
         SessionId,     // int: Session id key
     };
     const std::map<SysProcPressureColumn, std::string> m_sysProcPressureColumn {
         std::make_pair(SysProcPressureColumn::Id, "Id"),
         std::make_pair(SysProcPressureColumn::Timestamp, "Timestamp"),
+        std::make_pair(SysProcPressureColumn::RecvTime, "RecvTime"),
         std::make_pair(SysProcPressureColumn::CPUSomeAvg10, "CPUSomeAvg10"),
         std::make_pair(SysProcPressureColumn::CPUSomeAvg60, "CPUSomeAvg60"),
         std::make_pair(SysProcPressureColumn::CPUSomeAvg300, "CPUSomeAvg300"),
@@ -169,6 +173,7 @@ public:
     enum class ProcAcctColumn {
         Id,                    // int: Primary key
         Timestamp,             // int: Timestamp
+        RecvTime,              // int: Receive timestamp
         AcComm,                // str: ac_comm
         AcUid,                 // int: ac_uid
         AcGid,                 // int: ac_gid
@@ -206,6 +211,7 @@ public:
     const std::map<ProcAcctColumn, std::string> m_procAcctColumn {
         std::make_pair(ProcAcctColumn::Id, "Id"),
         std::make_pair(ProcAcctColumn::Timestamp, "Timestamp"),
+        std::make_pair(ProcAcctColumn::RecvTime, "RecvTime"),
         std::make_pair(ProcAcctColumn::AcComm, "AcComm"),
         std::make_pair(ProcAcctColumn::AcUid, "AcUid"),
         std::make_pair(ProcAcctColumn::AcGid, "AcGid"),

@@ -32,6 +32,7 @@ auto Query::createTables(Query::Type type) -> std::string
         out << "CREATE TABLE IF NOT EXISTS " << m_sysProcStatTableName << " ("
             << m_sysProcStatColumn.at(SysProcStatColumn::Id) << " INTEGER PRIMARY KEY, "
             << m_sysProcStatColumn.at(SysProcStatColumn::Timestamp) << " INTEGER NOT NULL, "
+            << m_sysProcStatColumn.at(SysProcStatColumn::RecvTime) << " INTEGER NOT NULL, "
             << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatAll) << " INTEGER NOT NULL, "
             << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatUsr) << " INTEGER NOT NULL, "
             << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatSys) << " INTEGER NOT NULL, "
@@ -45,6 +46,7 @@ auto Query::createTables(Query::Type type) -> std::string
         out << "CREATE TABLE IF NOT EXISTS " << m_sysProcPressureTableName << " ("
             << m_sysProcPressureColumn.at(SysProcPressureColumn::Id) << " INTEGER PRIMARY KEY, "
             << m_sysProcPressureColumn.at(SysProcPressureColumn::Timestamp) << " INTEGER NOT NULL, "
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::RecvTime) << " INTEGER NOT NULL, "
             << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg10) << " REAL NOT NULL, "
             << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg60) << " REAL NOT NULL, "
             << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg300) << " REAL NOT NULL, " 
@@ -79,6 +81,7 @@ auto Query::createTables(Query::Type type) -> std::string
         out << "CREATE TABLE IF NOT EXISTS " << m_procAcctTableName << " ("
             << m_procAcctColumn.at(ProcAcctColumn::Id) << " INTEGER PRIMARY KEY, "
             << m_procAcctColumn.at(ProcAcctColumn::Timestamp) << " INTEGER NOT NULL, "
+            << m_procAcctColumn.at(ProcAcctColumn::RecvTime) << " INTEGER NOT NULL, "
             << m_procAcctColumn.at(ProcAcctColumn::AcComm) << " TEXT NOT NULL, "
             << m_procAcctColumn.at(ProcAcctColumn::AcUid) << " INTEGER NOT NULL, "
             << m_procAcctColumn.at(ProcAcctColumn::AcGid) << " INTEGER NOT NULL, "
@@ -315,17 +318,21 @@ auto Query::hasSession(Query::Type type, const std::string &hash) -> std::string
 auto Query::addData(Query::Type type,
                     const std::string &sessionHash,
                     const tkm::msg::server::SysProcStat &sysProcStat,
-                    uint64_t ts) -> std::string
+                    uint64_t ts, uint64_t recvTime) -> std::string
 {
     std::stringstream out;
 
     if (type == Query::Type::SQLite3) {
         out << "INSERT INTO " << m_sysProcStatTableName << " ("
             << m_sysProcStatColumn.at(SysProcStatColumn::Timestamp) << ","
+            << m_sysProcStatColumn.at(SysProcStatColumn::RecvTime) << ","
             << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatAll) << ","
             << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatUsr) << ","
             << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatSys) << ","
-            << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << ") VALUES ('" << ts << "', '"
+            << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) 
+            << ") VALUES ('" 
+            << ts << "', '"
+            << recvTime << "', '"
             << sysProcStat.cpu().all() << "', '" << sysProcStat.cpu().usr() << "', '"
             << sysProcStat.cpu().sys() << "', "
             << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM "
@@ -339,13 +346,14 @@ auto Query::addData(Query::Type type,
 auto Query::addData(Query::Type type,
                     const std::string &sessionHash,
                     const tkm::msg::server::SysProcPressure &sysProcPressure,
-                    uint64_t ts) -> std::string
+                    uint64_t ts, uint64_t recvTime) -> std::string
 {
     std::stringstream out;
 
     if (type == Query::Type::SQLite3) {
         out << "INSERT INTO " << m_sysProcPressureTableName << " ("
             << m_sysProcPressureColumn.at(SysProcPressureColumn::Timestamp) << ","
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::RecvTime) << ","
             << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg10) << ","
             << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg60) << ","
             << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg300) << ","
@@ -370,7 +378,10 @@ auto Query::addData(Query::Type type,
             << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg60) << ","
             << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg300) << ","
             << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullTotal) << ","
-            << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << ") VALUES ('" << ts << "', '"
+            << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) 
+            << ") VALUES ('" 
+            << ts << "', '"
+            << recvTime << "', '"
             << sysProcPressure.cpu_some().avg10() << "', '" << sysProcPressure.cpu_some().avg60()
             << "', '" << sysProcPressure.cpu_some().avg300() << "', '"
             << sysProcPressure.cpu_some().total() << "', '" << sysProcPressure.cpu_full().avg10()
@@ -398,13 +409,14 @@ auto Query::addData(Query::Type type,
 auto Query::addData(Query::Type type,
                     const std::string &sessionHash,
                     const tkm::msg::server::ProcAcct &procAcct,
-                    uint64_t ts) -> std::string
+                    uint64_t ts, uint64_t recvTime) -> std::string
 {
     std::stringstream out;
 
     if (type == Query::Type::SQLite3) {
         out << "INSERT INTO " << m_procAcctTableName << " ("
             << m_procAcctColumn.at(ProcAcctColumn::Timestamp) << ","
+            << m_procAcctColumn.at(ProcAcctColumn::RecvTime) << ","
             << m_procAcctColumn.at(ProcAcctColumn::AcComm) << ","
             << m_procAcctColumn.at(ProcAcctColumn::AcUid) << ","
             << m_procAcctColumn.at(ProcAcctColumn::AcGid) << ","
@@ -437,7 +449,10 @@ auto Query::addData(Query::Type type,
             << m_procAcctColumn.at(ProcAcctColumn::ThrashingCount) << ","
             << m_procAcctColumn.at(ProcAcctColumn::ThrashingDelayTotal) << ","
             << m_procAcctColumn.at(ProcAcctColumn::ThrashingDelayAverage) << ","
-            << m_procAcctColumn.at(ProcAcctColumn::SessionId) << ") VALUES ('" << ts << "', '"
+            << m_procAcctColumn.at(ProcAcctColumn::SessionId) 
+            << ") VALUES ('" 
+            << ts << "', '"
+            << recvTime << "', '"
             << procAcct.ac_comm() << "', '" << procAcct.ac_uid() << "', '" << procAcct.ac_gid()
             << "', '" << procAcct.ac_pid() << "', '" << procAcct.ac_ppid() << "', '"
             << procAcct.ac_utime() << "', '" << procAcct.ac_stime() << "', '"

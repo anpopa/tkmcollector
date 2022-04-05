@@ -82,6 +82,9 @@ Connection::Connection(std::shared_ptr<IDevice> device)
                     tkm::msg::server::Data data;
 
                     msg.payload().UnpackTo(&data);
+
+                    // Set the receive timestamp
+                    data.set_recvtime(time(NULL));
                     rq.bulkData = std::make_any<tkm::msg::server::Data>(data);
 
                     m_device->pushRequest(rq);
