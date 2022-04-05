@@ -13,11 +13,10 @@ public:
         Version,
         ConfPath,
         RuntimeDirectory,
-        DBType,
         DBUserName,
         DBUserPassword,
-        DBServerAddress,
-        DBServerPort,
+        DBAddress,
+        DBPort,
         ControlSocket
     };
 
@@ -44,11 +43,10 @@ public:
             std::pair<Default, std::string>(Default::ConfPath, "@TKM_COLELCTOR_CONFIG_FILE@"));
         m_table.insert(
             std::pair<Default, std::string>(Default::RuntimeDirectory, "/tmp/tkm-collector"));
-        m_table.insert(std::pair<Default, std::string>(Default::DBType, "sqlite"));
         m_table.insert(std::pair<Default, std::string>(Default::DBUserName, "anon"));
         m_table.insert(std::pair<Default, std::string>(Default::DBUserPassword, "anon"));
-        m_table.insert(std::pair<Default, std::string>(Default::DBServerAddress, "localhost"));
-        m_table.insert(std::pair<Default, std::string>(Default::DBServerPort, "5432"));
+        m_table.insert(std::pair<Default, std::string>(Default::DBAddress, "/var/cache/tkm-collector/data.db"));
+        m_table.insert(std::pair<Default, std::string>(Default::DBPort, ""));
         m_table.insert(
             std::pair<Default, std::string>(Default::ControlSocket, ".tkm-control.sock"));
 

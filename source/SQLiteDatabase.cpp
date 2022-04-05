@@ -54,7 +54,7 @@ static auto doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Req
 SQLiteDatabase::SQLiteDatabase()
 : IDatabase()
 {
-    fs::path addr(CollectorApp()->getOptions()->getFor(Options::Key::DBServerAddress));
+    fs::path addr(CollectorApp()->getOptions()->getFor(Options::Key::DBAddress));
     logDebug() << "Using DB file: " << addr.string();
     if (sqlite3_open(addr.c_str(), &m_db) != SQLITE_OK) {
         sqlite3_close(m_db);

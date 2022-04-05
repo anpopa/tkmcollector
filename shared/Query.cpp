@@ -45,35 +45,31 @@ auto Query::createTables(Query::Type type) -> std::string
         out << "CREATE TABLE IF NOT EXISTS " << m_sysProcPressureTableName << " ("
             << m_sysProcPressureColumn.at(SysProcPressureColumn::Id) << " INTEGER PRIMARY KEY, "
             << m_sysProcPressureColumn.at(SysProcPressureColumn::Timestamp) << " INTEGER NOT NULL, "
-            << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg10) << " TEXT NOT NULL, "
-            << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg60) << " TEXT NOT NULL, "
-            << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg300)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeTotal)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg10)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg60)
-            << " TEXT NOT NULL, "
-            << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg300)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullTotal)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg10)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg60)
-            << " TEXT NOT NULL, "
-            << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg300)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeTotal)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg10)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg60)
-            << " TEXT NOT NULL, "
-            << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg300)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullTotal)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg10)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg60)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg300)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeTotal)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg10)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg60)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg300)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullTotal)
-            << " TEXT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::SessionId)
-            << " INTEGER NOT NULL, "
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg10) << " REAL NOT NULL, "
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg60) << " REAL NOT NULL, "
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg300) << " REAL NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeTotal) << " INTEGER NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg10) << " REAL NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg60) << " REAL NOT NULL, "
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg300) << " REAL NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullTotal) << " INTEGER NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg10) << " REAL NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg60) << " REAL NOT NULL, "
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg300) << " REAL NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeTotal) << " INTEGER NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg10) << " REAL NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg60) << " REAL NOT NULL, "
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg300) << " REAL NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullTotal) << " INTEGER NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg10) << " REAL NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg60) << " REAL NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg300) << " REAL NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeTotal) << " INTEGER NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg10) << " REAL NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg60) << " REAL NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg300) << " REAL NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullTotal) << " INTEGER NOT NULL, " 
+            << m_sysProcPressureColumn.at(SysProcPressureColumn::SessionId) << " INTEGER NOT NULL, "
             << "CONSTRAINT KFSession FOREIGN KEY("
             << m_sysProcPressureColumn.at(SysProcPressureColumn::SessionId) << ") REFERENCES "
             << m_sessionsTableName << "(" << m_sessionColumn.at(SessionColumn::Id)
@@ -130,6 +126,10 @@ auto Query::dropTables(Query::Type type) -> std::string
 
     if (type == Query::Type::SQLite3) {
         out << "DROP TABLE IF EXISTS " << m_devicesTableName << ";";
+        out << "DROP TABLE IF EXISTS " << m_sessionsTableName << ";";
+        out << "DROP TABLE IF EXISTS " << m_sysProcStatTableName << ";";
+        out << "DROP TABLE IF EXISTS " << m_sysProcPressureTableName << ";";
+        out << "DROP TABLE IF EXISTS " << m_procAcctTableName << ";";
     }
 
     return out.str();

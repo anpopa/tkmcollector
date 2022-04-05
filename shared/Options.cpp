@@ -18,12 +18,6 @@ Options::Options(const string &configFile)
 auto Options::getFor(Key key) -> string
 {
     switch (key) {
-    case Key::DBType:
-        if (hasConfigFile()) {
-            const optional<string> prop = m_configFile->getPropertyValue("database", -1, "Type");
-            return prop.value_or(tkmDefaults.getFor(Defaults::Default::DBType));
-        }
-        return tkmDefaults.getFor(Defaults::Default::DBType);
     case Key::DBUserName:
         if (hasConfigFile()) {
             const optional<string> prop
@@ -38,20 +32,20 @@ auto Options::getFor(Key key) -> string
             return prop.value_or(tkmDefaults.getFor(Defaults::Default::DBUserPassword));
         }
         return tkmDefaults.getFor(Defaults::Default::DBUserPassword);
-    case Key::DBServerAddress:
+    case Key::DBAddress:
         if (hasConfigFile()) {
             const optional<string> prop
-                = m_configFile->getPropertyValue("database", -1, "ServerAddress");
-            return prop.value_or(tkmDefaults.getFor(Defaults::Default::DBServerAddress));
+                = m_configFile->getPropertyValue("database", -1, "Address");
+            return prop.value_or(tkmDefaults.getFor(Defaults::Default::DBAddress));
         }
-        return tkmDefaults.getFor(Defaults::Default::DBServerAddress);
-    case Key::DBServerPort:
+        return tkmDefaults.getFor(Defaults::Default::DBAddress);
+    case Key::DBPort:
         if (hasConfigFile()) {
             const optional<string> prop
-                = m_configFile->getPropertyValue("database", -1, "ServerPort");
-            return prop.value_or(tkmDefaults.getFor(Defaults::Default::DBServerPort));
+                = m_configFile->getPropertyValue("database", -1, "Port");
+            return prop.value_or(tkmDefaults.getFor(Defaults::Default::DBPort));
         }
-        return tkmDefaults.getFor(Defaults::Default::DBServerPort);
+        return tkmDefaults.getFor(Defaults::Default::DBPort);
     case Key::RuntimeDirectory:
         if (hasConfigFile()) {
             const optional<string> prop

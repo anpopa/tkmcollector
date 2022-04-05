@@ -16,11 +16,10 @@ class Options
 {
 public:
     enum class Key {
-        DBType,
         DBUserName,
         DBUserPassword,
-        DBServerAddress,
-        DBServerPort,
+        DBAddress,
+        DBPort,
         RuntimeDirectory
     };
 
