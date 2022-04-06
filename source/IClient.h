@@ -1,3 +1,14 @@
+/*-
+ * SPDX-License-Identifier: MIT
+ *-
+ * @date      2021-2022
+ * @author    Alin Popa <alin.popa@fxdata.ro>
+ * @copyright MIT
+ * @brief     IClient Class
+ * @details   Interfaces for UDS clients
+ *-
+ */
+
 #pragma once
 
 #include "EnvelopeReader.h"

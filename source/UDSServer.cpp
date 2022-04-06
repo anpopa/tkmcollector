@@ -1,3 +1,14 @@
+/*-
+ * SPDX-License-Identifier: MIT
+ *-
+ * @date      2021-2022
+ * @author    Alin Popa <alin.popa@fxdata.ro>
+ * @copyright MIT
+ * @brief     UDSServer Class
+ * @details   Unix domain server connection for ControlClient
+ *-
+ */
+
 #include <filesystem>
 #include <unistd.h>
 

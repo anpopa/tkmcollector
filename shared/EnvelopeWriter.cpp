@@ -1,3 +1,14 @@
+/*-
+ * SPDX-License-Identifier: MIT
+ *-
+ * @date      2021-2022
+ * @author    Alin Popa <alin.popa@fxdata.ro>
+ * @copyright MIT
+ * @brief     EnvelopeWriter Class
+ * @details   IPC Envelope writer helper class
+ *-
+ */
+
 #include <cstring>
 #include <errno.h>
 #include <stdexcept>

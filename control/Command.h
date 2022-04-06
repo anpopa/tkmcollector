@@ -1,3 +1,14 @@
+/*-
+ * SPDX-License-Identifier: MIT
+ *-
+ * @date      2021-2022
+ * @author    Alin Popa <alin.popa@fxdata.ro>
+ * @copyright MIT
+ * @brief     Command Class
+ * @details   Process commands from cli arguments
+ *-
+ */
+
 #pragma once
 
 #include <string>

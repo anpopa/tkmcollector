@@ -1,3 +1,14 @@
+/*-
+ * SPDX-License-Identifier: MIT
+ *-
+ * @date      2021-2022
+ * @author    Alin Popa <alin.popa@fxdata.ro>
+ * @copyright MIT
+ * @brief     Query class
+ * @details   Provide SQL query strings per database type
+ *-
+ */
+
 #include "Query.h"
 
 namespace tkm

@@ -1,3 +1,14 @@
+/*-
+ * SPDX-License-Identifier: MIT
+ *-
+ * @date      2021-2022
+ * @author    Alin Popa <alin.popa@fxdata.ro>
+ * @copyright MIT
+ * @brief     Main function
+ * @details   Application main function
+ *-
+ */
+
 #include "Application.h"
 #include "Defaults.h"
 

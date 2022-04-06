@@ -117,7 +117,7 @@ Connection::Connection(std::shared_ptr<IDevice> device)
     setPrepare([]() { return false; });
     setFinalize([this]() {
         logInfo() << "Closed connection for device: " << m_device->getDeviceData().hash();
-        disconnect();
+        m_device->deleteConnection();
     });
 }
 
