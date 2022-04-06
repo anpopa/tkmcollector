@@ -247,8 +247,9 @@ static auto doDisconnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevi
         mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
         mrq.args.emplace(Defaults::Arg::Reason, "Device disconnected");
 
-        // Delete the current connection
-        mgr->deleteConnection();
+        // Remove the associated connection event source
+        // This will trigger device deleteConnection() and socket cleanup
+        CollectorApp()->remEventSource(mgr->getConnection()->getShared());
     } else {
         mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
         mrq.args.emplace(Defaults::Arg::Reason, "Device not connected");
