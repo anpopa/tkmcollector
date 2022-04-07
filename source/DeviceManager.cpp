@@ -18,62 +18,62 @@ namespace tkm::collector
 
 bool DeviceManager::addDevice(std::shared_ptr<MonitorDevice> device)
 {
-    auto found = false;
+  auto found = false;
 
-    m_devices.foreach ([this, &device, &found](const std::shared_ptr<MonitorDevice> &entry) {
-        if (entry->getDeviceData().hash() == device->getDeviceData().hash()) {
-            found = true;
-        }
-    });
-
-    if (!found) {
-        m_devices.append(device);
-        m_devices.commit();
+  m_devices.foreach ([this, &device, &found](const std::shared_ptr<MonitorDevice> &entry) {
+    if (entry->getDeviceData().hash() == device->getDeviceData().hash()) {
+      found = true;
     }
+  });
 
-    return !found;
+  if (!found) {
+    m_devices.append(device);
+    m_devices.commit();
+  }
+
+  return !found;
 }
 
 bool DeviceManager::remDevice(std::shared_ptr<MonitorDevice> device)
 {
-    auto found = false;
+  auto found = false;
 
-    m_devices.foreach ([this, &device, &found](const std::shared_ptr<MonitorDevice> &entry) {
-        if (entry->getDeviceData().hash() == device->getDeviceData().hash()) {
-            logDebug() << "Found device to remove with hash " << entry->getDeviceData().hash();
-            entry->getConnection()->disconnect();
-            m_devices.remove(entry);
-            found = true;
-        }
-    });
-    m_devices.commit();
+  m_devices.foreach ([this, &device, &found](const std::shared_ptr<MonitorDevice> &entry) {
+    if (entry->getDeviceData().hash() == device->getDeviceData().hash()) {
+      logDebug() << "Found device to remove with hash " << entry->getDeviceData().hash();
+      entry->getConnection()->disconnect();
+      m_devices.remove(entry);
+      found = true;
+    }
+  });
+  m_devices.commit();
 
-    return found;
+  return found;
 }
 
 auto DeviceManager::getDevice(const std::string &hash) -> std::shared_ptr<MonitorDevice>
 {
-    std::shared_ptr<MonitorDevice> retEntry = nullptr;
+  std::shared_ptr<MonitorDevice> retEntry = nullptr;
 
-    m_devices.foreach ([this, &hash, &retEntry](const std::shared_ptr<MonitorDevice> &entry) {
-        if (entry->getDeviceData().hash() == hash) {
-            retEntry = entry;
-        }
-    });
+  m_devices.foreach ([this, &hash, &retEntry](const std::shared_ptr<MonitorDevice> &entry) {
+    if (entry->getDeviceData().hash() == hash) {
+      retEntry = entry;
+    }
+  });
 
-    return retEntry;
+  return retEntry;
 }
 
 bool DeviceManager::loadDevices(void)
 {
-    IDatabase::Request dbrq {.action = IDatabase::Action::LoadDevices};
-    return CollectorApp()->getDatabase()->pushRequest(dbrq);
+  IDatabase::Request dbrq{.action = IDatabase::Action::LoadDevices};
+  return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
 bool DeviceManager::cleanSessions(void)
 {
-    IDatabase::Request dbrq {.action = IDatabase::Action::CleanSessions};
-    return CollectorApp()->getDatabase()->pushRequest(dbrq);
+  IDatabase::Request dbrq{.action = IDatabase::Action::CleanSessions};
+  return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
 } // namespace tkm::collector

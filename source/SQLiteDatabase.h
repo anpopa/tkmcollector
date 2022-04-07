@@ -26,43 +26,43 @@ namespace tkm::collector
 class SQLiteDatabase : public IDatabase, public std::enable_shared_from_this<SQLiteDatabase>
 {
 public:
-    enum class QueryType {
-        Check,
-        Create,
-        DropTables,
-        LoadDevices,
-        GetDevices,
-        GetSessions,
-        AddDevice,
-        RemDevice,
-        HasDevice,
-        AddSession,
-        EndSession,
-        CleanSessions,
-        AddData,
-    };
+  enum class QueryType {
+    Check,
+    Create,
+    DropTables,
+    LoadDevices,
+    GetDevices,
+    GetSessions,
+    AddDevice,
+    RemDevice,
+    HasDevice,
+    AddSession,
+    EndSession,
+    CleanSessions,
+    AddData,
+  };
 
-    typedef struct Query {
-        QueryType type;
-        void *raw;
-    } Query;
-
-public:
-    SQLiteDatabase(SQLiteDatabase const &) = delete;
-    void operator=(SQLiteDatabase const &) = delete;
-
-    void enableEvents() final;
-    auto getShared() -> std::shared_ptr<SQLiteDatabase> { return shared_from_this(); }
-    auto requestHandler(const IDatabase::Request &request) -> bool final;
-
-    auto runQuery(const std::string &sql, Query &query) -> bool;
+  typedef struct Query {
+    QueryType type;
+    void *raw;
+  } Query;
 
 public:
-    SQLiteDatabase();
-    ~SQLiteDatabase();
+  SQLiteDatabase(SQLiteDatabase const &) = delete;
+  void operator=(SQLiteDatabase const &) = delete;
+
+  void enableEvents() final;
+  auto getShared() -> std::shared_ptr<SQLiteDatabase> { return shared_from_this(); }
+  bool requestHandler(const IDatabase::Request &request) final;
+
+  bool runQuery(const std::string &sql, Query &query);
+
+public:
+  SQLiteDatabase();
+  ~SQLiteDatabase();
 
 private:
-    sqlite3 *m_db = nullptr;
+  sqlite3 *m_db = nullptr;
 };
 
 } // namespace tkm::collector

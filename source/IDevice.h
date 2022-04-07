@@ -31,51 +31,51 @@ namespace tkm::collector
 class IDevice
 {
 public:
-    enum class Action {
-        Connect,
-        Disconnect,
-        SendDescriptor,
-        RequestSession,
-        SetSession,
-        StartCollecting,
-        StopCollecting,
-        StartStream,
-        StopStream,
-        ProcessData,
-        Status,
-    };
+  enum class Action {
+    Connect,
+    Disconnect,
+    SendDescriptor,
+    RequestSession,
+    SetSession,
+    StartCollecting,
+    StopCollecting,
+    StartStream,
+    StopStream,
+    ProcessData,
+    Status,
+  };
 
-    typedef struct Request {
-        std::shared_ptr<IClient> client;
-        Action action;
-        std::map<Defaults::Arg, std::string> args;
-        std::any bulkData;
-    } Request;
+  typedef struct Request {
+    std::shared_ptr<IClient> client;
+    Action action;
+    std::map<Defaults::Arg, std::string> args;
+    std::any bulkData;
+  } Request;
 
 public:
-    IDevice()
-    {
-        m_queue = std::make_shared<AsyncQueue<Request>>(
-            "DeviceQueue", [this](const Request &request) { return requestHandler(request); });
-    }
+  IDevice()
+  {
+    m_queue = std::make_shared<AsyncQueue<Request>>(
+        "DeviceQueue", [this](const Request &request) { return requestHandler(request); });
+  }
 
-    virtual bool createConnection() = 0;
-    virtual void enableConnection() = 0;
-    virtual void deleteConnection() = 0;
+  virtual bool createConnection() = 0;
+  virtual void enableConnection() = 0;
+  virtual void deleteConnection() = 0;
 
-    auto getDeviceData() -> tkm::msg::collector::DeviceData & { return m_deviceData; }
-    auto getSessionData() -> tkm::msg::collector::SessionData & { return m_sessionData; }
+  auto getDeviceData() -> tkm::msg::collector::DeviceData & { return m_deviceData; }
+  auto getSessionData() -> tkm::msg::collector::SessionData & { return m_sessionData; }
 
-    virtual auto pushRequest(Request &request) -> bool = 0;
-    virtual void updateState(tkm::msg::collector::DeviceData_State state) = 0;
-
-protected:
-    virtual auto requestHandler(const Request &request) -> bool = 0;
+  virtual bool pushRequest(Request &request) = 0;
+  virtual void updateState(tkm::msg::collector::DeviceData_State state) = 0;
 
 protected:
-    std::shared_ptr<AsyncQueue<Request>> m_queue = nullptr;
-    tkm::msg::collector::DeviceData m_deviceData {};
-    tkm::msg::collector::SessionData m_sessionData {};
+  virtual bool requestHandler(const Request &request) = 0;
+
+protected:
+  std::shared_ptr<AsyncQueue<Request>> m_queue = nullptr;
+  tkm::msg::collector::DeviceData m_deviceData{};
+  tkm::msg::collector::SessionData m_sessionData{};
 };
 
 } // namespace tkm::collector

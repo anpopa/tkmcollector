@@ -28,50 +28,50 @@ namespace tkm::control
 class Dispatcher : public std::enable_shared_from_this<Dispatcher>
 {
 public:
-    enum class Action {
-        Connect,
-        SendDescriptor,
-        RequestSession,
-        SetSession,
-        InitDatabase,
-        QuitCollector,
-        GetDevices,
-        GetSessions,
-        AddDevice,
-        RemoveDevice,
-        ConnectDevice,
-        DisconnectDevice,
-        StartCollecting,
-        StopCollecting,
-        CollectorStatus,
-        DeviceList,
-        SessionList,
-        Quit
-    };
+  enum class Action {
+    Connect,
+    SendDescriptor,
+    RequestSession,
+    SetSession,
+    InitDatabase,
+    QuitCollector,
+    GetDevices,
+    GetSessions,
+    AddDevice,
+    RemoveDevice,
+    ConnectDevice,
+    DisconnectDevice,
+    StartCollecting,
+    StopCollecting,
+    CollectorStatus,
+    DeviceList,
+    SessionList,
+    Quit
+  };
 
-    typedef struct Request {
-        Action action;
-        std::any bulkData;
-        std::map<Defaults::Arg, std::string> args;
-    } Request;
+  typedef struct Request {
+    Action action;
+    std::any bulkData;
+    std::map<Defaults::Arg, std::string> args;
+  } Request;
 
 public:
-    Dispatcher()
-    {
-        m_queue = std::make_shared<AsyncQueue<Request>>(
-            "DispatcherQueue", [this](const Request &rq) { return requestHandler(rq); });
-    }
+  Dispatcher()
+  {
+    m_queue = std::make_shared<AsyncQueue<Request>>(
+        "DispatcherQueue", [this](const Request &rq) { return requestHandler(rq); });
+  }
 
-    auto getShared() -> std::shared_ptr<Dispatcher> { return shared_from_this(); }
+  auto getShared() -> std::shared_ptr<Dispatcher> { return shared_from_this(); }
 
-    void enableEvents();
-    auto pushRequest(Request &request) -> bool;
-
-private:
-    auto requestHandler(const Request &request) -> bool;
+  void enableEvents();
+  bool pushRequest(Request &request);
 
 private:
-    std::shared_ptr<AsyncQueue<Request>> m_queue = nullptr;
+  bool requestHandler(const Request &request);
+
+private:
+  std::shared_ptr<AsyncQueue<Request>> m_queue = nullptr;
 };
 
 } // namespace tkm::control

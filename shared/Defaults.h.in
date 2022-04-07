@@ -20,73 +20,73 @@ namespace tkm
 class Defaults
 {
 public:
-    enum class Default {
-        Version,
-        ConfPath,
-        RuntimeDirectory,
-        DBUserName,
-        DBUserPassword,
-        DBAddress,
-        DBPort,
-        ControlSocket
-    };
+  enum class Default {
+    Version,
+    ConfPath,
+    RuntimeDirectory,
+    DBUserName,
+    DBUserPassword,
+    DBAddress,
+    DBPort,
+    ControlSocket
+  };
 
-    enum class Arg {
-        Id,
-        RequestId,
-        Forced,
-        Status,
-        Reason,
-        What,
-        DeviceHash,
-        DeviceName,
-        DeviceAddress,
-        DevicePort,
-        SessionHash
-    };
+  enum class Arg {
+    Id,
+    RequestId,
+    Forced,
+    Status,
+    Reason,
+    What,
+    DeviceHash,
+    DeviceName,
+    DeviceAddress,
+    DevicePort,
+    SessionHash
+  };
 
-    enum class Val { True, False, StatusOkay, StatusError, StatusBusy };
+  enum class Val { True, False, StatusOkay, StatusError, StatusBusy };
 
-    Defaults()
-    {
-        m_table.insert(std::pair<Default, std::string>(Default::Version, "@GIT_SHA1@"));
-        m_table.insert(
-            std::pair<Default, std::string>(Default::ConfPath, "@TKM_COLELCTOR_CONFIG_FILE@"));
-        m_table.insert(
-            std::pair<Default, std::string>(Default::RuntimeDirectory, "/tmp/tkm-collector"));
-        m_table.insert(std::pair<Default, std::string>(Default::DBUserName, "anon"));
-        m_table.insert(std::pair<Default, std::string>(Default::DBUserPassword, "anon"));
-        m_table.insert(std::pair<Default, std::string>(Default::DBAddress, "/tmp/tkm-collector/data.db"));
-        m_table.insert(std::pair<Default, std::string>(Default::DBPort, ""));
-        m_table.insert(
-            std::pair<Default, std::string>(Default::ControlSocket, ".tkm-control.sock"));
+  Defaults()
+  {
+    m_table.insert(std::pair<Default, std::string>(Default::Version, "@GIT_SHA1@"));
+    m_table.insert(
+        std::pair<Default, std::string>(Default::ConfPath, "@TKM_COLELCTOR_CONFIG_FILE@"));
+    m_table.insert(
+        std::pair<Default, std::string>(Default::RuntimeDirectory, "/tmp/tkm-collector"));
+    m_table.insert(std::pair<Default, std::string>(Default::DBUserName, "anon"));
+    m_table.insert(std::pair<Default, std::string>(Default::DBUserPassword, "anon"));
+    m_table.insert(
+        std::pair<Default, std::string>(Default::DBAddress, "/tmp/tkm-collector/data.db"));
+    m_table.insert(std::pair<Default, std::string>(Default::DBPort, ""));
+    m_table.insert(std::pair<Default, std::string>(Default::ControlSocket, ".tkm-control.sock"));
 
-        m_args.insert(std::pair<Arg, std::string>(Arg::Id, "Id"));
-        m_args.insert(std::pair<Arg, std::string>(Arg::Forced, "Forced"));
-        m_args.insert(std::pair<Arg, std::string>(Arg::Reason, "Reason"));
-        m_args.insert(std::pair<Arg, std::string>(Arg::What, "What"));
-        m_args.insert(std::pair<Arg, std::string>(Arg::DeviceHash, "DeviceHash"));
-        m_args.insert(std::pair<Arg, std::string>(Arg::DeviceName, "DeviceName"));
-        m_args.insert(std::pair<Arg, std::string>(Arg::DeviceAddress, "DeviceAddress"));
-        m_args.insert(std::pair<Arg, std::string>(Arg::DevicePort, "DevicePort"));
+    m_args.insert(std::pair<Arg, std::string>(Arg::Id, "Id"));
+    m_args.insert(std::pair<Arg, std::string>(Arg::Forced, "Forced"));
+    m_args.insert(std::pair<Arg, std::string>(Arg::Reason, "Reason"));
+    m_args.insert(std::pair<Arg, std::string>(Arg::What, "What"));
+    m_args.insert(std::pair<Arg, std::string>(Arg::DeviceHash, "DeviceHash"));
+    m_args.insert(std::pair<Arg, std::string>(Arg::DeviceName, "DeviceName"));
+    m_args.insert(std::pair<Arg, std::string>(Arg::DeviceAddress, "DeviceAddress"));
+    m_args.insert(std::pair<Arg, std::string>(Arg::DevicePort, "DevicePort"));
 
-        m_vals.insert(std::pair<Val, std::string>(Val::True, "True"));
-        m_vals.insert(std::pair<Val, std::string>(Val::False, "False"));
-        m_vals.insert(std::pair<Val, std::string>(Val::StatusOkay, "Okay"));
-        m_vals.insert(std::pair<Val, std::string>(Val::StatusError, "Error"));
-        m_vals.insert(std::pair<Val, std::string>(Val::StatusBusy, "Busy"));
-    }
+    m_vals.insert(std::pair<Val, std::string>(Val::True, "True"));
+    m_vals.insert(std::pair<Val, std::string>(Val::False, "False"));
+    m_vals.insert(std::pair<Val, std::string>(Val::StatusOkay, "Okay"));
+    m_vals.insert(std::pair<Val, std::string>(Val::StatusError, "Error"));
+    m_vals.insert(std::pair<Val, std::string>(Val::StatusBusy, "Busy"));
+  }
 
-    auto getFor(Default key) -> std::string & { return m_table.at(key); }
-    auto argFor(Arg key) -> std::string & { return m_args.at(key); }
-    auto valFor(Val key) -> std::string & { return m_vals.at(key); }
+  auto getFor(Default key) -> std::string & { return m_table.at(key); }
+  auto argFor(Arg key) -> std::string & { return m_args.at(key); }
+  auto valFor(Val key) -> std::string & { return m_vals.at(key); }
 
 private:
-    std::map<Default, std::string> m_table;
-    std::map<Arg, std::string> m_args;
-    std::map<Val, std::string> m_vals;
+  std::map<Default, std::string> m_table;
+  std::map<Arg, std::string> m_args;
+  std::map<Val, std::string> m_vals;
 };
 
-static Defaults tkmDefaults {};
+static Defaults tkmDefaults{};
 
 } // namespace tkm

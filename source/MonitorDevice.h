@@ -32,27 +32,27 @@ namespace tkm::collector
 class MonitorDevice : public IDevice, public std::enable_shared_from_this<MonitorDevice>
 {
 public:
-    explicit MonitorDevice(const tkm::msg::collector::DeviceData &data)
-    {
-        m_deviceData.CopyFrom(data);
-    }
-    ~MonitorDevice() = default;
+  explicit MonitorDevice(const tkm::msg::collector::DeviceData &data)
+  {
+    m_deviceData.CopyFrom(data);
+  }
+  ~MonitorDevice() = default;
 
-    bool createConnection() final;
-    void enableConnection() final;
-    void deleteConnection() final;
+  bool createConnection() final;
+  void enableConnection() final;
+  void deleteConnection() final;
 
-    auto getShared() -> std::shared_ptr<MonitorDevice> { return shared_from_this(); }
-    auto getConnection() -> std::shared_ptr<Connection> & { return m_connection; }
-    void enableEvents();
-    auto pushRequest(Request &request) -> bool;
-    void updateState(tkm::msg::collector::DeviceData_State state) final;
-
-private:
-    auto requestHandler(const Request &request) -> bool final;
+  auto getShared() -> std::shared_ptr<MonitorDevice> { return shared_from_this(); }
+  auto getConnection() -> std::shared_ptr<Connection> & { return m_connection; }
+  void enableEvents();
+  bool pushRequest(Request &request);
+  void updateState(tkm::msg::collector::DeviceData_State state) final;
 
 private:
-    std::shared_ptr<Connection> m_connection = nullptr;
+  bool requestHandler(const Request &request) final;
+
+private:
+  std::shared_ptr<Connection> m_connection = nullptr;
 };
 
 } // namespace tkm::collector

@@ -31,22 +31,22 @@ namespace tkm::collector
 class UDSServer : public Pollable, public std::enable_shared_from_this<UDSServer>
 {
 public:
-    UDSServer();
-    ~UDSServer();
+  UDSServer();
+  ~UDSServer();
 
-    auto getShared() -> std::shared_ptr<UDSServer> { return shared_from_this(); }
-    void enableEvents();
-    void start();
-    void stop();
+  auto getShared() -> std::shared_ptr<UDSServer> { return shared_from_this(); }
+  void enableEvents();
+  void start();
+  void stop();
 
 public:
-    UDSServer(UDSServer const &) = delete;
-    void operator=(UDSServer const &) = delete;
+  UDSServer(UDSServer const &) = delete;
+  void operator=(UDSServer const &) = delete;
 
 private:
-    struct sockaddr_un m_addr {
-    };
-    int m_sockFd = -1;
+  struct sockaddr_un m_addr {
+  };
+  int m_sockFd = -1;
 };
 
 } // namespace tkm::collector
