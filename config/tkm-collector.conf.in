@@ -12,7 +12,7 @@ RuntimeDirectory=/tmp/tkm-collector
 ; Database configuration option
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [database]
-Address=/var/cache/tkm-collector/data.db
+Address=/tmp/tkm-collector/data.db
 Port=
 UserName=
 UserPassword=

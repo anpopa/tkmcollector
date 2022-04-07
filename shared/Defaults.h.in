@@ -56,7 +56,7 @@ public:
             std::pair<Default, std::string>(Default::RuntimeDirectory, "/tmp/tkm-collector"));
         m_table.insert(std::pair<Default, std::string>(Default::DBUserName, "anon"));
         m_table.insert(std::pair<Default, std::string>(Default::DBUserPassword, "anon"));
-        m_table.insert(std::pair<Default, std::string>(Default::DBAddress, "/var/cache/tkm-collector/data.db"));
+        m_table.insert(std::pair<Default, std::string>(Default::DBAddress, "/tmp/tkm-collector/data.db"));
         m_table.insert(std::pair<Default, std::string>(Default::DBPort, ""));
         m_table.insert(
             std::pair<Default, std::string>(Default::ControlSocket, ".tkm-control.sock"));

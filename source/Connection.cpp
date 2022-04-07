@@ -167,7 +167,7 @@ auto Connection::connect() -> int
 
             auto ret = select(m_sockFd + 1, NULL, &wfds, &efds, &tv);
             if (ret == -1) {
-                logError() << "Error Connecting";
+                logError() << "Select error on connecting" << ::strerror(errno);
                 return -1;
             }
             if (ret == 0) {
@@ -184,12 +184,12 @@ auto Connection::connect() -> int
                 }
 
                 if (error != 0) {
-                    logError() << "Connection failed. Socket error: " << error;
+                    logError() << "Connection failed. Socket error: " << ::strerror(errno);
                     return -1;
                 }
             }
         } else {
-            logError() << "Failed to connect to server: " << strerror(errno);
+            logError() << "Failed to connect to server: " << ::strerror(errno);
             return -1;
         }
     }

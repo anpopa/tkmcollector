@@ -144,18 +144,20 @@ static auto doConnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice:
         mrq.args.emplace(Defaults::Arg::Reason, "Failed to create connection object");
         return CollectorApp()->getDispatcher()->pushRequest(mrq);
     }
-    mgr->enableConnection();
 
     if (mgr->getConnection()->connect() < 0) {
+        // The event loop is not using the shared connection object, 
+        // just release this connection for MonitorDevice
+        mgr->deleteConnection();
+
         logError() << "Connection to device failed";
-
-        // Remove connection object
-        mgr->getConnection() = nullptr;
-
         mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
         mrq.args.emplace(Defaults::Arg::Reason, "Connection Failed");
         return CollectorApp()->getDispatcher()->pushRequest(mrq);
     }
+
+    // Ready to enable connection event loop source
+    mgr->enableConnection();
 
     MonitorDevice::Request nrq = {.client = rq.client,
                                   .action = MonitorDevice::Action::SendDescriptor,
