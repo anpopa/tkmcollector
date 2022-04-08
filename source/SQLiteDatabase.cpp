@@ -88,7 +88,7 @@ bool SQLiteDatabase::runQuery(const std::string &sql, SQLiteDatabase::Query &que
   return true;
 }
 
-static bool sqlite_callback(void *data, int argc, char **argv, char **colname)
+static auto sqlite_callback(void *data, int argc, char **argv, char **colname) -> int
 {
   auto *query = static_cast<SQLiteDatabase::Query *>(data);
 
