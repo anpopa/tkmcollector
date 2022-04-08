@@ -105,18 +105,20 @@ public:
   };
 
   enum class SysProcStatColumn {
-    Id,         // int: Primary key
-    Timestamp,  // int: Timestamp
-    RecvTime,   // int: Timestamp
-    CPUStatAll, // int: CPUStat.all
-    CPUStatUsr, // int: CPUStat.usr
-    CPUStatSys, // int: CPUStat.sys
-    SessionId,  // int: Session id key
+    Id,          // int: Primary key
+    Timestamp,   // int: Timestamp
+    RecvTime,    // int: Timestamp
+    CPUStatName, // str: CPUStat.name
+    CPUStatAll,  // int: CPUStat.all
+    CPUStatUsr,  // int: CPUStat.usr
+    CPUStatSys,  // int: CPUStat.sys
+    SessionId,   // int: Session id key
   };
   const std::map<SysProcStatColumn, std::string> m_sysProcStatColumn{
       std::make_pair(SysProcStatColumn::Id, "Id"),
       std::make_pair(SysProcStatColumn::Timestamp, "Timestamp"),
       std::make_pair(SysProcStatColumn::RecvTime, "RecvTime"),
+      std::make_pair(SysProcStatColumn::CPUStatName, "CPUStatName"),
       std::make_pair(SysProcStatColumn::CPUStatAll, "CPUStatAll"),
       std::make_pair(SysProcStatColumn::CPUStatUsr, "CPUStatUsr"),
       std::make_pair(SysProcStatColumn::CPUStatSys, "CPUStatSys"),

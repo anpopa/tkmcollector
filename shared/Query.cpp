@@ -44,6 +44,7 @@ auto Query::createTables(Query::Type type) -> std::string
         << m_sysProcStatColumn.at(SysProcStatColumn::Id) << " INTEGER PRIMARY KEY, "
         << m_sysProcStatColumn.at(SysProcStatColumn::Timestamp) << " INTEGER NOT NULL, "
         << m_sysProcStatColumn.at(SysProcStatColumn::RecvTime) << " INTEGER NOT NULL, "
+        << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatName) << " TEXT NOT NULL, "
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatAll) << " INTEGER NOT NULL, "
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatUsr) << " INTEGER NOT NULL, "
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatSys) << " INTEGER NOT NULL, "
@@ -337,12 +338,13 @@ auto Query::addData(Query::Type type,
     out << "INSERT INTO " << m_sysProcStatTableName << " ("
         << m_sysProcStatColumn.at(SysProcStatColumn::Timestamp) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::RecvTime) << ","
+        << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatName) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatAll) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatUsr) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatSys) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << ") VALUES ('" << ts << "', '"
-        << recvTime << "', '" << sysProcStat.cpu().all() << "', '" << sysProcStat.cpu().usr()
-        << "', '" << sysProcStat.cpu().sys() << "', "
+        << recvTime << "', '" << sysProcStat.cpu().name() << "', '" << sysProcStat.cpu().all()
+        << "', '" << sysProcStat.cpu().usr() << "', '" << sysProcStat.cpu().sys() << "', "
         << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
         << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
         << "'" << sessionHash << "'));";
