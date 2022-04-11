@@ -68,6 +68,11 @@ public:
                const tkm::msg::server::ProcAcct &procAcct,
                uint64_t ts,
                uint64_t recvTime) -> std::string;
+  auto addData(Query::Type type,
+               const std::string &sessionHash,
+               const tkm::msg::server::ProcEvent &procEvent,
+               uint64_t ts,
+               uint64_t recvTime) -> std::string;
 
 public:
   enum class DeviceColumn {
@@ -102,6 +107,39 @@ public:
       std::make_pair(SessionColumn::StartTimestamp, "StartTimestamp"),
       std::make_pair(SessionColumn::EndTimestamp, "EndTimestamp"),
       std::make_pair(SessionColumn::Device, "Device"),
+  };
+
+  enum class ProcEventColumn {
+    Id,          // int: Primary key
+    Timestamp,   // int: Timestamp
+    RecvTime,    // int: Received timestamp
+    What,        // str: What
+    ProcessPID,  // int: ProcessID
+    ProcessTGID, // int: ProcessTGID
+    ParentPID,   // int: ParentPID
+    ParentTGID,  // int: ParentTGID
+    ChildPID,    // int: ChildPID
+    ChildTGID,   // int: ChildTGID
+    ExitCode,    // int: ExitCode
+    ProcessRID,  // int: User or group RID
+    ProcessEID,  // int: User or group EID
+    SessionId,   // int: Session id key
+  };
+  const std::map<ProcEventColumn, std::string> m_procEventColumn{
+      std::make_pair(ProcEventColumn::Id, "Id"),
+      std::make_pair(ProcEventColumn::Timestamp, "Timestamp"),
+      std::make_pair(ProcEventColumn::RecvTime, "RecvTime"),
+      std::make_pair(ProcEventColumn::What, "What"),
+      std::make_pair(ProcEventColumn::ProcessPID, "ProcessPID"),
+      std::make_pair(ProcEventColumn::ProcessTGID, "ProcessTGID"),
+      std::make_pair(ProcEventColumn::ParentPID, "ParentPID"),
+      std::make_pair(ProcEventColumn::ParentTGID, "ParentTGID"),
+      std::make_pair(ProcEventColumn::ChildPID, "ChildPID"),
+      std::make_pair(ProcEventColumn::ChildTGID, "ChildTGID"),
+      std::make_pair(ProcEventColumn::ExitCode, "ExitCode"),
+      std::make_pair(ProcEventColumn::ProcessRID, "ProcessRID"),
+      std::make_pair(ProcEventColumn::ProcessEID, "ProcessEID"),
+      std::make_pair(ProcEventColumn::SessionId, "SessionId"),
   };
 
   enum class SysProcStatColumn {
@@ -268,6 +306,7 @@ public:
   const std::string m_sysProcStatTableName = "tkmSysProcStat";
   const std::string m_sysProcPressureTableName = "tkmSysProcPressure";
   const std::string m_procAcctTableName = "tkmProcAcct";
+  const std::string m_procEventTableName = "tkmProcEvent";
 };
 
 static Query tkmQuery{};

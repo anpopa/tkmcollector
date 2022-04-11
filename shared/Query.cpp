@@ -10,6 +10,7 @@
  */
 
 #include "Query.h"
+#include "Server.pb.h"
 
 namespace tkm
 {
@@ -37,6 +38,26 @@ auto Query::createTables(Query::Type type) -> std::string
         << m_sessionColumn.at(SessionColumn::Device) << " INTEGER NOT NULL, "
         << "CONSTRAINT KFDevice FOREIGN KEY(" << m_sessionColumn.at(SessionColumn::Device)
         << ") REFERENCES " << m_devicesTableName << "(" << m_deviceColumn.at(DeviceColumn::Id)
+        << ") ON DELETE CASCADE);";
+
+    // ProcEvent table
+    out << "CREATE TABLE IF NOT EXISTS " << m_procEventTableName << " ("
+        << m_procEventColumn.at(ProcEventColumn::Id) << " INTEGER PRIMARY KEY, "
+        << m_procEventColumn.at(ProcEventColumn::Timestamp) << " INTEGER NOT NULL, "
+        << m_procEventColumn.at(ProcEventColumn::RecvTime) << " INTEGER NOT NULL, "
+        << m_procEventColumn.at(ProcEventColumn::What) << " TEXT NOT NULL, "
+        << m_procEventColumn.at(ProcEventColumn::ProcessPID) << " INTEGER, "
+        << m_procEventColumn.at(ProcEventColumn::ProcessTGID) << " INTEGER, "
+        << m_procEventColumn.at(ProcEventColumn::ParentPID) << " INTEGER, "
+        << m_procEventColumn.at(ProcEventColumn::ParentTGID) << " INTEGER, "
+        << m_procEventColumn.at(ProcEventColumn::ChildPID) << " INTEGER, "
+        << m_procEventColumn.at(ProcEventColumn::ChildTGID) << " INTEGER, "
+        << m_procEventColumn.at(ProcEventColumn::ExitCode) << " INTEGER, "
+        << m_procEventColumn.at(ProcEventColumn::ProcessRID) << " INTEGER, "
+        << m_procEventColumn.at(ProcEventColumn::ProcessEID) << " INTEGER, "
+        << m_procEventColumn.at(ProcEventColumn::SessionId) << " INTEGER NOT NULL, "
+        << "CONSTRAINT KFSession FOREIGN KEY(" << m_procEventColumn.at(ProcEventColumn::SessionId)
+        << ") REFERENCES " << m_sessionsTableName << "(" << m_sessionColumn.at(SessionColumn::Id)
         << ") ON DELETE CASCADE);";
 
     // SysProcStat table
@@ -145,6 +166,7 @@ auto Query::dropTables(Query::Type type) -> std::string
     out << "DROP TABLE IF EXISTS " << m_sysProcStatTableName << ";";
     out << "DROP TABLE IF EXISTS " << m_sysProcPressureTableName << ";";
     out << "DROP TABLE IF EXISTS " << m_procAcctTableName << ";";
+    out << "DROP TABLE IF EXISTS " << m_procEventTableName << ";";
   }
 
   return out.str();
@@ -321,6 +343,107 @@ auto Query::hasSession(Query::Type type, const std::string &hash) -> std::string
     out << "SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
         << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
         << "'" << hash << "' LIMIT 1;";
+  }
+
+  return out.str();
+}
+
+auto Query::addData(Query::Type type,
+                    const std::string &sessionHash,
+                    const tkm::msg::server::ProcEvent &procEvent,
+                    uint64_t ts,
+                    uint64_t recvTime) -> std::string
+{
+  std::stringstream out;
+
+  if (type == Query::Type::SQLite3) {
+    out << "INSERT INTO " << m_procEventTableName << " ("
+        << m_procEventColumn.at(ProcEventColumn::Timestamp) << ","
+        << m_procEventColumn.at(ProcEventColumn::RecvTime) << ","
+        << m_procEventColumn.at(ProcEventColumn::What) << ",";
+
+    switch (procEvent.what()) {
+    case tkm::msg::server::ProcEvent::What::ProcEvent_What_Fork:
+      out << m_procEventColumn.at(ProcEventColumn::ParentPID) << ",";
+      out << m_procEventColumn.at(ProcEventColumn::ParentTGID) << ",";
+      out << m_procEventColumn.at(ProcEventColumn::ChildPID) << ",";
+      out << m_procEventColumn.at(ProcEventColumn::ChildTGID) << ",";
+      break;
+    case tkm::msg::server::ProcEvent::What::ProcEvent_What_Exec:
+      out << m_procEventColumn.at(ProcEventColumn::ProcessPID) << ",";
+      out << m_procEventColumn.at(ProcEventColumn::ProcessTGID) << ",";
+      break;
+    case tkm::msg::server::ProcEvent::What::ProcEvent_What_Exit:
+      out << m_procEventColumn.at(ProcEventColumn::ProcessPID) << ",";
+      out << m_procEventColumn.at(ProcEventColumn::ProcessTGID) << ",";
+      out << m_procEventColumn.at(ProcEventColumn::ExitCode) << ",";
+      break;
+    case tkm::msg::server::ProcEvent::What::ProcEvent_What_UID:
+    case tkm::msg::server::ProcEvent::What::ProcEvent_What_GID:
+      out << m_procEventColumn.at(ProcEventColumn::ProcessPID) << ",";
+      out << m_procEventColumn.at(ProcEventColumn::ProcessTGID) << ",";
+      out << m_procEventColumn.at(ProcEventColumn::ProcessRID) << ",";
+      out << m_procEventColumn.at(ProcEventColumn::ProcessEID) << ",";
+      break;
+    default:
+      break;
+    }
+
+    out << m_procEventColumn.at(ProcEventColumn::SessionId) << ") VALUES ('" << ts << "', '"
+        << recvTime << "', '";
+
+    switch (procEvent.what()) {
+    case tkm::msg::server::ProcEvent::What::ProcEvent_What_Fork: {
+      tkm::msg::server::ProcEventFork data;
+      procEvent.data().UnpackTo(&data);
+      out << "fork"
+          << "', '";
+      out << data.parent_pid() << "', '" << data.parent_tgid() << "', '" << data.child_pid()
+          << "', '" << data.child_tgid() << "', '";
+      break;
+    }
+    case tkm::msg::server::ProcEvent::What::ProcEvent_What_Exec: {
+      tkm::msg::server::ProcEventExec data;
+      procEvent.data().UnpackTo(&data);
+      out << "exec"
+          << "', '";
+      out << data.process_pid() << "', '" << data.process_tgid() << "', '";
+      break;
+    }
+    case tkm::msg::server::ProcEvent::What::ProcEvent_What_Exit: {
+      tkm::msg::server::ProcEventExit data;
+      procEvent.data().UnpackTo(&data);
+      out << "exit"
+          << "', '";
+      out << data.process_pid() << "', '" << data.process_tgid() << "', '" << data.exit_code()
+          << "', '";
+      break;
+    }
+    case tkm::msg::server::ProcEvent::What::ProcEvent_What_UID: {
+      tkm::msg::server::ProcEventUID data;
+      procEvent.data().UnpackTo(&data);
+      out << "uid"
+          << "', '";
+      out << data.process_pid() << "', '" << data.process_tgid() << "', '" << data.ruid() << "', '"
+          << data.euid() << "', '";
+      break;
+    }
+    case tkm::msg::server::ProcEvent::What::ProcEvent_What_GID: {
+      tkm::msg::server::ProcEventGID data;
+      procEvent.data().UnpackTo(&data);
+      out << "gid"
+          << "', '";
+      out << data.process_pid() << "', '" << data.process_tgid() << "', '" << data.rgid() << "', '"
+          << data.egid() << "', '";
+      break;
+    }
+    default:
+      break;
+    }
+
+    out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+        << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+        << "'" << sessionHash << "'));";
   }
 
   return out.str();

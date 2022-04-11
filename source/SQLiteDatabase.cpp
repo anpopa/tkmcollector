@@ -590,7 +590,23 @@ static bool doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Req
         tkmQuery.addData(Query::Type::SQLite3, sessionHash, sysProcPressure, ts, recvTime), query);
   };
 
+  auto writeProcEvent = [&db, &rq, &status, &query](const std::string &sessionHash,
+                                                    const tkm::msg::server::ProcEvent &procEvent,
+                                                    uint64_t ts,
+                                                    uint64_t recvTime) {
+    logDebug() << "Add ProcEvent entry for session: " << sessionHash;
+    status = db->runQuery(
+        tkmQuery.addData(Query::Type::SQLite3, sessionHash, procEvent, ts, recvTime), query);
+  };
+
   switch (data.what()) {
+  case tkm::msg::server::Data_What_ProcEvent: {
+    tkm::msg::server::ProcEvent procEvent;
+    data.payload().UnpackTo(&procEvent);
+    writeProcEvent(
+        rq.args.at(Defaults::Arg::SessionHash), procEvent, data.timestamp(), data.recvtime());
+    break;
+  }
   case tkm::msg::server::Data_What_ProcAcct: {
     tkm::msg::server::ProcAcct procAcct;
     data.payload().UnpackTo(&procAcct);
