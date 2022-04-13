@@ -34,5 +34,5 @@ build:
     - apt update
     - apt -y install build-essential cmake pkgconf libprotobuf-dev protobuf-compiler libsqlite3-dev libpqxx-dev
   script:
-    - mkdir build && cd build && cmake .. && make
+    - mkdir build && cd build && cmake -DWITH_POSTGRESQL=OFF .. && make
 
