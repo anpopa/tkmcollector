@@ -32,10 +32,9 @@ public:
 
   void enableEvents() final;
   auto getShared() -> std::shared_ptr<PQDatabase> { return shared_from_this(); }
-  auto getConnection() -> std::unique_ptr<pqxx::connection>& { return m_connection; }
+  auto getConnection() -> std::unique_ptr<pqxx::connection> & { return m_connection; }
   bool requestHandler(const IDatabase::Request &request) final;
 
-  auto runNonTransaction(const std::string &sql) -> pqxx::result;
   auto runTransaction(const std::string &sql) -> pqxx::result;
   bool reconnect();
 
@@ -45,8 +44,6 @@ public:
 
 private:
   std::unique_ptr<pqxx::connection> m_connection = nullptr;
-  std::unique_ptr<pqxx::nontransaction> m_nontransaction = nullptr;
-  std::unique_ptr<pqxx::work> m_work = nullptr;
 };
 
 } // namespace tkm::collector

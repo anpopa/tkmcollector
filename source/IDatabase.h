@@ -15,8 +15,8 @@
 #include <memory>
 #include <string>
 
-#include "Options.h"
 #include "IClient.h"
+#include "Options.h"
 
 #include "../bswinfra/source/AsyncQueue.h"
 

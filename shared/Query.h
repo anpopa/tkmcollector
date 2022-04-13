@@ -81,7 +81,6 @@ public:
     Name,    // str: Device name
     Address, // str: Device address
     Port,    // int: Device port
-    State,   // int: Device state
   };
   const std::map<DeviceColumn, std::string> m_deviceColumn{
       std::make_pair(DeviceColumn::Id, "Id"),
@@ -89,7 +88,6 @@ public:
       std::make_pair(DeviceColumn::Name, "Name"),
       std::make_pair(DeviceColumn::Address, "Address"),
       std::make_pair(DeviceColumn::Port, "Port"),
-      std::make_pair(DeviceColumn::State, "State"),
   };
 
   enum class SessionColumn {

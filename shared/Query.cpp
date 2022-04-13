@@ -19,19 +19,27 @@ auto Query::createTables(Query::Type type) -> std::string
 {
   std::stringstream out;
 
-  if (type == Query::Type::SQLite3) {
+  if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     // Devices table
-    out << "CREATE TABLE IF NOT EXISTS " << m_devicesTableName << " ("
-        << m_deviceColumn.at(DeviceColumn::Id) << " INTEGER PRIMARY KEY, "
-        << m_deviceColumn.at(DeviceColumn::Hash) << " TEXT NOT NULL, "
+    out << "CREATE TABLE IF NOT EXISTS " << m_devicesTableName << " (";
+    if (type == Query::Type::SQLite3) {
+      out << m_deviceColumn.at(DeviceColumn::Id) << " INTEGER PRIMARY KEY, ";
+    } else {
+      out << m_deviceColumn.at(DeviceColumn::Id) << " SERIAL PRIMARY KEY, ";
+    }
+    out << m_deviceColumn.at(DeviceColumn::Hash) << " TEXT NOT NULL, "
         << m_deviceColumn.at(DeviceColumn::Name) << " TEXT NOT NULL, "
         << m_deviceColumn.at(DeviceColumn::Address) << " TEXT NOT NULL, "
         << m_deviceColumn.at(DeviceColumn::Port) << " INTEGER NOT NULL);";
 
     // Sessions table
-    out << "CREATE TABLE IF NOT EXISTS " << m_sessionsTableName << " ("
-        << m_sessionColumn.at(SessionColumn::Id) << " INTEGER PRIMARY KEY, "
-        << m_sessionColumn.at(SessionColumn::Name) << " TEXT NOT NULL, "
+    out << "CREATE TABLE IF NOT EXISTS " << m_sessionsTableName << " (";
+    if (type == Query::Type::SQLite3) {
+      out << m_deviceColumn.at(DeviceColumn::Id) << " INTEGER PRIMARY KEY, ";
+    } else {
+      out << m_deviceColumn.at(DeviceColumn::Id) << " SERIAL PRIMARY KEY, ";
+    }
+    out << m_sessionColumn.at(SessionColumn::Name) << " TEXT NOT NULL, "
         << m_sessionColumn.at(SessionColumn::Hash) << " TEXT NOT NULL, "
         << m_sessionColumn.at(SessionColumn::StartTimestamp) << " INTEGER NOT NULL, "
         << m_sessionColumn.at(SessionColumn::EndTimestamp) << " INTEGER NOT NULL, "
@@ -41,9 +49,13 @@ auto Query::createTables(Query::Type type) -> std::string
         << ") ON DELETE CASCADE);";
 
     // ProcEvent table
-    out << "CREATE TABLE IF NOT EXISTS " << m_procEventTableName << " ("
-        << m_procEventColumn.at(ProcEventColumn::Id) << " INTEGER PRIMARY KEY, "
-        << m_procEventColumn.at(ProcEventColumn::Timestamp) << " INTEGER NOT NULL, "
+    out << "CREATE TABLE IF NOT EXISTS " << m_procEventTableName << " (";
+    if (type == Query::Type::SQLite3) {
+      out << m_deviceColumn.at(DeviceColumn::Id) << " INTEGER PRIMARY KEY, ";
+    } else {
+      out << m_deviceColumn.at(DeviceColumn::Id) << " SERIAL PRIMARY KEY, ";
+    }
+    out << m_procEventColumn.at(ProcEventColumn::Timestamp) << " INTEGER NOT NULL, "
         << m_procEventColumn.at(ProcEventColumn::RecvTime) << " INTEGER NOT NULL, "
         << m_procEventColumn.at(ProcEventColumn::What) << " TEXT NOT NULL, "
         << m_procEventColumn.at(ProcEventColumn::ProcessPID) << " INTEGER, "
@@ -61,9 +73,13 @@ auto Query::createTables(Query::Type type) -> std::string
         << ") ON DELETE CASCADE);";
 
     // SysProcStat table
-    out << "CREATE TABLE IF NOT EXISTS " << m_sysProcStatTableName << " ("
-        << m_sysProcStatColumn.at(SysProcStatColumn::Id) << " INTEGER PRIMARY KEY, "
-        << m_sysProcStatColumn.at(SysProcStatColumn::Timestamp) << " INTEGER NOT NULL, "
+    out << "CREATE TABLE IF NOT EXISTS " << m_sysProcStatTableName << " (";
+    if (type == Query::Type::SQLite3) {
+      out << m_deviceColumn.at(DeviceColumn::Id) << " INTEGER PRIMARY KEY, ";
+    } else {
+      out << m_deviceColumn.at(DeviceColumn::Id) << " SERIAL PRIMARY KEY, ";
+    }
+    out << m_sysProcStatColumn.at(SysProcStatColumn::Timestamp) << " INTEGER NOT NULL, "
         << m_sysProcStatColumn.at(SysProcStatColumn::RecvTime) << " INTEGER NOT NULL, "
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatName) << " TEXT NOT NULL, "
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatAll) << " INTEGER NOT NULL, "
@@ -76,9 +92,13 @@ auto Query::createTables(Query::Type type) -> std::string
         << ") ON DELETE CASCADE);";
 
     // SysProcPressure table
-    out << "CREATE TABLE IF NOT EXISTS " << m_sysProcPressureTableName << " ("
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::Id) << " INTEGER PRIMARY KEY, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::Timestamp) << " INTEGER NOT NULL, "
+    out << "CREATE TABLE IF NOT EXISTS " << m_sysProcPressureTableName << " (";
+    if (type == Query::Type::SQLite3) {
+      out << m_deviceColumn.at(DeviceColumn::Id) << " INTEGER PRIMARY KEY, ";
+    } else {
+      out << m_deviceColumn.at(DeviceColumn::Id) << " SERIAL PRIMARY KEY, ";
+    }
+    out << m_sysProcPressureColumn.at(SysProcPressureColumn::Timestamp) << " INTEGER NOT NULL, "
         << m_sysProcPressureColumn.at(SysProcPressureColumn::RecvTime) << " INTEGER NOT NULL, "
         << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg10) << " REAL NOT NULL, "
         << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg60) << " REAL NOT NULL, "
@@ -111,9 +131,13 @@ auto Query::createTables(Query::Type type) -> std::string
         << ") ON DELETE CASCADE);";
 
     // ProcAcct table
-    out << "CREATE TABLE IF NOT EXISTS " << m_procAcctTableName << " ("
-        << m_procAcctColumn.at(ProcAcctColumn::Id) << " INTEGER PRIMARY KEY, "
-        << m_procAcctColumn.at(ProcAcctColumn::Timestamp) << " INTEGER NOT NULL, "
+    out << "CREATE TABLE IF NOT EXISTS " << m_procAcctTableName << " (";
+    if (type == Query::Type::SQLite3) {
+      out << m_deviceColumn.at(DeviceColumn::Id) << " INTEGER PRIMARY KEY, ";
+    } else {
+      out << m_deviceColumn.at(DeviceColumn::Id) << " SERIAL PRIMARY KEY, ";
+    }
+    out << m_procAcctColumn.at(ProcAcctColumn::Timestamp) << " INTEGER NOT NULL, "
         << m_procAcctColumn.at(ProcAcctColumn::RecvTime) << " INTEGER NOT NULL, "
         << m_procAcctColumn.at(ProcAcctColumn::AcComm) << " TEXT NOT NULL, "
         << m_procAcctColumn.at(ProcAcctColumn::AcUid) << " INTEGER NOT NULL, "
@@ -167,6 +191,13 @@ auto Query::dropTables(Query::Type type) -> std::string
     out << "DROP TABLE IF EXISTS " << m_sysProcPressureTableName << ";";
     out << "DROP TABLE IF EXISTS " << m_procAcctTableName << ";";
     out << "DROP TABLE IF EXISTS " << m_procEventTableName << ";";
+  } else if (type == Query::Type::PostgreSQL) {
+    out << "DROP TABLE IF EXISTS " << m_devicesTableName << " CASCADE;";
+    out << "DROP TABLE IF EXISTS " << m_sessionsTableName << " CASCADE;";
+    out << "DROP TABLE IF EXISTS " << m_sysProcStatTableName << " CASCADE;";
+    out << "DROP TABLE IF EXISTS " << m_sysProcPressureTableName << " CASCADE;";
+    out << "DROP TABLE IF EXISTS " << m_procAcctTableName << " CASCADE;";
+    out << "DROP TABLE IF EXISTS " << m_procEventTableName << " CASCADE;";
   }
 
   return out.str();
@@ -176,7 +207,7 @@ auto Query::getDevices(Query::Type type) -> std::string
 {
   std::stringstream out;
 
-  if (type == Query::Type::SQLite3) {
+  if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     out << "SELECT * "
         << " FROM " << m_devicesTableName << ";";
   }
@@ -192,7 +223,7 @@ auto Query::addDevice(Query::Type type,
 {
   std::stringstream out;
 
-  if (type == Query::Type::SQLite3) {
+  if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     out << "INSERT INTO " << m_devicesTableName << " (" << m_deviceColumn.at(DeviceColumn::Hash)
         << "," << m_deviceColumn.at(DeviceColumn::Name) << ","
         << m_deviceColumn.at(DeviceColumn::Address) << "," << m_deviceColumn.at(DeviceColumn::Port)
@@ -211,6 +242,10 @@ auto Query::remDevice(Query::Type type, const std::string &hash) -> std::string
     out << "DELETE FROM " << m_devicesTableName << " WHERE "
         << m_deviceColumn.at(DeviceColumn::Hash) << " IS "
         << "'" << hash << "';";
+  } else if (type == Query::Type::PostgreSQL) {
+    out << "DELETE FROM " << m_devicesTableName << " WHERE "
+        << m_deviceColumn.at(DeviceColumn::Hash) << " LIKE "
+        << "'" << hash << "';";
   }
 
   return out.str();
@@ -223,6 +258,10 @@ auto Query::getDevice(Query::Type type, const std::string &hash) -> std::string
   if (type == Query::Type::SQLite3) {
     out << "SELECT * FROM " << m_devicesTableName << " WHERE "
         << m_deviceColumn.at(DeviceColumn::Hash) << " IS "
+        << "'" << hash << "' LIMIT 1;";
+  } else if (type == Query::Type::PostgreSQL) {
+    out << "SELECT * FROM " << m_devicesTableName << " WHERE "
+        << m_deviceColumn.at(DeviceColumn::Hash) << " LIKE "
         << "'" << hash << "' LIMIT 1;";
   }
 
@@ -237,6 +276,10 @@ auto Query::hasDevice(Query::Type type, const std::string &hash) -> std::string
     out << "SELECT " << m_deviceColumn.at(DeviceColumn::Id) << " FROM " << m_devicesTableName
         << " WHERE " << m_deviceColumn.at(DeviceColumn::Hash) << " IS "
         << "'" << hash << "' LIMIT 1;";
+  } else if (type == Query::Type::PostgreSQL) {
+    out << "SELECT " << m_deviceColumn.at(DeviceColumn::Id) << " FROM " << m_devicesTableName
+        << " WHERE " << m_deviceColumn.at(DeviceColumn::Hash) << " LIKE "
+        << "'" << hash << "' LIMIT 1;";
   }
 
   return out.str();
@@ -246,7 +289,7 @@ auto Query::getSessions(Query::Type type) -> std::string
 {
   std::stringstream out;
 
-  if (type == Query::Type::SQLite3) {
+  if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     out << "SELECT * "
         << " FROM " << m_sessionsTableName << ";";
   }
@@ -263,6 +306,12 @@ auto Query::getSessions(Query::Type type, const std::string &deviceHash) -> std:
         << m_sessionColumn.at(SessionColumn::Device) << " IS "
         << "(SELECT " << m_deviceColumn.at(DeviceColumn::Id) << " FROM " << m_devicesTableName
         << " WHERE " << m_deviceColumn.at(DeviceColumn::Hash) << " IS "
+        << "'" << deviceHash << "');";
+  } else if (type == Query::Type::PostgreSQL) {
+    out << "SELECT * FROM " << m_sessionsTableName << " WHERE "
+        << m_sessionColumn.at(SessionColumn::Device) << " LIKE "
+        << "(SELECT " << m_deviceColumn.at(DeviceColumn::Id) << " FROM " << m_devicesTableName
+        << " WHERE " << m_deviceColumn.at(DeviceColumn::Hash) << " LIKE "
         << "'" << deviceHash << "');";
   }
 
@@ -289,6 +338,18 @@ auto Query::addSession(Query::Type type,
         << "(SELECT " << m_deviceColumn.at(DeviceColumn::Id) << " FROM " << m_devicesTableName
         << " WHERE " << m_deviceColumn.at(DeviceColumn::Hash) << " IS "
         << "'" << deviceHash << "'));";
+  } else if (type == Query::Type::PostgreSQL) {
+    out << "INSERT INTO " << m_sessionsTableName << " (" << m_sessionColumn.at(SessionColumn::Hash)
+        << "," << m_sessionColumn.at(SessionColumn::Name) << ","
+        << m_sessionColumn.at(SessionColumn::StartTimestamp) << ","
+        << m_sessionColumn.at(SessionColumn::EndTimestamp) << ","
+        << m_sessionColumn.at(SessionColumn::Device) << ") VALUES ('" << hash << "', '" << name
+        << "', '" << startTimestamp << "', '"
+        << "0"
+        << "', "
+        << "(SELECT " << m_deviceColumn.at(DeviceColumn::Id) << " FROM " << m_devicesTableName
+        << " WHERE " << m_deviceColumn.at(DeviceColumn::Hash) << " LIKE "
+        << "'" << deviceHash << "'));";
   }
 
   return out.str();
@@ -304,6 +365,12 @@ auto Query::endSession(Query::Type type, const std::string &hash) -> std::string
         << "'" << time(NULL) << "'"
         << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
         << "'" << hash << "';";
+  } else if (type == Query::Type::PostgreSQL) {
+    out << "UPDATE " << m_sessionsTableName << " SET "
+        << m_sessionColumn.at(SessionColumn::EndTimestamp) << " = "
+        << "'" << time(NULL) << "'"
+        << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
+        << "'" << hash << "';";
   }
 
   return out.str();
@@ -316,6 +383,10 @@ auto Query::remSession(Query::Type type, const std::string &hash) -> std::string
   if (type == Query::Type::SQLite3) {
     out << "DELETE FROM " << m_sessionsTableName << " WHERE "
         << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+        << "'" << hash << "';";
+  } else if (type == Query::Type::PostgreSQL) {
+    out << "DELETE FROM " << m_sessionsTableName << " WHERE "
+        << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
         << "'" << hash << "';";
   }
 
@@ -330,6 +401,10 @@ auto Query::getSession(Query::Type type, const std::string &hash) -> std::string
     out << "SELECT * FROM " << m_sessionsTableName << " WHERE "
         << m_sessionColumn.at(SessionColumn::Hash) << " IS "
         << "'" << hash << "' LIMIT 1;";
+  } else if (type == Query::Type::PostgreSQL) {
+    out << "SELECT * FROM " << m_sessionsTableName << " WHERE "
+        << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
+        << "'" << hash << "' LIMIT 1;";
   }
 
   return out.str();
@@ -342,6 +417,10 @@ auto Query::hasSession(Query::Type type, const std::string &hash) -> std::string
   if (type == Query::Type::SQLite3) {
     out << "SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
         << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+        << "'" << hash << "' LIMIT 1;";
+  } else if (type == Query::Type::PostgreSQL) {
+    out << "SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+        << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
         << "'" << hash << "' LIMIT 1;";
   }
 
@@ -356,7 +435,7 @@ auto Query::addData(Query::Type type,
 {
   std::stringstream out;
 
-  if (type == Query::Type::SQLite3) {
+  if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     out << "INSERT INTO " << m_procEventTableName << " ("
         << m_procEventColumn.at(ProcEventColumn::Timestamp) << ","
         << m_procEventColumn.at(ProcEventColumn::RecvTime) << ","
@@ -399,7 +478,7 @@ auto Query::addData(Query::Type type,
       out << "fork"
           << "', '";
       out << data.parent_pid() << "', '" << data.parent_tgid() << "', '" << data.child_pid()
-          << "', '" << data.child_tgid() << "', '";
+          << "', '" << data.child_tgid() << "', ";
       break;
     }
     case tkm::msg::server::ProcEvent::What::ProcEvent_What_Exec: {
@@ -407,7 +486,7 @@ auto Query::addData(Query::Type type,
       procEvent.data().UnpackTo(&data);
       out << "exec"
           << "', '";
-      out << data.process_pid() << "', '" << data.process_tgid() << "', '";
+      out << data.process_pid() << "', '" << data.process_tgid() << "', ";
       break;
     }
     case tkm::msg::server::ProcEvent::What::ProcEvent_What_Exit: {
@@ -416,7 +495,7 @@ auto Query::addData(Query::Type type,
       out << "exit"
           << "', '";
       out << data.process_pid() << "', '" << data.process_tgid() << "', '" << data.exit_code()
-          << "', '";
+          << "', ";
       break;
     }
     case tkm::msg::server::ProcEvent::What::ProcEvent_What_UID: {
@@ -425,7 +504,7 @@ auto Query::addData(Query::Type type,
       out << "uid"
           << "', '";
       out << data.process_pid() << "', '" << data.process_tgid() << "', '" << data.ruid() << "', '"
-          << data.euid() << "', '";
+          << data.euid() << "', ";
       break;
     }
     case tkm::msg::server::ProcEvent::What::ProcEvent_What_GID: {
@@ -434,16 +513,22 @@ auto Query::addData(Query::Type type,
       out << "gid"
           << "', '";
       out << data.process_pid() << "', '" << data.process_tgid() << "', '" << data.rgid() << "', '"
-          << data.egid() << "', '";
+          << data.egid() << "', ";
       break;
     }
     default:
       break;
     }
 
-    out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
-        << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
-        << "'" << sessionHash << "'));";
+    if (type == Query::Type::SQLite3) {
+      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+          << "'" << sessionHash << "'));";
+    } else {
+      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
+          << "'" << sessionHash << "'));";
+    }
   }
 
   return out.str();
@@ -457,7 +542,7 @@ auto Query::addData(Query::Type type,
 {
   std::stringstream out;
 
-  if (type == Query::Type::SQLite3) {
+  if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     out << "INSERT INTO " << m_sysProcStatTableName << " ("
         << m_sysProcStatColumn.at(SysProcStatColumn::Timestamp) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::RecvTime) << ","
@@ -467,10 +552,17 @@ auto Query::addData(Query::Type type,
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatSys) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << ") VALUES ('" << ts << "', '"
         << recvTime << "', '" << sysProcStat.cpu().name() << "', '" << sysProcStat.cpu().all()
-        << "', '" << sysProcStat.cpu().usr() << "', '" << sysProcStat.cpu().sys() << "', "
-        << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
-        << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
-        << "'" << sessionHash << "'));";
+        << "', '" << sysProcStat.cpu().usr() << "', '" << sysProcStat.cpu().sys() << "', ";
+
+    if (type == Query::Type::SQLite3) {
+      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+          << "'" << sessionHash << "'));";
+    } else {
+      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
+          << "'" << sessionHash << "'));";
+    }
   }
 
   return out.str();
@@ -484,7 +576,7 @@ auto Query::addData(Query::Type type,
 {
   std::stringstream out;
 
-  if (type == Query::Type::SQLite3) {
+  if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     out << "INSERT INTO " << m_sysProcPressureTableName << " ("
         << m_sysProcPressureColumn.at(SysProcPressureColumn::Timestamp) << ","
         << m_sysProcPressureColumn.at(SysProcPressureColumn::RecvTime) << ","
@@ -529,10 +621,17 @@ auto Query::addData(Query::Type type,
         << sysProcPressure.io_some().total() << "', '" << sysProcPressure.io_full().avg10()
         << "', '" << sysProcPressure.io_full().avg60() << "', '"
         << sysProcPressure.io_full().avg300() << "', '" << sysProcPressure.io_full().total()
-        << "', "
-        << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
-        << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
-        << "'" << sessionHash << "'));";
+        << "', ";
+
+    if (type == Query::Type::SQLite3) {
+      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+          << "'" << sessionHash << "'));";
+    } else {
+      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
+          << "'" << sessionHash << "'));";
+    }
   }
 
   return out.str();
@@ -546,7 +645,7 @@ auto Query::addData(Query::Type type,
 {
   std::stringstream out;
 
-  if (type == Query::Type::SQLite3) {
+  if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     out << "INSERT INTO " << m_procAcctTableName << " ("
         << m_procAcctColumn.at(ProcAcctColumn::Timestamp) << ","
         << m_procAcctColumn.at(ProcAcctColumn::RecvTime) << ","
@@ -601,10 +700,17 @@ auto Query::addData(Query::Type type,
         << procAcct.reclaim().freepages_delay_average() << "', '"
         << procAcct.thrashing().thrashing_count() << "', '"
         << procAcct.thrashing().thrashing_delay_total() << "', '"
-        << procAcct.thrashing().thrashing_delay_average() << "', "
-        << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
-        << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
-        << "'" << sessionHash << "'));";
+        << procAcct.thrashing().thrashing_delay_average() << "', ";
+
+    if (type == Query::Type::SQLite3) {
+      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+          << "'" << sessionHash << "'));";
+    } else {
+      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
+          << "'" << sessionHash << "'));";
+    }
   }
 
   return out.str();

@@ -74,8 +74,7 @@ auto Options::getFor(Key key) -> string
     return tkmDefaults.getFor(Defaults::Default::RuntimeDirectory);
   case Key::DatabaseType:
     if (hasConfigFile()) {
-      const optional<string> prop =
-          m_configFile->getPropertyValue("general", -1, "DatabaseType");
+      const optional<string> prop = m_configFile->getPropertyValue("general", -1, "DatabaseType");
       return prop.value_or(tkmDefaults.getFor(Defaults::Default::DatabaseType));
     }
     return tkmDefaults.getFor(Defaults::Default::DatabaseType);

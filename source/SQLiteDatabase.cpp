@@ -126,10 +126,6 @@ static auto sqlite_callback(void *data, int argc, char **argv, char **colname) -
                          tkmQuery.m_deviceColumn.at(Query::DeviceColumn::Port).c_str(),
                          60) == 0) {
         device.set_port(std::stoi(argv[i]));
-      } else if (strncmp(colname[i],
-                         tkmQuery.m_deviceColumn.at(Query::DeviceColumn::State).c_str(),
-                         60) == 0) {
-        device.set_state(static_cast<tkm::msg::collector::DeviceData_State>(std::stoi(argv[i])));
       }
     }
     pld->emplace_back(device);

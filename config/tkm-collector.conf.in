@@ -13,7 +13,7 @@ RuntimeDirectory=/tmp/tkm-collector
 ; Database configuration option
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [database]
-ServerAddress=localhost
+ServerAddress=127.0.0.1
 ServerPort=5432
 DatabaseName=TaskMonitor
 DatabasePath=/tmp/tkm-collector/data.db

@@ -59,11 +59,10 @@ PQDatabase::PQDatabase(std::shared_ptr<Options> options)
            << "hostaddr = " << m_options->getFor(Options::Key::DBServerAddress) << " "
            << "port = " << m_options->getFor(Options::Key::DBServerPort);
 
+  logDebug() << "Connection string: " << connInfo.str();
   m_connection = std::make_unique<pqxx::connection>(connInfo.str());
   if (m_connection->is_open()) {
     logInfo() << "Opened database successfully: " << m_connection->dbname();
-    m_work = std::make_unique<pqxx::work>(*m_connection);
-    m_nontransaction = std::make_unique<pqxx::nontransaction>(*m_connection);
   } else {
     logDebug() << "Can't open database";
     throw std::runtime_error("Fail to open posgress database");
@@ -75,10 +74,6 @@ bool PQDatabase::reconnect()
   if (m_connection->is_open()) {
     return true;
   }
-
-  // Reset PQXX objects
-  m_work.reset();
-  m_nontransaction.reset();
   m_connection.reset();
 
   std::stringstream connInfo;
@@ -92,8 +87,6 @@ bool PQDatabase::reconnect()
   m_connection = std::make_unique<pqxx::connection>(connInfo.str());
   if (m_connection->is_open()) {
     logInfo() << "Opened database successfully: " << m_connection->dbname();
-    m_work = std::make_unique<pqxx::work>(*m_connection);
-    m_nontransaction = std::make_unique<pqxx::nontransaction>(*m_connection);
   } else {
     logDebug() << "Can't open database";
     return false;
@@ -102,15 +95,13 @@ bool PQDatabase::reconnect()
   return true;
 }
 
-auto PQDatabase::runNonTransaction(const std::string &sql) -> pqxx::result
-{
-  return m_nontransaction->exec(sql);
-}
-
 auto PQDatabase::runTransaction(const std::string &sql) -> pqxx::result
 {
-  auto result = m_work->exec(sql);
-  m_work->commit();
+  pqxx::work work(*m_connection);
+
+  auto result = work.exec(sql);
+  work.commit();
+
   return result;
 }
 
@@ -185,7 +176,7 @@ static bool doInitDatabase(const shared_ptr<PQDatabase> &db, const IDatabase::Re
   if (rq.args.count(Defaults::Arg::Forced)) {
     if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
       try {
-        db->runNonTransaction(tkmQuery.dropTables(Query::Type::PostgreSQL));
+        db->runTransaction(tkmQuery.dropTables(Query::Type::PostgreSQL));
       } catch (std::exception &e) {
         logError() << "Database query fails: " << e.what();
       }
@@ -193,7 +184,7 @@ static bool doInitDatabase(const shared_ptr<PQDatabase> &db, const IDatabase::Re
   }
 
   try {
-    db->runNonTransaction(tkmQuery.createTables(Query::Type::PostgreSQL));
+    db->runTransaction(tkmQuery.createTables(Query::Type::PostgreSQL));
   } catch (std::exception &e) {
     logError() << "Database query fails: " << e.what();
     status = false;
@@ -231,8 +222,6 @@ static bool doLoadDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Req
           c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Address)].as<string>());
       deviceData.set_port(
           c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Port)].as<int>());
-      deviceData.set_state(static_cast<tkm::msg::collector::DeviceData_State>(
-          c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::State)].as<int>()));
 
       deviceList.push_back(deviceData);
     }
@@ -332,8 +321,6 @@ static bool doGetDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
           c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Address)].as<string>());
       deviceData.set_port(
           c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Port)].as<int>());
-      deviceData.set_state(static_cast<tkm::msg::collector::DeviceData_State>(
-          c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::State)].as<int>()));
 
       deviceList.push_back(deviceData);
     }
@@ -485,7 +472,7 @@ static bool doAddDevice(const shared_ptr<PQDatabase> &db, const IDatabase::Reque
     if (rq.args.count(Defaults::Arg::Forced)) {
       if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
         try {
-          db->runNonTransaction(tkmQuery.remDevice(Query::Type::PostgreSQL, deviceData.hash()));
+          db->runTransaction(tkmQuery.remDevice(Query::Type::PostgreSQL, deviceData.hash()));
         } catch (std::exception &e) {
           logError() << "Cannot remove device. Database query fails: " << e.what();
           status = false;
@@ -499,11 +486,11 @@ static bool doAddDevice(const shared_ptr<PQDatabase> &db, const IDatabase::Reque
 
     if (status) {
       try {
-        db->runNonTransaction(tkmQuery.addDevice(Query::Type::PostgreSQL,
-                                                 deviceData.hash(),
-                                                 deviceData.name(),
-                                                 deviceData.address(),
-                                                 deviceData.port()));
+        db->runTransaction(tkmQuery.addDevice(Query::Type::PostgreSQL,
+                                              deviceData.hash(),
+                                              deviceData.name(),
+                                              deviceData.address(),
+                                              deviceData.port()));
       } catch (std::exception &e) {
         logError() << "Database query fails: " << e.what();
         status = false;
@@ -557,7 +544,7 @@ static bool doRemoveDevice(const shared_ptr<PQDatabase> &db, const IDatabase::Re
     }
 
     try {
-      db->runNonTransaction(tkmQuery.remDevice(Query::Type::PostgreSQL, deviceData.hash()));
+      db->runTransaction(tkmQuery.remDevice(Query::Type::PostgreSQL, deviceData.hash()));
     } catch (std::exception &e) {
       logError() << "Database query fails: " << e.what();
       status = false;
@@ -592,11 +579,11 @@ static bool doAddSession(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
   bool status = true;
 
   try {
-    db->runNonTransaction(tkmQuery.addSession(Query::Type::PostgreSQL,
-                                              rq.args.at(Defaults::Arg::SessionHash),
-                                              sessionName,
-                                              time(NULL),
-                                              rq.args.at(Defaults::Arg::DeviceHash)));
+    db->runTransaction(tkmQuery.addSession(Query::Type::PostgreSQL,
+                                           rq.args.at(Defaults::Arg::SessionHash),
+                                           sessionName,
+                                           time(NULL),
+                                           rq.args.at(Defaults::Arg::DeviceHash)));
   } catch (std::exception &e) {
     logError() << "Database query fails: " << e.what();
     status = false;
@@ -618,7 +605,7 @@ static bool doEndSession(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
   }
 
   try {
-    db->runNonTransaction(
+    db->runTransaction(
         tkmQuery.endSession(Query::Type::PostgreSQL, rq.args.at(Defaults::Arg::SessionHash)));
   } catch (std::exception &e) {
     logError() << "Query failed to mark end session. Database query fails: " << e.what();
@@ -643,7 +630,7 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
                                            uint64_t recvTime) {
     logDebug() << "Add ProcAcct entry for session: " << sessionHash;
     try {
-      db->runNonTransaction(
+      db->runTransaction(
           tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, acct, ts, recvTime));
     } catch (std::exception &e) {
       logError() << "Query failed to mark end session. Database query fails: " << e.what();
@@ -657,7 +644,7 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
                                               uint64_t recvTime) {
     logDebug() << "Add SysProcStat entry for session: " << sessionHash;
     try {
-      db->runNonTransaction(
+      db->runTransaction(
           tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, sysProcStat, ts, recvTime));
     } catch (std::exception &e) {
       logError() << "Query failed to mark end session. Database query fails: " << e.what();
@@ -672,7 +659,7 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
                                   uint64_t recvTime) {
     logDebug() << "Add SysProcPressure entry for session: " << sessionHash;
     try {
-      db->runNonTransaction(
+      db->runTransaction(
           tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, sysProcPressure, ts, recvTime));
     } catch (std::exception &e) {
       logError() << "Query failed to mark end session. Database query fails: " << e.what();
@@ -686,7 +673,7 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
                                             uint64_t recvTime) {
     logDebug() << "Add ProcEvent entry for session: " << sessionHash;
     try {
-      db->runNonTransaction(
+      db->runTransaction(
           tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, procEvent, ts, recvTime));
     } catch (std::exception &e) {
       logError() << "Query failed to mark end session. Database query fails: " << e.what();
