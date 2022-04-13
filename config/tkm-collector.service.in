@@ -1,0 +1,15 @@
+###############################################################################
+#  Task Monitor Collector
+###############################################################################
+[Unit]
+Description=Task Monitor Collector Service
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=@CMAKE_INSTALL_PREFIX@/bin/tkm-collector -c /etc/tkm-collector.conf
+WatchdogSec=30
+
+[Install]
+WantedBy=multi-user.target

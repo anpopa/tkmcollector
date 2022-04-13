@@ -13,6 +13,9 @@
 #include <stdexcept>
 
 #include "Application.h"
+#ifdef WITH_SYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
 #ifdef WITH_SQLITE3
 #include "SQLiteDatabase.h"
 #endif
@@ -106,6 +109,40 @@ Application::Application(const string &name, const string &description, const st
     // Mark all in progress sessions as complete
     m_deviceManager->cleanSessions();
   }
+}
+
+void Application::startWatchdog(void)
+{
+#ifdef WITH_SYSTEMD
+  ulong usec = 0;
+  int status;
+
+  status = sd_watchdog_enabled(0, &usec);
+  if (status > 0) {
+    logInfo() << "Systemd watchdog enabled with timeout %lu seconds" << USEC2SEC(usec);
+
+    auto timer = std::make_shared<Timer>("Watchdog", [this]() {
+      if (sd_notify(0, "WATCHDOG=1") < 0) {
+        logWarn() << "Fail to send the heartbeet to systemd";
+      } else {
+        logDebug() << "Watchdog heartbeat sent";
+      }
+
+      return true;
+    });
+
+    timer->start((usec / 2), true);
+    CollectorApp()->addEventSource(timer);
+  } else {
+    if (status == 0) {
+      logInfo() << "Systemd watchdog disabled";
+    } else {
+      logWarn() << "Fail to get the systemd watchdog status";
+    }
+  }
+#else
+  logInfo() << "Watchdog build time disabled";
+#endif
 }
 
 } // namespace tkm::collector

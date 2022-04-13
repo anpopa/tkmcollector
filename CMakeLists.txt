@@ -55,11 +55,17 @@ configure_file(
     ${CMAKE_SOURCE_DIR}/config/tkm-collector.conf.in
     ${CMAKE_BINARY_DIR}/config/tkm-collector.conf)
 
+configure_file(
+    ${CMAKE_SOURCE_DIR}/config/tkm-collector.service.in
+    ${CMAKE_BINARY_DIR}/config/tkm-collector.service)
+
+
 option(WITH_TESTS "Build test suite" N)
 option(WITH_SYSLOG "Build Logger with syslog" Y)
 option(WITH_TIDY "Build with clang-tidy" N)
-option(WITH_SQLITE3 "Build with SQLITE3 database" Y)
+option(WITH_SQLITE3 "Build with SQLite3 database" Y)
 option(WITH_POSTGRESQL "Build with PostgreSQL database" Y)
+option(WITH_SYSTEMD "Build with systemd watchdog support" Y)
 
 if(WITH_TIDY)
     set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=*")
@@ -79,6 +85,10 @@ endif()
 
 # Enable collector interfaces
 set(WITH_COLLECTOR ON)
+
+if (${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
+    link_directories(/usr/local/lib)
+endif()
 
 include(BSWInfra)
 include(TaskMonitorInterfaces)
@@ -102,7 +112,14 @@ if(WITH_POSTGRESQL)
     set                   (LIBS ${LIBS} ${LIBPQXX_LIBRARIES})
 endif()
 
+if(WITH_SYSTEMD)
+    pkg_check_modules     (LIBSYSTEMD libsystemd REQUIRED)
+    include_directories   (${LIBSYSTEMD_INCLUDE_DIRS})
+    set                   (LIBS ${LIBS} ${LIBSYSTEMD_LIBRARIES})
+endif()
+
 # Build
+add_subdirectory(config)
 add_subdirectory(source)
 add_subdirectory(control)
 if(WITH_TESTS)
@@ -145,6 +162,7 @@ add_compile_options (
 # Status reporting
 message (STATUS "SYSTEM_TYPE: "          ${CMAKE_SYSTEM_NAME})
 message (STATUS "CMAKE_BUILD_TYPE: "     ${CMAKE_BUILD_TYPE})
+message (STATUS "WITH_SYSTEMD: "         ${WITH_SYSTEMD})
 message (STATUS "WITH_TESTS: "           ${WITH_TESTS})
 message (STATUS "WITH_SYSLOG: "          ${WITH_SYSLOG})
 message (STATUS "WITH_TIDY: "            ${WITH_TIDY})

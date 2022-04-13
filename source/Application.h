@@ -65,6 +65,9 @@ public:
   void operator=(Application const &) = delete;
 
 private:
+  void startWatchdog(void);
+
+private:
   std::shared_ptr<Options> m_options = nullptr;
   std::shared_ptr<UDSServer> m_udsServer = nullptr;
   std::shared_ptr<Dispatcher> m_dispatcher = nullptr;
