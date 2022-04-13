@@ -50,10 +50,10 @@ static bool doEndSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::
 static bool doCleanSessions(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq);
 static bool doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq);
 
-SQLiteDatabase::SQLiteDatabase()
-: IDatabase()
+SQLiteDatabase::SQLiteDatabase(std::shared_ptr<Options> options)
+: IDatabase(options)
 {
-  fs::path addr(CollectorApp()->getOptions()->getFor(Options::Key::DBAddress));
+  fs::path addr(CollectorApp()->getOptions()->getFor(Options::Key::DBFilePath));
   logDebug() << "Using DB file: " << addr.string();
   if (sqlite3_open(addr.c_str(), &m_db) != SQLITE_OK) {
     sqlite3_close(m_db);

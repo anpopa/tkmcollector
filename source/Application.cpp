@@ -16,6 +16,9 @@
 #ifdef WITH_SQLITE3
 #include "SQLiteDatabase.h"
 #endif
+#ifdef WITH_POSTGRESQL
+#include "PQDatabase.h"
+#endif
 
 namespace fs = std::filesystem;
 using std::shared_ptr;
@@ -53,19 +56,35 @@ Application::Application(const string &name, const string &description, const st
   m_dispatcher->enableEvents();
 
   // Use one of DB backends
+  if (m_options->getFor(Options::Key::RuntimeDirectory) == "sqlite3") {
 #ifdef WITH_SQLITE3
-  try {
-    m_database = std::make_shared<SQLiteDatabase>();
-    m_database->enableEvents();
-  } catch (std::exception &e) {
-    logError() << "Fail to open database. Reason: " << e.what();
-    std::cout << "Fail to open database. Reason: " << e.what() << std::endl;
-    Dispatcher::Request rq{.action = Dispatcher::Action::Quit};
-    m_dispatcher->pushRequest(rq);
-  }
+    try {
+      m_database = std::make_shared<SQLiteDatabase>(m_options);
+      m_database->enableEvents();
+    } catch (std::exception &e) {
+      logError() << "Fail to open database. Reason: " << e.what();
+      std::cout << "Fail to open database. Reason: " << e.what() << std::endl;
+      Dispatcher::Request rq{.action = Dispatcher::Action::Quit};
+      m_dispatcher->pushRequest(rq);
+    }
 #else
-  static_assert(true, "No database configured in cmake");
+    static_assert(true, "SQLite3 database configured but support not enabled at build time");
 #endif
+  } else {
+#ifdef WITH_POSTGRESQL
+    try {
+      m_database = std::make_shared<PQDatabase>(m_options);
+      m_database->enableEvents();
+    } catch (std::exception &e) {
+      logError() << "Fail to open database. Reason: " << e.what();
+      std::cout << "Fail to open database. Reason: " << e.what() << std::endl;
+      Dispatcher::Request rq{.action = Dispatcher::Action::Quit};
+      m_dispatcher->pushRequest(rq);
+    }
+#else
+    static_assert(true, "PostgreSQL database configured but support not enabled at build time");
+#endif
+  }
 
   // Create UDSServer
   m_udsServer = std::make_shared<UDSServer>();

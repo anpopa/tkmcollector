@@ -15,7 +15,7 @@
 #include <memory>
 #include <string>
 
-#include "Defaults.h"
+#include "Options.h"
 #include "IClient.h"
 
 #include "../bswinfra/source/AsyncQueue.h"
@@ -53,7 +53,8 @@ public:
   } Request;
 
 public:
-  explicit IDatabase()
+  explicit IDatabase(std::shared_ptr<Options> options)
+  : m_options(options)
   {
     m_queue = std::make_shared<AsyncQueue<IDatabase::Request>>(
         "DBQueue", [this](const IDatabase::Request &rq) { return requestHandler(rq); });
@@ -69,6 +70,7 @@ public:
 
 protected:
   std::shared_ptr<AsyncQueue<IDatabase::Request>> m_queue = nullptr;
+  std::shared_ptr<Options> m_options = nullptr;
 };
 
 } // namespace tkm::collector

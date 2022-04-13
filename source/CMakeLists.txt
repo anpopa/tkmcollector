@@ -20,8 +20,12 @@ if(WITH_SQLITE3)
     set(BINARY_SRC ${BINARY_SRC} SQLiteDatabase.cpp)
 endif()
 
+if(WITH_POSTGRESQL)
+    set(BINARY_SRC ${BINARY_SRC} PQDatabase.cpp)
+endif()
+
 add_executable(${BINARY_NAME} ${BINARY_SRC})
-target_link_libraries(${BINARY_NAME} BSWInfra TaskMonitorInterfaces)
+target_link_libraries(${BINARY_NAME} ${LIBS} BSWInfra TaskMonitorInterfaces)
 
 if(WITH_SQLITE3)
     target_link_libraries(${BINARY_NAME} ${SQLite3_LIBRARIES})

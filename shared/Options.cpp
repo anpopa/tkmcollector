@@ -29,6 +29,12 @@ Options::Options(const string &configFile)
 auto Options::getFor(Key key) -> string
 {
   switch (key) {
+  case Key::DBName:
+    if (hasConfigFile()) {
+      const optional<string> prop = m_configFile->getPropertyValue("database", -1, "DatabaseName");
+      return prop.value_or(tkmDefaults.getFor(Defaults::Default::DBName));
+    }
+    return tkmDefaults.getFor(Defaults::Default::DBName);
   case Key::DBUserName:
     if (hasConfigFile()) {
       const optional<string> prop = m_configFile->getPropertyValue("database", -1, "UserName");
@@ -41,18 +47,24 @@ auto Options::getFor(Key key) -> string
       return prop.value_or(tkmDefaults.getFor(Defaults::Default::DBUserPassword));
     }
     return tkmDefaults.getFor(Defaults::Default::DBUserPassword);
-  case Key::DBAddress:
+  case Key::DBServerAddress:
     if (hasConfigFile()) {
-      const optional<string> prop = m_configFile->getPropertyValue("database", -1, "Address");
-      return prop.value_or(tkmDefaults.getFor(Defaults::Default::DBAddress));
+      const optional<string> prop = m_configFile->getPropertyValue("database", -1, "ServerAddress");
+      return prop.value_or(tkmDefaults.getFor(Defaults::Default::DBServerAddress));
     }
-    return tkmDefaults.getFor(Defaults::Default::DBAddress);
-  case Key::DBPort:
+    return tkmDefaults.getFor(Defaults::Default::DBServerAddress);
+  case Key::DBServerPort:
     if (hasConfigFile()) {
-      const optional<string> prop = m_configFile->getPropertyValue("database", -1, "Port");
-      return prop.value_or(tkmDefaults.getFor(Defaults::Default::DBPort));
+      const optional<string> prop = m_configFile->getPropertyValue("database", -1, "ServerPort");
+      return prop.value_or(tkmDefaults.getFor(Defaults::Default::DBServerPort));
     }
-    return tkmDefaults.getFor(Defaults::Default::DBPort);
+    return tkmDefaults.getFor(Defaults::Default::DBServerPort);
+  case Key::DBFilePath:
+    if (hasConfigFile()) {
+      const optional<string> prop = m_configFile->getPropertyValue("database", -1, "DatabasePath");
+      return prop.value_or(tkmDefaults.getFor(Defaults::Default::DBFilePath));
+    }
+    return tkmDefaults.getFor(Defaults::Default::DBFilePath);
   case Key::RuntimeDirectory:
     if (hasConfigFile()) {
       const optional<string> prop =
@@ -60,6 +72,13 @@ auto Options::getFor(Key key) -> string
       return prop.value_or(tkmDefaults.getFor(Defaults::Default::RuntimeDirectory));
     }
     return tkmDefaults.getFor(Defaults::Default::RuntimeDirectory);
+  case Key::DatabaseType:
+    if (hasConfigFile()) {
+      const optional<string> prop =
+          m_configFile->getPropertyValue("general", -1, "DatabaseType");
+      return prop.value_or(tkmDefaults.getFor(Defaults::Default::DatabaseType));
+    }
+    return tkmDefaults.getFor(Defaults::Default::DatabaseType);
   default:
     logError() << "Unknown option key";
     break;

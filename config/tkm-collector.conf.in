@@ -6,13 +6,16 @@
 ; General configuration option
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [general]
+DatabaseBackend=sqlite3
 RuntimeDirectory=/tmp/tkm-collector
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Database configuration option
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [database]
-Address=/tmp/tkm-collector/data.db
-Port=
-UserName=
-UserPassword=
+ServerAddress=localhost
+ServerPort=5432
+DatabaseName=TaskMonitor
+DatabasePath=/tmp/tkm-collector/data.db
+UserName=tkmcollector
+UserPassword=tkmcollector123

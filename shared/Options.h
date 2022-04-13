@@ -26,7 +26,16 @@ namespace tkm
 class Options
 {
 public:
-  enum class Key { DBUserName, DBUserPassword, DBAddress, DBPort, RuntimeDirectory };
+  enum class Key {
+    DatabaseType,
+    RuntimeDirectory,
+    DBName,
+    DBUserName,
+    DBUserPassword,
+    DBServerAddress,
+    DBServerPort,
+    DBFilePath,
+  };
 
 public:
   explicit Options(const std::string &configFile);

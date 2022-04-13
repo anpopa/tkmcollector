@@ -25,7 +25,7 @@ if(CMAKE_BUILD_TYPE STREQUAL Coverage)
         "*/bswinfra/*"
         "*/build/*"
         "*/tests/*"
-    )
+        )
     set(COVERAGE_BASE_DIR ${CMAKE_SOURCE_DIR}/source)
     set(COVERAGE_BRANCH_COVERAGE ON)
     set(COVERAGE_THRESHOLD_LINE 90)
@@ -58,18 +58,23 @@ configure_file(
 option(WITH_TESTS "Build test suite" N)
 option(WITH_SYSLOG "Build Logger with syslog" Y)
 option(WITH_TIDY "Build with clang-tidy" N)
-option(WITH_SQLITE3 "Build with SQLITE3 support" Y)
+option(WITH_SQLITE3 "Build with SQLITE3 database" Y)
+option(WITH_POSTGRESQL "Build with PostgreSQL database" Y)
 
 if(WITH_TIDY)
-	set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=*")
+    set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=*")
 endif()
 
 if(WITH_SYSLOG)
-	add_compile_options("-DWITH_SYSLOG")
+    add_compile_options("-DWITH_SYSLOG")
 endif()
 
 if(WITH_SQLITE3)
     add_compile_options("-DWITH_SQLITE3")
+endif()
+
+if(WITH_POSTGRESQL)
+    add_compile_options("-DWITH_POSTGRESQL")
 endif()
 
 # Enable collector interfaces
@@ -83,12 +88,18 @@ include_directories(${CMAKE_SOURCE_DIR}/shared)
 include_directories(${CMAKE_BINARY_DIR}/shared)
 
 # Dependencies
-find_package          (PkgConfig REQUIRED)
-find_package		  (Threads REQUIRED)
+find_package    (PkgConfig REQUIRED)
+find_package    (Threads REQUIRED)
 
 if(WITH_SQLITE3)
     find_package      (SQLite3 REQUIRED)
     include_directories(${SQLITE3_INCLUDE_DIR})
+endif()
+
+if(WITH_POSTGRESQL)
+    pkg_check_modules     (LIBPQXX libpqxx REQUIRED)
+    include_directories   (${LIBPQXX_INCLUDE_DIRS})
+    set                   (LIBS ${LIBS} ${LIBPQXX_LIBRARIES})
 endif()
 
 # Build
@@ -138,4 +149,5 @@ message (STATUS "WITH_TESTS: "           ${WITH_TESTS})
 message (STATUS "WITH_SYSLOG: "          ${WITH_SYSLOG})
 message (STATUS "WITH_TIDY: "            ${WITH_TIDY})
 message (STATUS "WITH_SQLITE3: "         ${WITH_SQLITE3})
+message (STATUS "WITH_POSTGRESQL: "      ${WITH_POSTGRESQL})
 
