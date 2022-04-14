@@ -15,9 +15,9 @@ command_args="-d -c @CMAKE_INSTALL_PREFIX@/etc/tkm-collector.conf"
  
 pidfile="/var/run/tkm-collector/tkm-collector.pid"
 
-stop_postcmd="${name}_poststop"
+stop_postcmd="tkmcollector_poststop"
 
-utsyslog_poststop()
+tkmcollector_poststop()
 {
     rm -rf $pidfile
 }
