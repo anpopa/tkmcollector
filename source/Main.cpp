@@ -28,7 +28,7 @@ static void terminate(int signum)
   exit(EXIT_SUCCESS);
 }
 
-static void daemonize(const char *chdir_path)
+static void daemonize()
 {
   pid_t pid, sid;
   int fd;
@@ -53,7 +53,7 @@ static void daemonize(const char *chdir_path)
     exit(EXIT_FAILURE);
   }
 
-  if ((chdir(chdir_path)) < 0) {
+  if ((chdir("/")) < 0) {
     cout << "ERROR: Cannot chdir on daemonize: " << strerror(errno) << endl;
     exit(EXIT_FAILURE);
   }
@@ -63,6 +63,7 @@ static void daemonize(const char *chdir_path)
     dup2(fd, STDIN_FILENO);
     dup2(fd, STDOUT_FILENO);
     dup2(fd, STDERR_FILENO);
+
     if (fd > 2) {
       close(fd);
     }
@@ -165,9 +166,15 @@ auto main(int argc, char **argv) -> int
   if (daemon) {
     auto options = tkm::Options{config_path};
 
+    if (!fs::exists(options.getFor(tkm::Options::Key::RuntimeDirectory))) {
+      if (!fs::create_directories(options.getFor(tkm::Options::Key::RuntimeDirectory))) {
+        cout << "ERROR: Cannot create runtime directory" << endl;
+        return EXIT_FAILURE;
+      }
+    }
+
     // daemonize
-    cout << "Runtime directory: " << options.getFor(tkm::Options::Key::RuntimeDirectory) << endl;
-    daemonize(options.getFor(tkm::Options::Key::RuntimeDirectory).c_str());
+    daemonize();
 
     // create pid file
     std::string pidFile = options.getFor(tkm::Options::Key::RuntimeDirectory);

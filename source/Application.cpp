@@ -59,7 +59,7 @@ Application::Application(const string &name, const string &description, const st
   m_dispatcher->enableEvents();
 
   // Use one of DB backends
-  if (m_options->getFor(Options::Key::RuntimeDirectory) == "sqlite3") {
+  if (m_options->getFor(Options::Key::DatabaseType) == "sqlite3") {
 #ifdef WITH_SQLITE3
     try {
       m_database = std::make_shared<SQLiteDatabase>(m_options);
