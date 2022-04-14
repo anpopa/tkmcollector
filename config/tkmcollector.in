@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# PROVIDE: tkmcollector
+# REQUIRE: DAEMON postgresql
+# BEFORE: LOGIN
+# KEYWORD: nojail shutdown
+
+. /etc/rc.subr
+
+name=tkmcollector
+rcvar=tkmcollector_enable
+
+command="@CMAKE_INSTALL_PREFIX@/bin/tkm-collector"
+command_args="-d -c @CMAKE_INSTALL_PREFIX@/etc/tkm-collector.conf"
+ 
+pidfile="/var/run/tkm-collector/tkm-collector.pid"
+
+stop_postcmd="${name}_poststop"
+
+utsyslog_poststop()
+{
+    rm -rf $pidfile
+}
+
+load_rc_config $name
+run_rc_command "$1"
