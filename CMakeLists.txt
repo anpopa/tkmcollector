@@ -59,6 +59,11 @@ configure_file(
     ${CMAKE_SOURCE_DIR}/config/tkm-collector.service.in
     ${CMAKE_BINARY_DIR}/config/tkm-collector.service)
 
+configure_file(
+    ${CMAKE_SOURCE_DIR}/config/tkmcollector.in
+    ${CMAKE_BINARY_DIR}/config/tkmcollector)
+
+
 
 option(WITH_TESTS "Build test suite" N)
 option(WITH_SYSLOG "Build Logger with syslog" Y)

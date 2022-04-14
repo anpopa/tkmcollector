@@ -1,2 +1,10 @@
-install(FILES ${CMAKE_BINARY_DIR}/config/tkm-collector.conf DESTINATION /etc)
-install(FILES ${CMAKE_BINARY_DIR}/config/tkm-collector.service DESTINATION /etc/systemd/system)
+if (${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
+    install(FILES ${CMAKE_BINARY_DIR}/config/tkm-collector.conf DESTINATION ${CMAKE_INSTALL_PREFIX}/etc)
+    install(FILES ${CMAKE_BINARY_DIR}/config/tkmcollector DESTINATION ${CMAKE_INSTALL_PREFIX}/etc/rc.d)
+else()
+    install(FILES ${CMAKE_BINARY_DIR}/config/tkm-collector.conf DESTINATION /etc)
+endif()
+
+if(WITH_SYSTEMD)
+    install(FILES ${CMAKE_BINARY_DIR}/config/tkm-collector.service DESTINATION /etc/systemd/system)
+endif()
