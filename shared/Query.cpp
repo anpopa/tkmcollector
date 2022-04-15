@@ -364,13 +364,13 @@ auto Query::endSession(Query::Type type, const std::string &hash) -> std::string
         << m_sessionColumn.at(SessionColumn::EndTimestamp) << " = "
         << "'" << time(NULL) << "'"
         << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
-        << "'" << hash << "';";
+        << "'" << hash << "' AND EndTimestamp = 0;";
   } else if (type == Query::Type::PostgreSQL) {
     out << "UPDATE " << m_sessionsTableName << " SET "
         << m_sessionColumn.at(SessionColumn::EndTimestamp) << " = "
         << "'" << time(NULL) << "'"
         << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
-        << "'" << hash << "';";
+        << "'" << hash << "' AND EndTimestamp = 0;";
   }
 
   return out.str();
@@ -523,11 +523,11 @@ auto Query::addData(Query::Type type,
     if (type == Query::Type::SQLite3) {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
           << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
-          << "'" << sessionHash << "'));";
+          << "'" << sessionHash << "' AND EndTimestamp = 0));";
     } else {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
           << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
-          << "'" << sessionHash << "'));";
+          << "'" << sessionHash << "' AND EndTimestamp = 0));";
     }
   }
 
@@ -557,11 +557,11 @@ auto Query::addData(Query::Type type,
     if (type == Query::Type::SQLite3) {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
           << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
-          << "'" << sessionHash << "'));";
+          << "'" << sessionHash << "' AND EndTimestamp = 0));";
     } else {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
           << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
-          << "'" << sessionHash << "'));";
+          << "'" << sessionHash << "' AND EndTimestamp = 0));";
     }
   }
 
@@ -626,11 +626,11 @@ auto Query::addData(Query::Type type,
     if (type == Query::Type::SQLite3) {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
           << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
-          << "'" << sessionHash << "'));";
+          << "'" << sessionHash << "' AND EndTimestamp = 0));";
     } else {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
           << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
-          << "'" << sessionHash << "'));";
+          << "'" << sessionHash << "' AND EndTimestamp = 0));";
     }
   }
 
@@ -705,11 +705,11 @@ auto Query::addData(Query::Type type,
     if (type == Query::Type::SQLite3) {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
           << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
-          << "'" << sessionHash << "'));";
+          << "'" << sessionHash << "' AND EndTimestamp = 0));";
     } else {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
           << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
-          << "'" << sessionHash << "'));";
+          << "'" << sessionHash << "' AND EndTimestamp = 0));";
     }
   }
 

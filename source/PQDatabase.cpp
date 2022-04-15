@@ -604,6 +604,7 @@ static bool doEndSession(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
     return true;
   }
 
+  logDebug() << "Mark end session for " << rq.args.at(Defaults::Arg::SessionHash);
   try {
     db->runTransaction(
         tkmQuery.endSession(Query::Type::PostgreSQL, rq.args.at(Defaults::Arg::SessionHash)));
@@ -633,7 +634,7 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
       db->runTransaction(
           tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, acct, ts, recvTime));
     } catch (std::exception &e) {
-      logError() << "Query failed to mark end session. Database query fails: " << e.what();
+      logError() << "Query failed to addData. Database query fails: " << e.what();
       status = false;
     }
   };
@@ -647,7 +648,7 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
       db->runTransaction(
           tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, sysProcStat, ts, recvTime));
     } catch (std::exception &e) {
-      logError() << "Query failed to mark end session. Database query fails: " << e.what();
+      logError() << "Query failed to addData. Database query fails: " << e.what();
       status = false;
     }
   };
@@ -662,7 +663,7 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
       db->runTransaction(
           tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, sysProcPressure, ts, recvTime));
     } catch (std::exception &e) {
-      logError() << "Query failed to mark end session. Database query fails: " << e.what();
+      logError() << "Query failed to addData. Database query fails: " << e.what();
       status = false;
     }
   };
@@ -676,7 +677,7 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
       db->runTransaction(
           tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, procEvent, ts, recvTime));
     } catch (std::exception &e) {
-      logError() << "Query failed to mark end session. Database query fails: " << e.what();
+      logError() << "Query failed to addData. Database query fails: " << e.what();
       status = false;
     }
   };
