@@ -33,6 +33,7 @@ public:
     QuitCollector,
     GetDevices,
     GetSessions,
+    RemoveSession,
     AddDevice,
     RemoveDevice,
     ConnectDevice,

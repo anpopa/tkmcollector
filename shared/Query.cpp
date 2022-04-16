@@ -364,13 +364,13 @@ auto Query::endSession(Query::Type type, const std::string &hash) -> std::string
         << m_sessionColumn.at(SessionColumn::EndTimestamp) << " = "
         << "'" << time(NULL) << "'"
         << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
-        << "'" << hash << "' AND EndTimestamp = 0;";
+        << "'" << hash << "';";
   } else if (type == Query::Type::PostgreSQL) {
     out << "UPDATE " << m_sessionsTableName << " SET "
         << m_sessionColumn.at(SessionColumn::EndTimestamp) << " = "
         << "'" << time(NULL) << "'"
         << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
-        << "'" << hash << "' AND EndTimestamp = 0;";
+        << "'" << hash << "';";
   }
 
   return out.str();

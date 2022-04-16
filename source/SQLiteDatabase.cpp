@@ -46,6 +46,7 @@ static bool doStartDeviceSession(const shared_ptr<SQLiteDatabase> &db,
 static bool doStopDeviceSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq);
 static bool doGetEntries(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq);
 static bool doAddSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq);
+static bool doRemSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq);
 static bool doEndSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq);
 static bool doCleanSessions(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq);
 static bool doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq);
@@ -100,6 +101,7 @@ static auto sqlite_callback(void *data, int argc, char **argv, char **colname) -
   case SQLiteDatabase::QueryType::RemDevice:
   case SQLiteDatabase::QueryType::AddSession:
   case SQLiteDatabase::QueryType::EndSession:
+  case SQLiteDatabase::QueryType::RemSession:
   case SQLiteDatabase::QueryType::AddData:
     break;
   case SQLiteDatabase::QueryType::LoadDevices:
@@ -135,6 +137,16 @@ static auto sqlite_callback(void *data, int argc, char **argv, char **colname) -
     auto pld = static_cast<int *>(query->raw);
     for (int i = 0; i < argc; i++) {
       if (strncmp(colname[i], tkmQuery.m_deviceColumn.at(Query::DeviceColumn::Id).c_str(), 60) ==
+          0) {
+        *pld = std::stol(argv[i]);
+      }
+    }
+    break;
+  }
+  case SQLiteDatabase::QueryType::HasSession: {
+    auto pld = static_cast<int *>(query->raw);
+    for (int i = 0; i < argc; i++) {
+      if (strncmp(colname[i], tkmQuery.m_sessionColumn.at(Query::SessionColumn::Id).c_str(), 60) ==
           0) {
         *pld = std::stol(argv[i]);
       }
@@ -201,6 +213,8 @@ bool SQLiteDatabase::requestHandler(const Request &rq)
     return doGetSessions(getShared(), rq);
   case IDatabase::Action::AddSession:
     return doAddSession(getShared(), rq);
+  case IDatabase::Action::RemSession:
+    return doRemSession(getShared(), rq);
   case IDatabase::Action::EndSession:
     return doEndSession(getShared(), rq);
   case IDatabase::Action::CleanSessions:
@@ -357,6 +371,7 @@ static bool doGetDevices(const shared_ptr<SQLiteDatabase> &db, const IDatabase::
 static bool doGetSessions(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  bool status = false;
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
@@ -369,7 +384,12 @@ static bool doGetSessions(const shared_ptr<SQLiteDatabase> &db, const IDatabase:
   auto querySessionList = std::vector<tkm::msg::collector::SessionData>();
   query.raw = &querySessionList;
 
-  auto status = db->runQuery(tkmQuery.getSessions(Query::Type::SQLite3, deviceData.hash()), query);
+  if (deviceData.hash().empty()) {
+    status = db->runQuery(tkmQuery.getSessions(Query::Type::SQLite3), query);
+  } else {
+    status = db->runQuery(tkmQuery.getSessions(Query::Type::SQLite3, deviceData.hash()), query);
+  }
+
   if (status) {
     tkm::msg::Envelope envelope;
     tkm::msg::collector::Message message;
@@ -493,7 +513,7 @@ static bool doRemoveDevice(const shared_ptr<SQLiteDatabase> &db, const IDatabase
       mrq.args.emplace(Defaults::Arg::Reason, "Device removed");
     }
   } else {
-    mrq.args.emplace(Defaults::Arg::Reason, "Cannot check existing user");
+    mrq.args.emplace(Defaults::Arg::Reason, "Cannot check existing device");
   }
 
   mrq.args.emplace(Defaults::Arg::Status,
@@ -508,19 +528,43 @@ static bool doAddSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::
   if ((rq.args.count(Defaults::Arg::DeviceHash) == 0) ||
       (rq.args.count(Defaults::Arg::SessionHash) == 0)) {
     logError() << "Invalid session data";
-    return true;
+    throw std::runtime_error("Invalid arguments");
+  }
+
+  // We don't allow sessions with the same hash, so if a device is sending an existing session hash
+  // we disconnect the device. Maybe is to harsh but this should not happen often in practice
+  auto sesId = -1;
+  SQLiteDatabase::Query queryCheckExisting{.type = SQLiteDatabase::QueryType::HasSession};
+  queryCheckExisting.raw = &sesId;
+
+  auto status = db->runQuery(
+      tkmQuery.hasSession(Query::Type::SQLite3, rq.args.at(Defaults::Arg::SessionHash)),
+      queryCheckExisting);
+  if (status) {
+    if (sesId != -1) {
+      logError() << "Session hash collision detected. Remove old session "
+                 << rq.args.at(Defaults::Arg::SessionHash);
+      SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::RemSession};
+      status = db->runQuery(
+          tkmQuery.remSession(Query::Type::SQLite3, rq.args.at(Defaults::Arg::SessionHash)), query);
+      if (!status) {
+        logError() << "Failed to remove existing session";
+      }
+    }
+  } else {
+    logError() << "Failed to check existing session";
   }
 
   const std::string sessionName =
       "Collector." + std::to_string(getpid()) + "." + std::to_string(time(NULL));
 
   SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::AddSession};
-  auto status = db->runQuery(tkmQuery.addSession(Query::Type::SQLite3,
-                                                 rq.args.at(Defaults::Arg::SessionHash),
-                                                 sessionName,
-                                                 time(NULL),
-                                                 rq.args.at(Defaults::Arg::DeviceHash)),
-                             query);
+  status = db->runQuery(tkmQuery.addSession(Query::Type::SQLite3,
+                                            rq.args.at(Defaults::Arg::SessionHash),
+                                            sessionName,
+                                            time(NULL),
+                                            rq.args.at(Defaults::Arg::DeviceHash)),
+                        query);
   if (!status) {
     logError() << "Query failed to add session";
   }
@@ -528,12 +572,53 @@ static bool doAddSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::
   return true;
 }
 
+static bool doRemSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
+{
+  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  auto sesId = -1;
+
+  if (rq.args.count(Defaults::Arg::RequestId)) {
+    mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
+  }
+
+  logDebug() << "Handling DB RemoveDevice request from client: " << rq.client->getName();
+  const auto &sessionData = std::any_cast<tkm::msg::collector::SessionData>(rq.bulkData);
+
+  SQLiteDatabase::Query queryCheckExisting{.type = SQLiteDatabase::QueryType::HasSession};
+  queryCheckExisting.raw = &sesId;
+
+  auto status = db->runQuery(tkmQuery.hasSession(Query::Type::SQLite3, sessionData.hash()),
+                             queryCheckExisting);
+  if (status) {
+    if (sesId == -1) {
+      mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
+      mrq.args.emplace(Defaults::Arg::Reason, "No such session");
+    }
+
+    SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::RemSession};
+    status = db->runQuery(tkmQuery.remSession(Query::Type::SQLite3, sessionData.hash()), query);
+
+    if (!status) {
+      mrq.args.emplace(Defaults::Arg::Reason, "Failed to remove session");
+    } else {
+      mrq.args.emplace(Defaults::Arg::Reason, "Session removed");
+    }
+  } else {
+    mrq.args.emplace(Defaults::Arg::Reason, "Cannot check existing session");
+  }
+
+  mrq.args.emplace(Defaults::Arg::Status,
+                   status == true ? tkmDefaults.valFor(Defaults::Val::StatusOkay)
+                                  : tkmDefaults.valFor(Defaults::Val::StatusError));
+  return CollectorApp()->getDispatcher()->pushRequest(mrq);
+}
+
 static bool doEndSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
 {
   logDebug() << "Handling DB EndSession request";
   if ((rq.args.count(Defaults::Arg::SessionHash) == 0)) {
     logError() << "Invalid session data";
-    return true;
+    throw std::runtime_error("Invalid arguments");
   }
 
   SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::EndSession};
@@ -554,7 +639,7 @@ static bool doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Req
 
   if ((rq.args.count(Defaults::Arg::SessionHash) == 0)) {
     logError() << "Invalid session data";
-    return true;
+    throw std::runtime_error("Invalid arguments");
   }
 
   auto writeProcAcct = [&db, &rq, &status, &query](const std::string &sessionHash,

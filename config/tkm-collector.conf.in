@@ -6,7 +6,7 @@
 ; General configuration option
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [general]
-DatabaseType=sqlite3
+DatabaseType=pqsql
 RuntimeDirectory=/var/run/tkm-collector
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

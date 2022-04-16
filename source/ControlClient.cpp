@@ -22,6 +22,8 @@ static bool doQuitCollector(const shared_ptr<ControlClient> &client,
 static bool doGetDevices(const shared_ptr<ControlClient> &client, tkm::msg::collector::Request &rq);
 static bool doGetSessions(const shared_ptr<ControlClient> &client,
                           tkm::msg::collector::Request &rq);
+static bool doRemoveSession(const shared_ptr<ControlClient> &client,
+                            tkm::msg::collector::Request &rq);
 static bool doAddDevice(const shared_ptr<ControlClient> &client, tkm::msg::collector::Request &rq);
 static bool doRemoveDevice(const shared_ptr<ControlClient> &client,
                            tkm::msg::collector::Request &rq);
@@ -79,6 +81,9 @@ ControlClient::ControlClient(int clientFd)
             break;
           case tkm::msg::collector::Request_Type_GetSessions:
             status = doGetSessions(getShared(), rq);
+            break;
+          case tkm::msg::collector::Request_Type_RemoveSession:
+            status = doRemoveSession(getShared(), rq);
             break;
           case tkm::msg::collector::Request_Type_AddDevice:
             status = doAddDevice(getShared(), rq);
@@ -187,6 +192,23 @@ static bool doGetDevices(const shared_ptr<ControlClient> &client, tkm::msg::coll
 {
   Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::GetDevices};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
+  return CollectorApp()->getDispatcher()->pushRequest(nrq);
+}
+
+static bool doRemoveSession(const shared_ptr<ControlClient> &client,
+                            tkm::msg::collector::Request &rq)
+{
+  Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::RemoveSession};
+  nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
+
+  if (rq.forced() == tkm::msg::collector::Request_Forced_Enforced) {
+    nrq.args.emplace(Defaults::Arg::Forced, tkmDefaults.valFor(Defaults::Val::True));
+  }
+
+  tkm::msg::collector::SessionData data;
+  rq.data().UnpackTo(&data);
+  nrq.bulkData = std::make_any<tkm::msg::collector::SessionData>(data);
+
   return CollectorApp()->getDispatcher()->pushRequest(nrq);
 }
 

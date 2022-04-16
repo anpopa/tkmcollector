@@ -120,7 +120,21 @@ Command::Command()
         if (request.args.count(Defaults::Arg::Forced)) {
           rq.args.emplace(tkm::Defaults::Arg::Forced, request.args.at(tkm::Defaults::Arg::Forced));
         }
-        rq.args.emplace(Defaults::Arg::DeviceHash, request.args.at(Defaults::Arg::DeviceHash));
+
+        if (request.args.count(Defaults::Arg::DeviceHash)) {
+          rq.args.emplace(Defaults::Arg::DeviceHash, request.args.at(Defaults::Arg::DeviceHash));
+        }
+
+        ControlApp()->getDispatcher()->pushRequest(rq);
+        break;
+      }
+      case Command::Action::RemoveSession: {
+        Dispatcher::Request rq{.action = Dispatcher::Action::RemoveSession};
+
+        if (request.args.count(Defaults::Arg::Forced)) {
+          rq.args.emplace(tkm::Defaults::Arg::Forced, request.args.at(tkm::Defaults::Arg::Forced));
+        }
+        rq.args.emplace(Defaults::Arg::SessionHash, request.args.at(Defaults::Arg::SessionHash));
 
         ControlApp()->getDispatcher()->pushRequest(rq);
         break;

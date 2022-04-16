@@ -57,7 +57,7 @@ public:
         std::pair<Default, std::string>(Default::ConfPath, "@TKM_COLELCTOR_CONFIG_FILE@"));
     m_table.insert(
         std::pair<Default, std::string>(Default::RuntimeDirectory, "/var/run/tkm-collector"));
-    m_table.insert(std::pair<Default, std::string>(Default::DatabaseType, "sqlite3"));
+    m_table.insert(std::pair<Default, std::string>(Default::DatabaseType, "pqsql"));
     m_table.insert(std::pair<Default, std::string>(Default::DBName, "taskmonitor"));
     m_table.insert(std::pair<Default, std::string>(Default::DBUserName, "tkmcollector"));
     m_table.insert(std::pair<Default, std::string>(Default::DBUserPassword, "tkmcollector123"));

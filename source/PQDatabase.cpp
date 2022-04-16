@@ -44,6 +44,7 @@ static bool doStartDeviceSession(const shared_ptr<PQDatabase> &db, const IDataba
 static bool doStopDeviceSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
 static bool doGetEntries(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
 static bool doAddSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doRemSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
 static bool doEndSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
 static bool doCleanSessions(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
 static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
@@ -135,6 +136,8 @@ bool PQDatabase::requestHandler(const Request &rq)
     return doGetSessions(getShared(), rq);
   case IDatabase::Action::AddSession:
     return doAddSession(getShared(), rq);
+  case IDatabase::Action::RemSession:
+    return doRemSession(getShared(), rq);
   case IDatabase::Action::EndSession:
     return doEndSession(getShared(), rq);
   case IDatabase::Action::CleanSessions:
@@ -380,9 +383,16 @@ static bool doGetSessions(const shared_ptr<PQDatabase> &db, const IDatabase::Req
   }
 
   logDebug() << "Handling DB GetSessions request from client: " << rq.client->getName();
+  const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
 
   try {
-    auto result = db->runTransaction(tkmQuery.getSessions(Query::Type::PostgreSQL));
+    pqxx::result result;
+
+    if (deviceData.hash().empty()) {
+      result = db->runTransaction(tkmQuery.getSessions(Query::Type::PostgreSQL));
+    } else {
+      result = db->runTransaction(tkmQuery.getSessions(Query::Type::PostgreSQL, deviceData.hash()));
+    }
 
     for (pqxx::result::const_iterator c = result.begin(); c != result.end(); ++c) {
       tkm::msg::collector::SessionData sessionData;
@@ -556,7 +566,7 @@ static bool doRemoveDevice(const shared_ptr<PQDatabase> &db, const IDatabase::Re
       mrq.args.emplace(Defaults::Arg::Reason, "Device removed");
     }
   } else {
-    mrq.args.emplace(Defaults::Arg::Reason, "Cannot check existing user");
+    mrq.args.emplace(Defaults::Arg::Reason, "Cannot check existing device");
   }
 
   mrq.args.emplace(Defaults::Arg::Status,
@@ -571,7 +581,30 @@ static bool doAddSession(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
   if ((rq.args.count(Defaults::Arg::DeviceHash) == 0) ||
       (rq.args.count(Defaults::Arg::SessionHash) == 0)) {
     logError() << "Invalid session data";
-    return true;
+    throw std::runtime_error("Invalid arguments");
+  }
+
+  // We don't allow sessions with the same hash, so if a device is sending an existing session hash
+  // we disconnect the device. Maybe is to harsh but this should not happen often in practice
+  auto sesId = -1;
+  try {
+    auto result = db->runTransaction(
+        tkmQuery.hasSession(Query::Type::PostgreSQL, rq.args.at(Defaults::Arg::SessionHash)));
+    for (pqxx::result::const_iterator c = result.begin(); c != result.end(); ++c) {
+      sesId = c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Id)].as<long>();
+    }
+  } catch (std::exception &e) {
+    logError() << "Database query fails: " << e.what();
+  }
+  if (sesId != -1) {
+    logError() << "Session hash collision detected. Remove old session "
+               << rq.args.at(Defaults::Arg::SessionHash);
+    try {
+      db->runTransaction(
+          tkmQuery.remSession(Query::Type::PostgreSQL, rq.args.at(Defaults::Arg::SessionHash)));
+    } catch (std::exception &e) {
+      logError() << "Failed to remove existing session. Database query fails: " << e.what();
+    }
   }
 
   const std::string sessionName =
@@ -596,12 +629,64 @@ static bool doAddSession(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
   return true;
 }
 
+static bool doRemSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+{
+  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  bool status = true;
+  auto sesId = -1;
+
+  if (rq.args.count(Defaults::Arg::RequestId)) {
+    mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
+  }
+
+  logDebug() << "Handling DB RemoveSession request from client: " << rq.client->getName();
+  const auto &sessionData = std::any_cast<tkm::msg::collector::SessionData>(rq.bulkData);
+
+  try {
+    auto result =
+        db->runTransaction(tkmQuery.hasSession(Query::Type::PostgreSQL, sessionData.hash()));
+    for (pqxx::result::const_iterator c = result.begin(); c != result.end(); ++c) {
+      sesId = c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Id)].as<long>();
+    }
+  } catch (std::exception &e) {
+    logError() << "Database query fails: " << e.what();
+    status = false;
+  }
+
+  if (status) {
+    if (sesId == -1) {
+      mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
+      mrq.args.emplace(Defaults::Arg::Reason, "No such session");
+    } else {
+      try {
+        db->runTransaction(tkmQuery.remSession(Query::Type::PostgreSQL, sessionData.hash()));
+      } catch (std::exception &e) {
+        logError() << "Database query fails: " << e.what();
+        status = false;
+      }
+
+      if (!status) {
+        mrq.args.emplace(Defaults::Arg::Reason, "Failed to remove session");
+      } else {
+        mrq.args.emplace(Defaults::Arg::Reason, "Session removed");
+      }
+    }
+  } else {
+    mrq.args.emplace(Defaults::Arg::Reason, "Cannot check existing session");
+  }
+
+  mrq.args.emplace(Defaults::Arg::Status,
+                   status == true ? tkmDefaults.valFor(Defaults::Val::StatusOkay)
+                                  : tkmDefaults.valFor(Defaults::Val::StatusError));
+  return CollectorApp()->getDispatcher()->pushRequest(mrq);
+}
+
 static bool doEndSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   logDebug() << "Handling DB EndSession request";
   if ((rq.args.count(Defaults::Arg::SessionHash) == 0)) {
     logError() << "Invalid session data";
-    return true;
+    throw std::runtime_error("Invalid arguments");
   }
 
   logDebug() << "Mark end session for " << rq.args.at(Defaults::Arg::SessionHash);
@@ -622,7 +707,7 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
 
   if ((rq.args.count(Defaults::Arg::SessionHash) == 0)) {
     logError() << "Invalid session data";
-    return true;
+    throw std::runtime_error("Invalid arguments");
   }
 
   auto writeProcAcct = [&db, &rq, &status](const std::string &sessionHash,

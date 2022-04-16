@@ -37,6 +37,8 @@ public:
     RemDevice,
     HasDevice,
     AddSession,
+    RemSession,
+    HasSession,
     EndSession,
     CleanSessions,
     AddData,

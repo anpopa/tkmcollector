@@ -31,6 +31,7 @@ static bool doQuit(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request 
 static bool doInitDatabase(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq);
 static bool doGetDevices(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq);
 static bool doGetSessions(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq);
+static bool doRemoveSession(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq);
 static bool doAddDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq);
 static bool doRemoveDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq);
 static bool doConnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq);
@@ -69,6 +70,8 @@ bool Dispatcher::requestHandler(const Request &request)
     return doGetDevices(getShared(), request);
   case Dispatcher::Action::GetSessions:
     return doGetSessions(getShared(), request);
+  case Dispatcher::Action::RemoveSession:
+    return doRemoveSession(getShared(), request);
   case Dispatcher::Action::AddDevice:
     return doAddDevice(getShared(), request);
   case Dispatcher::Action::RemoveDevice:
@@ -236,7 +239,7 @@ static bool doRemoveDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::
   tkm::msg::collector::Request requestMessage;
   tkm::msg::collector::DeviceData deviceData;
 
-  requestMessage.set_id("ConnectDevice");
+  requestMessage.set_id("RemoveDevice");
   requestMessage.set_type(tkm::msg::collector::Request_Type_RemoveDevice);
   if (rq.args.count(Defaults::Arg::Forced)) {
     if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
@@ -252,6 +255,31 @@ static bool doRemoveDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::
   requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Control);
 
   logDebug() << "Request remove device for: " << rq.args.at(Defaults::Arg::DeviceHash);
+  return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
+}
+
+static bool doRemoveSession(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
+{
+  tkm::msg::Envelope requestEnvelope;
+  tkm::msg::collector::Request requestMessage;
+  tkm::msg::collector::SessionData sessionData;
+
+  requestMessage.set_id("RemoveSession");
+  requestMessage.set_type(tkm::msg::collector::Request_Type_RemoveSession);
+  if (rq.args.count(Defaults::Arg::Forced)) {
+    if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
+      requestMessage.set_forced(tkm::msg::collector::Request_Forced_Enforced);
+    }
+  }
+
+  sessionData.set_hash(rq.args.at(Defaults::Arg::SessionHash));
+  requestMessage.mutable_data()->PackFrom(sessionData);
+
+  requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
+  requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Collector);
+  requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Control);
+
+  logDebug() << "Request remove session for: " << rq.args.at(Defaults::Arg::DeviceHash);
   return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
@@ -369,7 +397,9 @@ static bool doGetSessions(const shared_ptr<Dispatcher> &mgr, const Dispatcher::R
     }
   }
 
-  deviceData.set_hash(rq.args.at(Defaults::Arg::DeviceHash));
+  if (rq.args.count(Defaults::Arg::DeviceHash)) {
+    deviceData.set_hash(rq.args.at(Defaults::Arg::DeviceHash));
+  }
   requestMessage.mutable_data()->PackFrom(deviceData);
 
   requestEnvelope.mutable_mesg()->PackFrom(requestMessage);

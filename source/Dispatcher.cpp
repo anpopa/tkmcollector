@@ -30,6 +30,7 @@ static bool doInitDatabase(const shared_ptr<Dispatcher> &mgr, const Dispatcher::
 static bool doQuitCollector(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq);
 static bool doGetDevices(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq);
 static bool doGetSessions(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq);
+static bool doRemoveSession(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq);
 static bool doAddDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq);
 static bool doRemoveDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq);
 static bool doConnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq);
@@ -60,6 +61,8 @@ bool Dispatcher::requestHandler(const Request &rq)
     return doGetDevices(getShared(), rq);
   case Dispatcher::Action::GetSessions:
     return doGetSessions(getShared(), rq);
+  case Dispatcher::Action::RemoveSession:
+    return doRemoveSession(getShared(), rq);
   case Dispatcher::Action::AddDevice:
     return doAddDevice(getShared(), rq);
   case Dispatcher::Action::RemoveDevice:
@@ -102,6 +105,15 @@ static bool doGetDevices(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Re
 {
   IDatabase::Request dbrq{
       .client = rq.client, .action = IDatabase::Action::GetDevices, .args = rq.args};
+  return CollectorApp()->getDatabase()->pushRequest(dbrq);
+}
+
+static bool doRemoveSession(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
+{
+  IDatabase::Request dbrq{.client = rq.client,
+                          .action = IDatabase::Action::RemSession,
+                          .args = rq.args,
+                          .bulkData = rq.bulkData};
   return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
