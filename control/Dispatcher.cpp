@@ -406,7 +406,7 @@ static bool doGetSessions(const shared_ptr<Dispatcher> &mgr, const Dispatcher::R
   requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Collector);
   requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Control);
 
-  logDebug() << "Request get sessions for device: " << rq.args.at(Defaults::Arg::DeviceHash);
+  logDebug() << "Request get sessions";
   return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
