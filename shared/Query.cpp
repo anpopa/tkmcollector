@@ -11,6 +11,7 @@
 
 #include "Query.h"
 #include "Server.pb.h"
+#include <string>
 
 namespace tkm
 {
@@ -35,97 +36,188 @@ auto Query::createTables(Query::Type type) -> std::string
     // Sessions table
     out << "CREATE TABLE IF NOT EXISTS " << m_sessionsTableName << " (";
     if (type == Query::Type::SQLite3) {
-      out << m_deviceColumn.at(DeviceColumn::Id) << " INTEGER PRIMARY KEY, ";
+      out << m_sessionColumn.at(SessionColumn::Id) << " INTEGER PRIMARY KEY, "
+          << m_sessionColumn.at(SessionColumn::Name) << " TEXT NOT NULL, "
+          << m_sessionColumn.at(SessionColumn::Hash) << " TEXT NOT NULL, "
+          << m_sessionColumn.at(SessionColumn::StartTimestamp) << " INTEGER NOT NULL, "
+          << m_sessionColumn.at(SessionColumn::EndTimestamp) << " INTEGER NOT NULL, "
+          << m_sessionColumn.at(SessionColumn::Device) << " INTEGER NOT NULL, ";
     } else {
-      out << m_deviceColumn.at(DeviceColumn::Id) << " SERIAL PRIMARY KEY, ";
+      out << m_sessionColumn.at(SessionColumn::Id) << " SERIAL PRIMARY KEY, "
+          << m_sessionColumn.at(SessionColumn::Name) << " TEXT NOT NULL, "
+          << m_sessionColumn.at(SessionColumn::Hash) << " TEXT NOT NULL, "
+          << m_sessionColumn.at(SessionColumn::StartTimestamp) << " BIGINT NOT NULL, "
+          << m_sessionColumn.at(SessionColumn::EndTimestamp) << " BIGINT NOT NULL, "
+          << m_sessionColumn.at(SessionColumn::Device) << " INTEGER NOT NULL, ";
     }
-    out << m_sessionColumn.at(SessionColumn::Name) << " TEXT NOT NULL, "
-        << m_sessionColumn.at(SessionColumn::Hash) << " TEXT NOT NULL, "
-        << m_sessionColumn.at(SessionColumn::StartTimestamp) << " INTEGER NOT NULL, "
-        << m_sessionColumn.at(SessionColumn::EndTimestamp) << " INTEGER NOT NULL, "
-        << m_sessionColumn.at(SessionColumn::Device) << " INTEGER NOT NULL, "
-        << "CONSTRAINT KFDevice FOREIGN KEY(" << m_sessionColumn.at(SessionColumn::Device)
+    out << "CONSTRAINT KFDevice FOREIGN KEY(" << m_sessionColumn.at(SessionColumn::Device)
         << ") REFERENCES " << m_devicesTableName << "(" << m_deviceColumn.at(DeviceColumn::Id)
         << ") ON DELETE CASCADE);";
 
     // ProcEvent table
     out << "CREATE TABLE IF NOT EXISTS " << m_procEventTableName << " (";
     if (type == Query::Type::SQLite3) {
-      out << m_deviceColumn.at(DeviceColumn::Id) << " INTEGER PRIMARY KEY, ";
+      out << m_procEventColumn.at(ProcEventColumn::Id) << " INTEGER PRIMARY KEY, "
+          << m_procEventColumn.at(ProcEventColumn::Timestamp) << " INTEGER NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::RecvTime) << " INTEGER NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::What) << " TEXT NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::ProcessPID) << " INTEGER, "
+          << m_procEventColumn.at(ProcEventColumn::ProcessTGID) << " INTEGER, "
+          << m_procEventColumn.at(ProcEventColumn::ParentPID) << " INTEGER, "
+          << m_procEventColumn.at(ProcEventColumn::ParentTGID) << " INTEGER, "
+          << m_procEventColumn.at(ProcEventColumn::ChildPID) << " INTEGER, "
+          << m_procEventColumn.at(ProcEventColumn::ChildTGID) << " INTEGER, "
+          << m_procEventColumn.at(ProcEventColumn::ExitCode) << " INTEGER, "
+          << m_procEventColumn.at(ProcEventColumn::ProcessRID) << " INTEGER, "
+          << m_procEventColumn.at(ProcEventColumn::ProcessEID) << " INTEGER, "
+          << m_procEventColumn.at(ProcEventColumn::SessionId) << " INTEGER NOT NULL, ";
     } else {
-      out << m_deviceColumn.at(DeviceColumn::Id) << " SERIAL PRIMARY KEY, ";
+      out << m_procEventColumn.at(ProcEventColumn::Id) << " SERIAL PRIMARY KEY, "
+          << m_procEventColumn.at(ProcEventColumn::Timestamp) << " BIGINT NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::RecvTime) << " BIGINT NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::What) << " TEXT NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::ProcessPID) << " BIGINT "
+          << m_procEventColumn.at(ProcEventColumn::ProcessTGID) << " BIGINT "
+          << m_procEventColumn.at(ProcEventColumn::ParentPID) << " BIGINT "
+          << m_procEventColumn.at(ProcEventColumn::ParentTGID) << " BIGINT "
+          << m_procEventColumn.at(ProcEventColumn::ChildPID) << " BIGINT "
+          << m_procEventColumn.at(ProcEventColumn::ChildTGID) << " BIGINT "
+          << m_procEventColumn.at(ProcEventColumn::ExitCode) << " BIGINT "
+          << m_procEventColumn.at(ProcEventColumn::ProcessRID) << " BIGINT "
+          << m_procEventColumn.at(ProcEventColumn::ProcessEID) << " BIGINT "
+          << m_procEventColumn.at(ProcEventColumn::SessionId) << " INTEGER NOT NULL, ";
     }
-    out << m_procEventColumn.at(ProcEventColumn::Timestamp) << " INTEGER NOT NULL, "
-        << m_procEventColumn.at(ProcEventColumn::RecvTime) << " INTEGER NOT NULL, "
-        << m_procEventColumn.at(ProcEventColumn::What) << " TEXT NOT NULL, "
-        << m_procEventColumn.at(ProcEventColumn::ProcessPID) << " INTEGER, "
-        << m_procEventColumn.at(ProcEventColumn::ProcessTGID) << " INTEGER, "
-        << m_procEventColumn.at(ProcEventColumn::ParentPID) << " INTEGER, "
-        << m_procEventColumn.at(ProcEventColumn::ParentTGID) << " INTEGER, "
-        << m_procEventColumn.at(ProcEventColumn::ChildPID) << " INTEGER, "
-        << m_procEventColumn.at(ProcEventColumn::ChildTGID) << " INTEGER, "
-        << m_procEventColumn.at(ProcEventColumn::ExitCode) << " INTEGER, "
-        << m_procEventColumn.at(ProcEventColumn::ProcessRID) << " INTEGER, "
-        << m_procEventColumn.at(ProcEventColumn::ProcessEID) << " INTEGER, "
-        << m_procEventColumn.at(ProcEventColumn::SessionId) << " INTEGER NOT NULL, "
-        << "CONSTRAINT KFSession FOREIGN KEY(" << m_procEventColumn.at(ProcEventColumn::SessionId)
+    out << "CONSTRAINT KFSession FOREIGN KEY(" << m_procEventColumn.at(ProcEventColumn::SessionId)
         << ") REFERENCES " << m_sessionsTableName << "(" << m_sessionColumn.at(SessionColumn::Id)
         << ") ON DELETE CASCADE);";
 
     // SysProcStat table
     out << "CREATE TABLE IF NOT EXISTS " << m_sysProcStatTableName << " (";
     if (type == Query::Type::SQLite3) {
-      out << m_deviceColumn.at(DeviceColumn::Id) << " INTEGER PRIMARY KEY, ";
+      out << m_sysProcStatColumn.at(SysProcStatColumn::Id) << " INTEGER PRIMARY KEY, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::Timestamp) << " INTEGER NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::RecvTime) << " INTEGER NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatName) << " TEXT NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatAll) << " INTEGER NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatUsr) << " INTEGER NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatSys) << " INTEGER NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << " INTEGER NOT NULL, ";
     } else {
-      out << m_deviceColumn.at(DeviceColumn::Id) << " SERIAL PRIMARY KEY, ";
+      out << m_sysProcStatColumn.at(SysProcStatColumn::Id) << " SERIAL PRIMARY KEY, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::Timestamp) << " BIGINT NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::RecvTime) << " BIGINT NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatName) << " TEXT NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatAll) << " BIGINT NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatUsr) << " BIGINT NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatSys) << " BIGINT NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << " INTEGER NOT NULL, ";
     }
-    out << m_sysProcStatColumn.at(SysProcStatColumn::Timestamp) << " INTEGER NOT NULL, "
-        << m_sysProcStatColumn.at(SysProcStatColumn::RecvTime) << " INTEGER NOT NULL, "
-        << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatName) << " TEXT NOT NULL, "
-        << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatAll) << " INTEGER NOT NULL, "
-        << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatUsr) << " INTEGER NOT NULL, "
-        << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatSys) << " INTEGER NOT NULL, "
-        << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << " INTEGER NOT NULL, "
-        << "CONSTRAINT KFSession FOREIGN KEY("
+    out << "CONSTRAINT KFSession FOREIGN KEY("
         << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << ") REFERENCES "
         << m_sessionsTableName << "(" << m_sessionColumn.at(SessionColumn::Id)
+        << ") ON DELETE CASCADE);";
+
+    // SysProcMeminfo table
+    out << "CREATE TABLE IF NOT EXISTS " << m_sysProcMeminfoTableName << " (";
+    if (type == Query::Type::SQLite3) {
+      out << m_sysProcMemColumn.at(SysProcMemColumn::Id) << " INTEGER PRIMARY KEY, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::Timestamp) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::RecvTime) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::MemTotal) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::MemFree) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::MemAvail) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::MemCached) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::MemAvailPercent) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::SwapTotal) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::SwapFree) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::SwapCached) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::SwapFreePercent) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::SessionId) << " INTEGER NOT NULL, ";
+    } else {
+      out << m_sysProcMemColumn.at(SysProcMemColumn::Id) << " SERIAL PRIMARY KEY, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::Timestamp) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::RecvTime) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::MemTotal) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::MemFree) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::MemAvail) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::MemCached) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::MemAvailPercent) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::SwapTotal) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::SwapFree) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::SwapCached) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::SwapFreePercent) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::SessionId) << " INTEGER NOT NULL, ";
+    }
+    out << "CONSTRAINT KFSession FOREIGN KEY(" << m_sysProcMemColumn.at(SysProcMemColumn::SessionId)
+        << ") REFERENCES " << m_sessionsTableName << "(" << m_sessionColumn.at(SessionColumn::Id)
         << ") ON DELETE CASCADE);";
 
     // SysProcPressure table
     out << "CREATE TABLE IF NOT EXISTS " << m_sysProcPressureTableName << " (";
     if (type == Query::Type::SQLite3) {
-      out << m_deviceColumn.at(DeviceColumn::Id) << " INTEGER PRIMARY KEY, ";
+      out << m_sysProcPressureColumn.at(SysProcPressureColumn::Id) << " INTEGER PRIMARY KEY, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::Timestamp) << " INTEGER NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::RecvTime) << " INTEGER NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg10) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg60) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg300) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeTotal)
+          << " INTEGER NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg10) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg60) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg300) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullTotal)
+          << " INTEGER NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg10) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg60) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg300) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeTotal)
+          << " INTEGER NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg10) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg60) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg300) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullTotal)
+          << " INTEGER NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg10)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg60)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg300)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeTotal)
+          << " INTEGER NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg10)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg60)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg300)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullTotal)
+          << " INTEGER NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::SessionId)
+          << " INTEGER NOT NULL, ";
     } else {
-      out << m_deviceColumn.at(DeviceColumn::Id) << " SERIAL PRIMARY KEY, ";
+      out << m_sysProcPressureColumn.at(SysProcPressureColumn::Id) << " SERIAL PRIMARY KEY, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::Timestamp) << " BIGINT NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::RecvTime) << " BIGINT NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg10) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg60) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg300) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeTotal) << " BIGINT NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg10) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg60) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg300) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullTotal) << " BIGINT NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg10) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg60) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg300) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeTotal) << " BIGINT NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg10) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg60) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg300) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullTotal) << " BIGINT NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg10) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg60) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg300) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeTotal) << " BIGINT NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg10) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg60) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg300) << " REAL NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullTotal) << " BIGINT NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::SessionId) << " INTEGER NOT NULL, ";
     }
-    out << m_sysProcPressureColumn.at(SysProcPressureColumn::Timestamp) << " INTEGER NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::RecvTime) << " INTEGER NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg10) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg60) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg300) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeTotal) << " INTEGER NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg10) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg60) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg300) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullTotal) << " INTEGER NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg10) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg60) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg300) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeTotal) << " INTEGER NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg10) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg60) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg300) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullTotal) << " INTEGER NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg10) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg60) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg300) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeTotal) << " INTEGER NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg10) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg60) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg300) << " REAL NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullTotal) << " INTEGER NOT NULL, "
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::SessionId) << " INTEGER NOT NULL, "
-        << "CONSTRAINT KFSession FOREIGN KEY("
+    out << "CONSTRAINT KFSession FOREIGN KEY("
         << m_sysProcPressureColumn.at(SysProcPressureColumn::SessionId) << ") REFERENCES "
         << m_sessionsTableName << "(" << m_sessionColumn.at(SessionColumn::Id)
         << ") ON DELETE CASCADE);";
@@ -133,46 +225,81 @@ auto Query::createTables(Query::Type type) -> std::string
     // ProcAcct table
     out << "CREATE TABLE IF NOT EXISTS " << m_procAcctTableName << " (";
     if (type == Query::Type::SQLite3) {
-      out << m_deviceColumn.at(DeviceColumn::Id) << " INTEGER PRIMARY KEY, ";
+      out << m_procAcctColumn.at(ProcAcctColumn::Id) << " INTEGER PRIMARY KEY, "
+          << m_procAcctColumn.at(ProcAcctColumn::Timestamp) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::RecvTime) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::AcComm) << " TEXT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::AcUid) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::AcGid) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::AcPid) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::AcPPid) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::AcUTime) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::AcSTime) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::UserCpuPercent) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::SysCpuPercent) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::CpuCount) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::CpuRunRealTotal) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::CpuRunVirtualTotal) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::CpuDelayTotal) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::CpuDelayAverage) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::CoreMem) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::VirtMem) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::HiwaterRss) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::HiwaterVm) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::Nvcsw) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::Nivcsw) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::SwapinCount) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::SwapinDelayTotal) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::SwapinDelayAverage) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::BlkIOCount) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::BlkIODelayTotal) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::BlkIODelayAverage) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::FreePagesCount) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::FreePagesDelayTotal) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::FreePagesDelayAverage) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::ThrashingCount) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::ThrashingDelayTotal) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::ThrashingDelayAverage) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::SessionId) << " INTEGER NOT NULL, ";
     } else {
-      out << m_deviceColumn.at(DeviceColumn::Id) << " SERIAL PRIMARY KEY, ";
+      out << m_procAcctColumn.at(ProcAcctColumn::Id) << " SERIAL PRIMARY KEY, "
+          << m_procAcctColumn.at(ProcAcctColumn::Timestamp) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::RecvTime) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::AcComm) << " TEXT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::AcUid) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::AcGid) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::AcPid) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::AcPPid) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::AcUTime) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::AcSTime) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::UserCpuPercent) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::SysCpuPercent) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::CpuCount) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::CpuRunRealTotal) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::CpuRunVirtualTotal) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::CpuDelayTotal) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::CpuDelayAverage) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::CoreMem) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::VirtMem) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::HiwaterRss) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::HiwaterVm) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::Nvcsw) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::Nivcsw) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::SwapinCount) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::SwapinDelayTotal) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::SwapinDelayAverage) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::BlkIOCount) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::BlkIODelayTotal) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::BlkIODelayAverage) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::FreePagesCount) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::FreePagesDelayTotal) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::FreePagesDelayAverage) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::ThrashingCount) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::ThrashingDelayTotal) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::ThrashingDelayAverage) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::SessionId) << " INTEGER NOT NULL, ";
     }
-    out << m_procAcctColumn.at(ProcAcctColumn::Timestamp) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::RecvTime) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::AcComm) << " TEXT NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::AcUid) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::AcGid) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::AcPid) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::AcPPid) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::AcUTime) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::AcSTime) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::UserCpuPercent) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::SysCpuPercent) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::CpuCount) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::CpuRunRealTotal) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::CpuRunVirtualTotal) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::CpuDelayTotal) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::CpuDelayAverage) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::CoreMem) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::VirtMem) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::HiwaterRss) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::HiwaterVm) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::Nvcsw) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::Nivcsw) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::SwapinCount) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::SwapinDelayTotal) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::SwapinDelayAverage) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::BlkIOCount) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::BlkIODelayTotal) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::BlkIODelayAverage) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::FreePagesCount) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::FreePagesDelayTotal) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::FreePagesDelayAverage) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::ThrashingCount) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::ThrashingDelayTotal) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::ThrashingDelayAverage) << " INTEGER NOT NULL, "
-        << m_procAcctColumn.at(ProcAcctColumn::SessionId) << " INTEGER NOT NULL, "
-        << "CONSTRAINT KFSession FOREIGN KEY(" << m_procAcctColumn.at(ProcAcctColumn::SessionId)
+    out << "CONSTRAINT KFSession FOREIGN KEY(" << m_procAcctColumn.at(ProcAcctColumn::SessionId)
         << ") REFERENCES " << m_sessionsTableName << "(" << m_sessionColumn.at(SessionColumn::Id)
         << ") ON DELETE CASCADE);";
   }
@@ -188,6 +315,7 @@ auto Query::dropTables(Query::Type type) -> std::string
     out << "DROP TABLE IF EXISTS " << m_devicesTableName << ";";
     out << "DROP TABLE IF EXISTS " << m_sessionsTableName << ";";
     out << "DROP TABLE IF EXISTS " << m_sysProcStatTableName << ";";
+    out << "DROP TABLE IF EXISTS " << m_sysProcMeminfoTableName << ";";
     out << "DROP TABLE IF EXISTS " << m_sysProcPressureTableName << ";";
     out << "DROP TABLE IF EXISTS " << m_procAcctTableName << ";";
     out << "DROP TABLE IF EXISTS " << m_procEventTableName << ";";
@@ -195,6 +323,7 @@ auto Query::dropTables(Query::Type type) -> std::string
     out << "DROP TABLE IF EXISTS " << m_devicesTableName << " CASCADE;";
     out << "DROP TABLE IF EXISTS " << m_sessionsTableName << " CASCADE;";
     out << "DROP TABLE IF EXISTS " << m_sysProcStatTableName << " CASCADE;";
+    out << "DROP TABLE IF EXISTS " << m_sysProcMeminfoTableName << " CASCADE;";
     out << "DROP TABLE IF EXISTS " << m_sysProcPressureTableName << " CASCADE;";
     out << "DROP TABLE IF EXISTS " << m_procAcctTableName << " CASCADE;";
     out << "DROP TABLE IF EXISTS " << m_procEventTableName << " CASCADE;";
@@ -553,6 +682,48 @@ auto Query::addData(Query::Type type,
         << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << ") VALUES ('" << ts << "', '"
         << recvTime << "', '" << sysProcStat.cpu().name() << "', '" << sysProcStat.cpu().all()
         << "', '" << sysProcStat.cpu().usr() << "', '" << sysProcStat.cpu().sys() << "', ";
+
+    if (type == Query::Type::SQLite3) {
+      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+          << "'" << sessionHash << "' AND EndTimestamp = 0));";
+    } else {
+      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
+          << "'" << sessionHash << "' AND EndTimestamp = 0));";
+    }
+  }
+
+  return out.str();
+}
+
+auto Query::addData(Query::Type type,
+                    const std::string &sessionHash,
+                    const tkm::msg::server::SysProcMeminfo &sysProcMem,
+                    uint64_t ts,
+                    uint64_t recvTime) -> std::string
+{
+  std::stringstream out;
+
+  if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
+    out << "INSERT INTO " << m_sysProcMeminfoTableName << " ("
+        << m_sysProcMemColumn.at(SysProcMemColumn::Timestamp) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::RecvTime) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::MemTotal) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::MemFree) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::MemAvail) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::MemCached) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::MemAvailPercent) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::SwapTotal) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::SwapFree) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::SwapCached) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::SwapFreePercent) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::SessionId) << ") VALUES ('" << ts << "', '"
+        << recvTime << "', '" << sysProcMem.mem_total() << "', '" << sysProcMem.mem_free() << "', '"
+        << sysProcMem.mem_available() << "', '" << sysProcMem.mem_cached() << "', '"
+        << sysProcMem.mem_percent() << "', '" << sysProcMem.swap_total() << "', '"
+        << sysProcMem.swap_free() << "', '" << sysProcMem.swap_cached() << "', '"
+        << sysProcMem.swap_percent() << "', ";
 
     if (type == Query::Type::SQLite3) {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName

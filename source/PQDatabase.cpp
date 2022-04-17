@@ -26,7 +26,6 @@
 
 using std::shared_ptr;
 using std::string;
-namespace fs = std::filesystem;
 
 namespace tkm::collector
 {
@@ -714,7 +713,6 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
                                            const tkm::msg::server::ProcAcct &acct,
                                            uint64_t ts,
                                            uint64_t recvTime) {
-    logDebug() << "Add ProcAcct entry for session: " << sessionHash;
     try {
       db->runTransaction(
           tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, acct, ts, recvTime));
@@ -728,10 +726,22 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
                                               const tkm::msg::server::SysProcStat &sysProcStat,
                                               uint64_t ts,
                                               uint64_t recvTime) {
-    logDebug() << "Add SysProcStat entry for session: " << sessionHash;
     try {
       db->runTransaction(
           tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, sysProcStat, ts, recvTime));
+    } catch (std::exception &e) {
+      logError() << "Query failed to addData. Database query fails: " << e.what();
+      status = false;
+    }
+  };
+
+  auto writeSysProcMeminfo = [&db, &rq, &status](const std::string &sessionHash,
+                                                 const tkm::msg::server::SysProcMeminfo &sysProcMem,
+                                                 uint64_t ts,
+                                                 uint64_t recvTime) {
+    try {
+      db->runTransaction(
+          tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, sysProcMem, ts, recvTime));
     } catch (std::exception &e) {
       logError() << "Query failed to addData. Database query fails: " << e.what();
       status = false;
@@ -743,7 +753,6 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
                                   const tkm::msg::server::SysProcPressure &sysProcPressure,
                                   uint64_t ts,
                                   uint64_t recvTime) {
-    logDebug() << "Add SysProcPressure entry for session: " << sessionHash;
     try {
       db->runTransaction(
           tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, sysProcPressure, ts, recvTime));
@@ -757,7 +766,6 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
                                             const tkm::msg::server::ProcEvent &procEvent,
                                             uint64_t ts,
                                             uint64_t recvTime) {
-    logDebug() << "Add ProcEvent entry for session: " << sessionHash;
     try {
       db->runTransaction(
           tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, procEvent, ts, recvTime));
@@ -787,6 +795,13 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
     data.payload().UnpackTo(&sysProcStat);
     writeSysProcStat(
         rq.args.at(Defaults::Arg::SessionHash), sysProcStat, data.timestamp(), data.recvtime());
+    break;
+  }
+  case tkm::msg::server::Data_What_SysProcMeminfo: {
+    tkm::msg::server::SysProcMeminfo sysProcMem;
+    data.payload().UnpackTo(&sysProcMem);
+    writeSysProcMeminfo(
+        rq.args.at(Defaults::Arg::SessionHash), sysProcMem, data.timestamp(), data.recvtime());
     break;
   }
   case tkm::msg::server::Data_What_SysProcPressure: {

@@ -646,7 +646,6 @@ static bool doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Req
                                                    const tkm::msg::server::ProcAcct &acct,
                                                    uint64_t ts,
                                                    uint64_t recvTime) {
-    logDebug() << "Add ProcAcct entry for session: " << sessionHash;
     status = db->runQuery(tkmQuery.addData(Query::Type::SQLite3, sessionHash, acct, ts, recvTime),
                           query);
   };
@@ -656,9 +655,17 @@ static bool doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Req
                                   const tkm::msg::server::SysProcStat &sysProcStat,
                                   uint64_t ts,
                                   uint64_t recvTime) {
-        logDebug() << "Add SysProcStat entry for session: " << sessionHash;
         status = db->runQuery(
             tkmQuery.addData(Query::Type::SQLite3, sessionHash, sysProcStat, ts, recvTime), query);
+      };
+
+  auto writeSysProcMeminfo =
+      [&db, &rq, &status, &query](const std::string &sessionHash,
+                                  const tkm::msg::server::SysProcMeminfo &sysProcMem,
+                                  uint64_t ts,
+                                  uint64_t recvTime) {
+        status = db->runQuery(
+            tkmQuery.addData(Query::Type::SQLite3, sessionHash, sysProcMem, ts, recvTime), query);
       };
 
   auto writeSysProcPressure = [&db, &rq, &status, &query](
@@ -666,7 +673,6 @@ static bool doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Req
                                   const tkm::msg::server::SysProcPressure &sysProcPressure,
                                   uint64_t ts,
                                   uint64_t recvTime) {
-    logDebug() << "Add SysProcPressure entry for session: " << sessionHash;
     status = db->runQuery(
         tkmQuery.addData(Query::Type::SQLite3, sessionHash, sysProcPressure, ts, recvTime), query);
   };
@@ -675,7 +681,6 @@ static bool doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Req
                                                     const tkm::msg::server::ProcEvent &procEvent,
                                                     uint64_t ts,
                                                     uint64_t recvTime) {
-    logDebug() << "Add ProcEvent entry for session: " << sessionHash;
     status = db->runQuery(
         tkmQuery.addData(Query::Type::SQLite3, sessionHash, procEvent, ts, recvTime), query);
   };
@@ -700,6 +705,13 @@ static bool doAddData(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Req
     data.payload().UnpackTo(&sysProcStat);
     writeSysProcStat(
         rq.args.at(Defaults::Arg::SessionHash), sysProcStat, data.timestamp(), data.recvtime());
+    break;
+  }
+  case tkm::msg::server::Data_What_SysProcMeminfo: {
+    tkm::msg::server::SysProcMeminfo sysProcMem;
+    data.payload().UnpackTo(&sysProcMem);
+    writeSysProcMeminfo(
+        rq.args.at(Defaults::Arg::SessionHash), sysProcMem, data.timestamp(), data.recvtime());
     break;
   }
   case tkm::msg::server::Data_What_SysProcPressure: {

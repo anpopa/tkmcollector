@@ -60,6 +60,11 @@ public:
                uint64_t recvTime) -> std::string;
   auto addData(Query::Type type,
                const std::string &sessionHash,
+               const tkm::msg::server::SysProcMeminfo &sysProcMem,
+               uint64_t ts,
+               uint64_t recvTime) -> std::string;
+  auto addData(Query::Type type,
+               const std::string &sessionHash,
                const tkm::msg::server::SysProcPressure &sysProcPressure,
                uint64_t ts,
                uint64_t recvTime) -> std::string;
@@ -159,6 +164,37 @@ public:
       std::make_pair(SysProcStatColumn::CPUStatUsr, "CPUStatUsr"),
       std::make_pair(SysProcStatColumn::CPUStatSys, "CPUStatSys"),
       std::make_pair(SysProcStatColumn::SessionId, "SessionId"),
+  };
+
+  enum class SysProcMemColumn {
+    Id,              // int: Primary key
+    Timestamp,       // int: Timestamp
+    RecvTime,        // int: Timestamp
+    MemTotal,        // int: CPUStat.all
+    MemFree,         // int: CPUStat.all
+    MemAvail,        // int: CPUStat.all
+    MemCached,       // int: CPUStat.all
+    MemAvailPercent, // int: CPUStat.all
+    SwapTotal,       // int: CPUStat.all
+    SwapFree,        // int: CPUStat.all
+    SwapCached,      // int: CPUStat.all
+    SwapFreePercent, // int: CPUStat.all
+    SessionId,       // int: Session id key
+  };
+  const std::map<SysProcMemColumn, std::string> m_sysProcMemColumn{
+      std::make_pair(SysProcMemColumn::Id, "Id"),
+      std::make_pair(SysProcMemColumn::Timestamp, "Timestamp"),
+      std::make_pair(SysProcMemColumn::RecvTime, "RecvTime"),
+      std::make_pair(SysProcMemColumn::MemTotal, "MemTotal"),
+      std::make_pair(SysProcMemColumn::MemFree, "MemFree"),
+      std::make_pair(SysProcMemColumn::MemAvail, "MemAvail"),
+      std::make_pair(SysProcMemColumn::MemCached, "MemCached"),
+      std::make_pair(SysProcMemColumn::MemAvailPercent, "MemAvailPercent"),
+      std::make_pair(SysProcMemColumn::SwapTotal, "SwapTotal"),
+      std::make_pair(SysProcMemColumn::SwapFree, "SwapFree"),
+      std::make_pair(SysProcMemColumn::SwapCached, "SwapCached"),
+      std::make_pair(SysProcMemColumn::SwapFreePercent, "SwapFreePercent"),
+      std::make_pair(SysProcMemColumn::SessionId, "SessionId"),
   };
 
   enum class SysProcPressureColumn {
@@ -302,6 +338,7 @@ public:
   const std::string m_devicesTableName = "tkmDevices";
   const std::string m_sessionsTableName = "tkmSessions";
   const std::string m_sysProcStatTableName = "tkmSysProcStat";
+  const std::string m_sysProcMeminfoTableName = "tkmSysProcMeminfo";
   const std::string m_sysProcPressureTableName = "tkmSysProcPressure";
   const std::string m_procAcctTableName = "tkmProcAcct";
   const std::string m_procEventTableName = "tkmProcEvent";
