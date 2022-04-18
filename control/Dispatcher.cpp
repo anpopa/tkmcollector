@@ -279,7 +279,7 @@ static bool doRemoveSession(const shared_ptr<Dispatcher> &mgr, const Dispatcher:
   requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Collector);
   requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Control);
 
-  logDebug() << "Request remove session for: " << rq.args.at(Defaults::Arg::DeviceHash);
+  logDebug() << "Request remove session for: " << rq.args.at(Defaults::Arg::SessionHash);
   return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
