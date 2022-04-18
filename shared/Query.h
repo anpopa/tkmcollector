@@ -97,8 +97,8 @@ public:
 
   enum class SessionColumn {
     Id,             // int: Primary key
-    Hash,           // str: Unique device hash
     Name,           // str: Device name
+    Hash,           // str: Unique device hash
     StartTimestamp, // int: Start timestamp
     EndTimestamp,   // int: End timestamp
     Device,         // int: Device id key
