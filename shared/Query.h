@@ -148,7 +148,7 @@ public:
   enum class SysProcStatColumn {
     Id,          // int: Primary key
     Timestamp,   // int: Timestamp
-    RecvTime,    // int: Timestamp
+    RecvTime,    // int: RecvTime
     CPUStatName, // str: CPUStat.name
     CPUStatAll,  // int: CPUStat.all
     CPUStatUsr,  // int: CPUStat.usr
@@ -169,16 +169,16 @@ public:
   enum class SysProcMemColumn {
     Id,              // int: Primary key
     Timestamp,       // int: Timestamp
-    RecvTime,        // int: Timestamp
-    MemTotal,        // int: CPUStat.all
-    MemFree,         // int: CPUStat.all
-    MemAvail,        // int: CPUStat.all
-    MemCached,       // int: CPUStat.all
-    MemAvailPercent, // int: CPUStat.all
-    SwapTotal,       // int: CPUStat.all
-    SwapFree,        // int: CPUStat.all
-    SwapCached,      // int: CPUStat.all
-    SwapFreePercent, // int: CPUStat.all
+    RecvTime,        // int: RecvTime
+    MemTotal,        // int: MemTotal
+    MemFree,         // int: MemFree
+    MemAvail,        // int: MemAvail
+    MemCached,       // int: MemCached
+    MemAvailPercent, // int: MemAvailPercent
+    SwapTotal,       // int: SwapTotal
+    SwapFree,        // int: SwapFree
+    SwapCached,      // int: SwapCached
+    SwapFreePercent, // int: SwapFreePercent
     SessionId,       // int: Session id key
   };
   const std::map<SysProcMemColumn, std::string> m_sysProcMemColumn{
@@ -269,8 +269,7 @@ public:
     AcPPid,                // int: ac_ppid
     AcUTime,               // int: ac_utime
     AcSTime,               // int: ac_stime
-    UserCpuPercent,        // int: user_cpu_percent
-    SysCpuPercent,         // int: sys_cpu_percent
+    CpuPercent,            // int: cpu usage percent
     CpuCount,              // int: cpu_count
     CpuRunRealTotal,       // int: cpu_run_real_total
     CpuRunVirtualTotal,    // int: cpu_run_virtual_total
@@ -288,6 +287,12 @@ public:
     BlkIOCount,            // int: blkio_count
     BlkIODelayTotal,       // int: blkio_delay_total
     BlkIODelayAverage,     // int: blkio_delay_average
+    IOStorageReadBytes,    // int: Storage read bytes
+    IOStorageWriteBytes,   // int: Storage write bytes
+    IOReadChar,            // int: IO read bytes
+    IOWriteChar,           // int: IO write bytes
+    IOReadSyscalls,        // int: IO read syscalls
+    IOWriteSyscalls,       // int: IO write syscalls
     FreePagesCount,        // int: freepages_count
     FreePagesDelayTotal,   // int: freepages_delay_total
     FreePagesDelayAverage, // int: freepages_delay_average
@@ -307,8 +312,7 @@ public:
       std::make_pair(ProcAcctColumn::AcPPid, "AcPPid"),
       std::make_pair(ProcAcctColumn::AcUTime, "AcUTime"),
       std::make_pair(ProcAcctColumn::AcSTime, "AcSTime"),
-      std::make_pair(ProcAcctColumn::UserCpuPercent, "UserCpuPercent"),
-      std::make_pair(ProcAcctColumn::SysCpuPercent, "SysCpuPercent"),
+      std::make_pair(ProcAcctColumn::CpuPercent, "CpuPercent"),
       std::make_pair(ProcAcctColumn::CpuCount, "CpuCount"),
       std::make_pair(ProcAcctColumn::CpuRunRealTotal, "CpuRunRealTotal"),
       std::make_pair(ProcAcctColumn::CpuRunVirtualTotal, "CpuRunVirtualTotal"),
@@ -326,6 +330,12 @@ public:
       std::make_pair(ProcAcctColumn::BlkIOCount, "BlkIOCount"),
       std::make_pair(ProcAcctColumn::BlkIODelayTotal, "BlkIODelayTotal"),
       std::make_pair(ProcAcctColumn::BlkIODelayAverage, "BlkIODelayAverage"),
+      std::make_pair(ProcAcctColumn::IOStorageReadBytes, "IOStorageReadBytes"),
+      std::make_pair(ProcAcctColumn::IOStorageWriteBytes, "IOStorageWriteBytes"),
+      std::make_pair(ProcAcctColumn::IOReadChar, "IOReadChar"),
+      std::make_pair(ProcAcctColumn::IOWriteChar, "IOWriteChar"),
+      std::make_pair(ProcAcctColumn::IOReadSyscalls, "IOReadSyscalls"),
+      std::make_pair(ProcAcctColumn::IOWriteSyscalls, "IOWriteSyscalls"),
       std::make_pair(ProcAcctColumn::FreePagesCount, "FreePagesCount"),
       std::make_pair(ProcAcctColumn::FreePagesDelayTotal, "FreePagesDelayTotal"),
       std::make_pair(ProcAcctColumn::FreePagesDelayAverage, "FreePagesDelayAverage"),
