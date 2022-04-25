@@ -266,7 +266,7 @@ static bool doStartStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDev
     mgr->getProcAcctTimer().reset();
     mgr->getProcAcctTimer() = nullptr;
   }
-  mgr->getProcAcctTimer() = std::make_shared<Timer>("ProcAcctTimer", [&mgr]() {
+  mgr->getProcAcctTimer() = std::make_shared<Timer>("ProcAcctTimer", [mgr]() {
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
@@ -291,7 +291,7 @@ static bool doStartStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDev
     mgr->getSysProcStatTimer().reset();
     mgr->getSysProcStatTimer() = nullptr;
   }
-  mgr->getSysProcStatTimer() = std::make_shared<Timer>("SysProcStatTimer", [&mgr]() {
+  mgr->getSysProcStatTimer() = std::make_shared<Timer>("SysProcStatTimer", [mgr]() {
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
@@ -316,7 +316,7 @@ static bool doStartStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDev
     mgr->getSysProcMemInfoTimer().reset();
     mgr->getSysProcMemInfoTimer() = nullptr;
   }
-  mgr->getSysProcMemInfoTimer() = std::make_shared<Timer>("SysProcMemInfoTimer", [&mgr]() {
+  mgr->getSysProcMemInfoTimer() = std::make_shared<Timer>("SysProcMemInfoTimer", [mgr]() {
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
@@ -342,7 +342,7 @@ static bool doStartStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDev
     mgr->getSysProcPressureTimer().reset();
     mgr->getSysProcPressureTimer() = nullptr;
   }
-  mgr->getSysProcPressureTimer() = std::make_shared<Timer>("SysProcPressureTimer", [&mgr]() {
+  mgr->getSysProcPressureTimer() = std::make_shared<Timer>("SysProcPressureTimer", [mgr]() {
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
