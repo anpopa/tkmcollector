@@ -8,7 +8,7 @@
 #include "IClient.h"
 #include "Options.h"
 
-#include "Collector.pb.h"
+#include "Control.pb.h"
 
 using namespace bswi::log;
 using namespace bswi::event;

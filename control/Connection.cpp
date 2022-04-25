@@ -19,7 +19,7 @@
 #include "Defaults.h"
 #include "Helpers.h"
 
-#include "Collector.pb.h"
+#include "Control.pb.h"
 
 namespace fs = std::filesystem;
 using std::shared_ptr;
@@ -62,46 +62,46 @@ Connection::Connection()
             continue;
           }
 
-          tkm::msg::collector::Message msg;
+          tkm::msg::control::Message msg;
           envelope.mesg().UnpackTo(&msg);
 
           switch (msg.type()) {
-          case tkm::msg::collector::Message_Type_SetSession: {
+          case tkm::msg::control::Message_Type_SetSession: {
             Dispatcher::Request rq{.action = Dispatcher::Action::SetSession};
-            tkm::msg::collector::SessionInfo sessionInfo;
+            tkm::msg::control::SessionInfo sessionInfo;
 
             msg.data().UnpackTo(&sessionInfo);
-            rq.bulkData = std::make_any<tkm::msg::collector::SessionInfo>(sessionInfo);
+            rq.bulkData = std::make_any<tkm::msg::control::SessionInfo>(sessionInfo);
 
             ControlApp()->getDispatcher()->pushRequest(rq);
             break;
           }
-          case tkm::msg::collector::Message_Type_Status: {
+          case tkm::msg::control::Message_Type_Status: {
             Dispatcher::Request rq{.action = Dispatcher::Action::CollectorStatus};
-            tkm::msg::collector::Status data;
+            tkm::msg::control::Status data;
 
             msg.data().UnpackTo(&data);
-            rq.bulkData = std::make_any<tkm::msg::collector::Status>(data);
+            rq.bulkData = std::make_any<tkm::msg::control::Status>(data);
 
             ControlApp()->getDispatcher()->pushRequest(rq);
             break;
           }
-          case tkm::msg::collector::Message_Type_DeviceList: {
+          case tkm::msg::control::Message_Type_DeviceList: {
             Dispatcher::Request rq{.action = Dispatcher::Action::DeviceList};
-            tkm::msg::collector::DeviceList deviceList;
+            tkm::msg::control::DeviceList deviceList;
 
             msg.data().UnpackTo(&deviceList);
-            rq.bulkData = std::make_any<tkm::msg::collector::DeviceList>(deviceList);
+            rq.bulkData = std::make_any<tkm::msg::control::DeviceList>(deviceList);
 
             ControlApp()->getDispatcher()->pushRequest(rq);
             break;
           }
-          case tkm::msg::collector::Message_Type_SessionList: {
+          case tkm::msg::control::Message_Type_SessionList: {
             Dispatcher::Request rq{.action = Dispatcher::Action::SessionList};
-            tkm::msg::collector::SessionList sessionList;
+            tkm::msg::control::SessionList sessionList;
 
             msg.data().UnpackTo(&sessionList);
-            rq.bulkData = std::make_any<tkm::msg::collector::SessionList>(sessionList);
+            rq.bulkData = std::make_any<tkm::msg::control::SessionList>(sessionList);
 
             ControlApp()->getDispatcher()->pushRequest(rq);
             break;

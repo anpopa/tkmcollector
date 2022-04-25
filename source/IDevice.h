@@ -18,10 +18,9 @@
 #include "IClient.h"
 
 #include "../bswinfra/source/AsyncQueue.h"
-#include "../bswinfra/source/Exceptions.h"
-#include "../bswinfra/source/Logger.h"
+#include "../bswinfra/source/Timer.h"
 
-#include "Collector.pb.h"
+#include "Control.pb.h"
 
 using namespace bswi::event;
 
@@ -63,19 +62,19 @@ public:
   virtual void enableConnection() = 0;
   virtual void deleteConnection() = 0;
 
-  auto getDeviceData() -> tkm::msg::collector::DeviceData & { return m_deviceData; }
-  auto getSessionData() -> tkm::msg::collector::SessionData & { return m_sessionData; }
+  auto getDeviceData() -> tkm::msg::control::DeviceData & { return m_deviceData; }
+  auto getSessionData() -> tkm::msg::control::SessionData & { return m_sessionData; }
 
   virtual bool pushRequest(Request &request) = 0;
-  virtual void updateState(tkm::msg::collector::DeviceData_State state) = 0;
+  virtual void updateState(tkm::msg::control::DeviceData_State state) = 0;
 
 protected:
   virtual bool requestHandler(const Request &request) = 0;
 
 protected:
   std::shared_ptr<AsyncQueue<Request>> m_queue = nullptr;
-  tkm::msg::collector::DeviceData m_deviceData{};
-  tkm::msg::collector::SessionData m_sessionData{};
+  tkm::msg::control::DeviceData m_deviceData{};
+  tkm::msg::control::SessionData m_sessionData{};
 };
 
 } // namespace tkm::collector

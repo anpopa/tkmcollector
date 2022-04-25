@@ -18,7 +18,7 @@
 
 #include "../bswinfra/source/Timer.h"
 
-#include "Collector.pb.h"
+#include "Control.pb.h"
 
 using std::shared_ptr;
 using std::string;
@@ -137,7 +137,7 @@ static bool doRemoveDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::
 
 static bool doConnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
-  const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
+  const auto &deviceData = std::any_cast<tkm::msg::control::DeviceData>(rq.bulkData);
   std::shared_ptr<MonitorDevice> device =
       CollectorApp()->getDeviceManager()->getDevice(deviceData.hash());
 
@@ -161,7 +161,7 @@ static bool doConnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher:
 
 static bool doDisconnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
-  const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
+  const auto &deviceData = std::any_cast<tkm::msg::control::DeviceData>(rq.bulkData);
   std::shared_ptr<MonitorDevice> device =
       CollectorApp()->getDeviceManager()->getDevice(deviceData.hash());
 
@@ -185,7 +185,7 @@ static bool doDisconnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatch
 
 static bool doStartCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
-  const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
+  const auto &deviceData = std::any_cast<tkm::msg::control::DeviceData>(rq.bulkData);
   std::shared_ptr<MonitorDevice> device =
       CollectorApp()->getDeviceManager()->getDevice(deviceData.hash());
 
@@ -209,7 +209,7 @@ static bool doStartCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatche
 
 static bool doStopCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
-  const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
+  const auto &deviceData = std::any_cast<tkm::msg::control::DeviceData>(rq.bulkData);
   std::shared_ptr<MonitorDevice> device =
       CollectorApp()->getDeviceManager()->getDevice(deviceData.hash());
 
@@ -253,20 +253,20 @@ static bool doSendStatus(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Re
   }
 
   tkm::msg::Envelope envelope;
-  tkm::msg::collector::Message message;
-  tkm::msg::collector::Status status;
+  tkm::msg::control::Message message;
+  tkm::msg::control::Status status;
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
-    status.set_requestid(rq.args.at(Defaults::Arg::RequestId));
+    status.set_request_id(rq.args.at(Defaults::Arg::RequestId));
   }
 
   if (rq.args.count(Defaults::Arg::Status)) {
     if (rq.args.at(Defaults::Arg::Status) == tkmDefaults.valFor(Defaults::Val::StatusOkay)) {
-      status.set_what(tkm::msg::collector::Status_What_OK);
+      status.set_what(tkm::msg::control::Status_What_OK);
     } else if (rq.args.at(Defaults::Arg::Status) == tkmDefaults.valFor(Defaults::Val::StatusBusy)) {
-      status.set_what(tkm::msg::collector::Status_What_Busy);
+      status.set_what(tkm::msg::control::Status_What_Busy);
     } else {
-      status.set_what(tkm::msg::collector::Status_What_Error);
+      status.set_what(tkm::msg::control::Status_What_Error);
     }
   }
 
@@ -275,7 +275,7 @@ static bool doSendStatus(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Re
   }
 
   // As response to client registration request we ask client to send descriptor
-  message.set_type(tkm::msg::collector::Message_Type_Status);
+  message.set_type(tkm::msg::control::Message_Type_Status);
   message.mutable_data()->PackFrom(status);
   envelope.mutable_mesg()->PackFrom(message);
 

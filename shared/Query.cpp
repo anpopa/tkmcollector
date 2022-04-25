@@ -10,7 +10,6 @@
  */
 
 #include "Query.h"
-#include "Server.pb.h"
 #include <string>
 
 namespace tkm
@@ -58,33 +57,25 @@ auto Query::createTables(Query::Type type) -> std::string
     out << "CREATE TABLE IF NOT EXISTS " << m_procEventTableName << " (";
     if (type == Query::Type::SQLite3) {
       out << m_procEventColumn.at(ProcEventColumn::Id) << " INTEGER PRIMARY KEY, "
-          << m_procEventColumn.at(ProcEventColumn::Timestamp) << " INTEGER NOT NULL, "
-          << m_procEventColumn.at(ProcEventColumn::RecvTime) << " INTEGER NOT NULL, "
-          << m_procEventColumn.at(ProcEventColumn::What) << " TEXT NOT NULL, "
-          << m_procEventColumn.at(ProcEventColumn::ProcessPID) << " INTEGER, "
-          << m_procEventColumn.at(ProcEventColumn::ProcessTGID) << " INTEGER, "
-          << m_procEventColumn.at(ProcEventColumn::ParentPID) << " INTEGER, "
-          << m_procEventColumn.at(ProcEventColumn::ParentTGID) << " INTEGER, "
-          << m_procEventColumn.at(ProcEventColumn::ChildPID) << " INTEGER, "
-          << m_procEventColumn.at(ProcEventColumn::ChildTGID) << " INTEGER, "
-          << m_procEventColumn.at(ProcEventColumn::ExitCode) << " INTEGER, "
-          << m_procEventColumn.at(ProcEventColumn::ProcessRID) << " INTEGER, "
-          << m_procEventColumn.at(ProcEventColumn::ProcessEID) << " INTEGER, "
+          << m_procEventColumn.at(ProcEventColumn::SystemTime) << " INTEGER NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::MonotonicTime) << " INTEGER NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::ReceiveTime) << " INTEGER NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::ForkCount) << " INTEGER NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::ExecCount) << " INTEGER NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::ExitCount) << " INTEGER NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::UIdCount) << " INTEGER NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::GIdCount) << " INTEGER NOT NULL, "
           << m_procEventColumn.at(ProcEventColumn::SessionId) << " INTEGER NOT NULL, ";
     } else {
       out << m_procEventColumn.at(ProcEventColumn::Id) << " SERIAL PRIMARY KEY, "
-          << m_procEventColumn.at(ProcEventColumn::Timestamp) << " BIGINT NOT NULL, "
-          << m_procEventColumn.at(ProcEventColumn::RecvTime) << " BIGINT NOT NULL, "
-          << m_procEventColumn.at(ProcEventColumn::What) << " TEXT NOT NULL, "
-          << m_procEventColumn.at(ProcEventColumn::ProcessPID) << " BIGINT, "
-          << m_procEventColumn.at(ProcEventColumn::ProcessTGID) << " BIGINT, "
-          << m_procEventColumn.at(ProcEventColumn::ParentPID) << " BIGINT, "
-          << m_procEventColumn.at(ProcEventColumn::ParentTGID) << " BIGINT, "
-          << m_procEventColumn.at(ProcEventColumn::ChildPID) << " BIGINT, "
-          << m_procEventColumn.at(ProcEventColumn::ChildTGID) << " BIGINT, "
-          << m_procEventColumn.at(ProcEventColumn::ExitCode) << " BIGINT, "
-          << m_procEventColumn.at(ProcEventColumn::ProcessRID) << " BIGINT, "
-          << m_procEventColumn.at(ProcEventColumn::ProcessEID) << " BIGINT, "
+          << m_procEventColumn.at(ProcEventColumn::SystemTime) << " BIGINT NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::MonotonicTime) << " BIGINT NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::ReceiveTime) << " BIGINT NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::ForkCount) << " BIGINT NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::ExecCount) << " BIGINT NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::ExitCount) << " BIGINT NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::UIdCount) << " BIGINT NOT NULL, "
+          << m_procEventColumn.at(ProcEventColumn::GIdCount) << " BIGINT NOT NULL, "
           << m_procEventColumn.at(ProcEventColumn::SessionId) << " INTEGER NOT NULL, ";
     }
     out << "CONSTRAINT KFSession FOREIGN KEY(" << m_procEventColumn.at(ProcEventColumn::SessionId)
@@ -95,8 +86,9 @@ auto Query::createTables(Query::Type type) -> std::string
     out << "CREATE TABLE IF NOT EXISTS " << m_sysProcStatTableName << " (";
     if (type == Query::Type::SQLite3) {
       out << m_sysProcStatColumn.at(SysProcStatColumn::Id) << " INTEGER PRIMARY KEY, "
-          << m_sysProcStatColumn.at(SysProcStatColumn::Timestamp) << " INTEGER NOT NULL, "
-          << m_sysProcStatColumn.at(SysProcStatColumn::RecvTime) << " INTEGER NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::SystemTime) << " INTEGER NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::MonotonicTime) << " INTEGER NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::ReceiveTime) << " INTEGER NOT NULL, "
           << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatName) << " TEXT NOT NULL, "
           << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatAll) << " INTEGER NOT NULL, "
           << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatUsr) << " INTEGER NOT NULL, "
@@ -104,8 +96,9 @@ auto Query::createTables(Query::Type type) -> std::string
           << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << " INTEGER NOT NULL, ";
     } else {
       out << m_sysProcStatColumn.at(SysProcStatColumn::Id) << " SERIAL PRIMARY KEY, "
-          << m_sysProcStatColumn.at(SysProcStatColumn::Timestamp) << " BIGINT NOT NULL, "
-          << m_sysProcStatColumn.at(SysProcStatColumn::RecvTime) << " BIGINT NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::SystemTime) << " BIGINT NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::MonotonicTime) << " BIGINT NOT NULL, "
+          << m_sysProcStatColumn.at(SysProcStatColumn::ReceiveTime) << " BIGINT NOT NULL, "
           << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatName) << " TEXT NOT NULL, "
           << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatAll) << " BIGINT NOT NULL, "
           << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatUsr) << " BIGINT NOT NULL, "
@@ -121,8 +114,9 @@ auto Query::createTables(Query::Type type) -> std::string
     out << "CREATE TABLE IF NOT EXISTS " << m_sysProcMeminfoTableName << " (";
     if (type == Query::Type::SQLite3) {
       out << m_sysProcMemColumn.at(SysProcMemColumn::Id) << " INTEGER PRIMARY KEY, "
-          << m_sysProcMemColumn.at(SysProcMemColumn::Timestamp) << " INTEGER NOT NULL, "
-          << m_sysProcMemColumn.at(SysProcMemColumn::RecvTime) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::SystemTime) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::MonotonicTime) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::ReceiveTime) << " INTEGER NOT NULL, "
           << m_sysProcMemColumn.at(SysProcMemColumn::MemTotal) << " INTEGER NOT NULL, "
           << m_sysProcMemColumn.at(SysProcMemColumn::MemFree) << " INTEGER NOT NULL, "
           << m_sysProcMemColumn.at(SysProcMemColumn::MemAvail) << " INTEGER NOT NULL, "
@@ -135,8 +129,9 @@ auto Query::createTables(Query::Type type) -> std::string
           << m_sysProcMemColumn.at(SysProcMemColumn::SessionId) << " INTEGER NOT NULL, ";
     } else {
       out << m_sysProcMemColumn.at(SysProcMemColumn::Id) << " SERIAL PRIMARY KEY, "
-          << m_sysProcMemColumn.at(SysProcMemColumn::Timestamp) << " BIGINT NOT NULL, "
-          << m_sysProcMemColumn.at(SysProcMemColumn::RecvTime) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::SystemTime) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::MonotonicTime) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::ReceiveTime) << " BIGINT NOT NULL, "
           << m_sysProcMemColumn.at(SysProcMemColumn::MemTotal) << " BIGINT NOT NULL, "
           << m_sysProcMemColumn.at(SysProcMemColumn::MemFree) << " BIGINT NOT NULL, "
           << m_sysProcMemColumn.at(SysProcMemColumn::MemAvail) << " BIGINT NOT NULL, "
@@ -156,8 +151,10 @@ auto Query::createTables(Query::Type type) -> std::string
     out << "CREATE TABLE IF NOT EXISTS " << m_sysProcPressureTableName << " (";
     if (type == Query::Type::SQLite3) {
       out << m_sysProcPressureColumn.at(SysProcPressureColumn::Id) << " INTEGER PRIMARY KEY, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::Timestamp) << " INTEGER NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::RecvTime) << " INTEGER NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::SystemTime) << " INTEGER NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MonotonicTime)
+          << " INTEGER NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::ReceiveTime)
+          << " INTEGER NOT NULL, "
           << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg10) << " REAL NOT NULL, "
           << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg60) << " REAL NOT NULL, "
           << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg300) << " REAL NOT NULL, "
@@ -189,33 +186,35 @@ auto Query::createTables(Query::Type type) -> std::string
           << " INTEGER NOT NULL, ";
     } else {
       out << m_sysProcPressureColumn.at(SysProcPressureColumn::Id) << " SERIAL PRIMARY KEY, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::Timestamp) << " BIGINT NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::RecvTime) << " BIGINT NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg10) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg60) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg300) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeTotal) << " BIGINT NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg10) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg60) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg300) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullTotal) << " BIGINT NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg10) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg60) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg300) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeTotal) << " BIGINT NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg10) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg60) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg300) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullTotal) << " BIGINT NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg10) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg60) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg300) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeTotal) << " BIGINT NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg10) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg60) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg300) << " REAL NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullTotal) << " BIGINT NOT NULL, "
-          << m_sysProcPressureColumn.at(SysProcPressureColumn::SessionId) << " INTEGER NOT NULL, ";
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::SystemTime) << " BIGINT NOT NULL, "
+          << m_sysProcPressureColumn.at(SysProcPressureColumn::MonotonicTime)
+          << " BIGINT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::ReceiveTime)
+          << " BIGINT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg10)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg60)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg300)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeTotal)
+          << " BIGINT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg10)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg60)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullAvg300)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUFullTotal)
+          << " BIGINT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg10)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg60)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeAvg300)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMSomeTotal)
+          << " BIGINT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg10)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg60)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullAvg300)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::MEMFullTotal)
+          << " BIGINT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg10)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg60)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeAvg300)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOSomeTotal)
+          << " BIGINT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg10)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg60)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg300)
+          << " REAL NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullTotal)
+          << " BIGINT NOT NULL, " << m_sysProcPressureColumn.at(SysProcPressureColumn::SessionId)
+          << " INTEGER NOT NULL, ";
     }
     out << "CONSTRAINT KFSession FOREIGN KEY("
         << m_sysProcPressureColumn.at(SysProcPressureColumn::SessionId) << ") REFERENCES "
@@ -226,8 +225,9 @@ auto Query::createTables(Query::Type type) -> std::string
     out << "CREATE TABLE IF NOT EXISTS " << m_procAcctTableName << " (";
     if (type == Query::Type::SQLite3) {
       out << m_procAcctColumn.at(ProcAcctColumn::Id) << " INTEGER PRIMARY KEY, "
-          << m_procAcctColumn.at(ProcAcctColumn::Timestamp) << " INTEGER NOT NULL, "
-          << m_procAcctColumn.at(ProcAcctColumn::RecvTime) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::SystemTime) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::MonotonicTime) << " INTEGER NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::ReceiveTime) << " INTEGER NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::AcComm) << " TEXT NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::AcUid) << " INTEGER NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::AcGid) << " INTEGER NOT NULL, "
@@ -268,8 +268,9 @@ auto Query::createTables(Query::Type type) -> std::string
           << m_procAcctColumn.at(ProcAcctColumn::SessionId) << " INTEGER NOT NULL, ";
     } else {
       out << m_procAcctColumn.at(ProcAcctColumn::Id) << " SERIAL PRIMARY KEY, "
-          << m_procAcctColumn.at(ProcAcctColumn::Timestamp) << " BIGINT NOT NULL, "
-          << m_procAcctColumn.at(ProcAcctColumn::RecvTime) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::SystemTime) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::MonotonicTime) << " BIGINT NOT NULL, "
+          << m_procAcctColumn.at(ProcAcctColumn::ReceiveTime) << " BIGINT NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::AcComm) << " TEXT NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::AcUid) << " BIGINT NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::AcGid) << " BIGINT NOT NULL, "
@@ -568,106 +569,37 @@ auto Query::hasSession(Query::Type type, const std::string &hash) -> std::string
 
 auto Query::addData(Query::Type type,
                     const std::string &sessionHash,
-                    const tkm::msg::server::ProcEvent &procEvent,
-                    uint64_t ts,
-                    uint64_t recvTime) -> std::string
+                    const tkm::msg::monitor::ProcEvent &procEvent,
+                    uint64_t systemTime,
+                    uint64_t monotonicTime,
+                    uint64_t receiveTime) -> std::string
 {
   std::stringstream out;
 
   if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     out << "INSERT INTO " << m_procEventTableName << " ("
-        << m_procEventColumn.at(ProcEventColumn::Timestamp) << ","
-        << m_procEventColumn.at(ProcEventColumn::RecvTime) << ","
-        << m_procEventColumn.at(ProcEventColumn::What) << ",";
+        << m_procEventColumn.at(ProcEventColumn::SystemTime) << ","
+        << m_procEventColumn.at(ProcEventColumn::MonotonicTime) << ","
+        << m_procEventColumn.at(ProcEventColumn::ReceiveTime) << ","
+        << m_procEventColumn.at(ProcEventColumn::ForkCount) << ","
+        << m_procEventColumn.at(ProcEventColumn::ExecCount) << ","
+        << m_procEventColumn.at(ProcEventColumn::ExitCount) << ","
+        << m_procEventColumn.at(ProcEventColumn::UIdCount) << ","
+        << m_procEventColumn.at(ProcEventColumn::GIdCount) << ",";
+    out << m_procEventColumn.at(ProcEventColumn::SessionId) << ") VALUES ('" << systemTime << "', '"
+        << monotonicTime << "', '" << receiveTime << "', '" << procEvent.fork_count() << "', '"
+        << procEvent.exec_count() << "', '" << procEvent.exit_count() << "', '"
+        << procEvent.uid_count() << "', '" << procEvent.gid_count() << "', ";
+  }
 
-    switch (procEvent.what()) {
-    case tkm::msg::server::ProcEvent::What::ProcEvent_What_Fork:
-      out << m_procEventColumn.at(ProcEventColumn::ParentPID) << ",";
-      out << m_procEventColumn.at(ProcEventColumn::ParentTGID) << ",";
-      out << m_procEventColumn.at(ProcEventColumn::ChildPID) << ",";
-      out << m_procEventColumn.at(ProcEventColumn::ChildTGID) << ",";
-      break;
-    case tkm::msg::server::ProcEvent::What::ProcEvent_What_Exec:
-      out << m_procEventColumn.at(ProcEventColumn::ProcessPID) << ",";
-      out << m_procEventColumn.at(ProcEventColumn::ProcessTGID) << ",";
-      break;
-    case tkm::msg::server::ProcEvent::What::ProcEvent_What_Exit:
-      out << m_procEventColumn.at(ProcEventColumn::ProcessPID) << ",";
-      out << m_procEventColumn.at(ProcEventColumn::ProcessTGID) << ",";
-      out << m_procEventColumn.at(ProcEventColumn::ExitCode) << ",";
-      break;
-    case tkm::msg::server::ProcEvent::What::ProcEvent_What_UID:
-    case tkm::msg::server::ProcEvent::What::ProcEvent_What_GID:
-      out << m_procEventColumn.at(ProcEventColumn::ProcessPID) << ",";
-      out << m_procEventColumn.at(ProcEventColumn::ProcessTGID) << ",";
-      out << m_procEventColumn.at(ProcEventColumn::ProcessRID) << ",";
-      out << m_procEventColumn.at(ProcEventColumn::ProcessEID) << ",";
-      break;
-    default:
-      break;
-    }
-
-    out << m_procEventColumn.at(ProcEventColumn::SessionId) << ") VALUES ('" << ts << "', '"
-        << recvTime << "', '";
-
-    switch (procEvent.what()) {
-    case tkm::msg::server::ProcEvent::What::ProcEvent_What_Fork: {
-      tkm::msg::server::ProcEventFork data;
-      procEvent.data().UnpackTo(&data);
-      out << "fork"
-          << "', '";
-      out << data.parent_pid() << "', '" << data.parent_tgid() << "', '" << data.child_pid()
-          << "', '" << data.child_tgid() << "', ";
-      break;
-    }
-    case tkm::msg::server::ProcEvent::What::ProcEvent_What_Exec: {
-      tkm::msg::server::ProcEventExec data;
-      procEvent.data().UnpackTo(&data);
-      out << "exec"
-          << "', '";
-      out << data.process_pid() << "', '" << data.process_tgid() << "', ";
-      break;
-    }
-    case tkm::msg::server::ProcEvent::What::ProcEvent_What_Exit: {
-      tkm::msg::server::ProcEventExit data;
-      procEvent.data().UnpackTo(&data);
-      out << "exit"
-          << "', '";
-      out << data.process_pid() << "', '" << data.process_tgid() << "', '" << data.exit_code()
-          << "', ";
-      break;
-    }
-    case tkm::msg::server::ProcEvent::What::ProcEvent_What_UID: {
-      tkm::msg::server::ProcEventUID data;
-      procEvent.data().UnpackTo(&data);
-      out << "uid"
-          << "', '";
-      out << data.process_pid() << "', '" << data.process_tgid() << "', '" << data.ruid() << "', '"
-          << data.euid() << "', ";
-      break;
-    }
-    case tkm::msg::server::ProcEvent::What::ProcEvent_What_GID: {
-      tkm::msg::server::ProcEventGID data;
-      procEvent.data().UnpackTo(&data);
-      out << "gid"
-          << "', '";
-      out << data.process_pid() << "', '" << data.process_tgid() << "', '" << data.rgid() << "', '"
-          << data.egid() << "', ";
-      break;
-    }
-    default:
-      break;
-    }
-
-    if (type == Query::Type::SQLite3) {
-      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
-          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
-          << "'" << sessionHash << "' AND EndTimestamp = 0));";
-    } else {
-      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
-          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
-          << "'" << sessionHash << "' AND EndTimestamp = 0));";
-    }
+  if (type == Query::Type::SQLite3) {
+    out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+        << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+        << "'" << sessionHash << "' AND EndTimestamp = 0));";
+  } else {
+    out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+        << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
+        << "'" << sessionHash << "' AND EndTimestamp = 0));";
   }
 
   return out.str();
@@ -675,23 +607,26 @@ auto Query::addData(Query::Type type,
 
 auto Query::addData(Query::Type type,
                     const std::string &sessionHash,
-                    const tkm::msg::server::SysProcStat &sysProcStat,
-                    uint64_t ts,
-                    uint64_t recvTime) -> std::string
+                    const tkm::msg::monitor::SysProcStat &sysProcStat,
+                    uint64_t systemTime,
+                    uint64_t monotonicTime,
+                    uint64_t receiveTime) -> std::string
 {
   std::stringstream out;
 
   if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     out << "INSERT INTO " << m_sysProcStatTableName << " ("
-        << m_sysProcStatColumn.at(SysProcStatColumn::Timestamp) << ","
-        << m_sysProcStatColumn.at(SysProcStatColumn::RecvTime) << ","
+        << m_sysProcStatColumn.at(SysProcStatColumn::SystemTime) << ","
+        << m_sysProcStatColumn.at(SysProcStatColumn::MonotonicTime) << ","
+        << m_sysProcStatColumn.at(SysProcStatColumn::ReceiveTime) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatName) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatAll) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatUsr) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatSys) << ","
-        << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << ") VALUES ('" << ts << "', '"
-        << recvTime << "', '" << sysProcStat.cpu().name() << "', '" << sysProcStat.cpu().all()
-        << "', '" << sysProcStat.cpu().usr() << "', '" << sysProcStat.cpu().sys() << "', ";
+        << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << ") VALUES ('" << systemTime
+        << "', '" << monotonicTime << "', '" << receiveTime << "', '" << sysProcStat.cpu().name()
+        << "', '" << sysProcStat.cpu().all() << "', '" << sysProcStat.cpu().usr() << "', '"
+        << sysProcStat.cpu().sys() << "', ";
 
     if (type == Query::Type::SQLite3) {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
@@ -709,16 +644,18 @@ auto Query::addData(Query::Type type,
 
 auto Query::addData(Query::Type type,
                     const std::string &sessionHash,
-                    const tkm::msg::server::SysProcMeminfo &sysProcMem,
-                    uint64_t ts,
-                    uint64_t recvTime) -> std::string
+                    const tkm::msg::monitor::SysProcMeminfo &sysProcMem,
+                    uint64_t systemTime,
+                    uint64_t monotonicTime,
+                    uint64_t receiveTime) -> std::string
 {
   std::stringstream out;
 
   if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     out << "INSERT INTO " << m_sysProcMeminfoTableName << " ("
-        << m_sysProcMemColumn.at(SysProcMemColumn::Timestamp) << ","
-        << m_sysProcMemColumn.at(SysProcMemColumn::RecvTime) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::SystemTime) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::MonotonicTime) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::ReceiveTime) << ","
         << m_sysProcMemColumn.at(SysProcMemColumn::MemTotal) << ","
         << m_sysProcMemColumn.at(SysProcMemColumn::MemFree) << ","
         << m_sysProcMemColumn.at(SysProcMemColumn::MemAvail) << ","
@@ -728,12 +665,12 @@ auto Query::addData(Query::Type type,
         << m_sysProcMemColumn.at(SysProcMemColumn::SwapFree) << ","
         << m_sysProcMemColumn.at(SysProcMemColumn::SwapCached) << ","
         << m_sysProcMemColumn.at(SysProcMemColumn::SwapFreePercent) << ","
-        << m_sysProcMemColumn.at(SysProcMemColumn::SessionId) << ") VALUES ('" << ts << "', '"
-        << recvTime << "', '" << sysProcMem.mem_total() << "', '" << sysProcMem.mem_free() << "', '"
-        << sysProcMem.mem_available() << "', '" << sysProcMem.mem_cached() << "', '"
-        << sysProcMem.mem_percent() << "', '" << sysProcMem.swap_total() << "', '"
-        << sysProcMem.swap_free() << "', '" << sysProcMem.swap_cached() << "', '"
-        << sysProcMem.swap_percent() << "', ";
+        << m_sysProcMemColumn.at(SysProcMemColumn::SessionId) << ") VALUES ('" << systemTime
+        << "', '" << monotonicTime << "', '" << receiveTime << "', '" << sysProcMem.mem_total()
+        << "', '" << sysProcMem.mem_free() << "', '" << sysProcMem.mem_available() << "', '"
+        << sysProcMem.mem_cached() << "', '" << sysProcMem.mem_percent() << "', '"
+        << sysProcMem.swap_total() << "', '" << sysProcMem.swap_free() << "', '"
+        << sysProcMem.swap_cached() << "', '" << sysProcMem.swap_percent() << "', ";
 
     if (type == Query::Type::SQLite3) {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
@@ -751,16 +688,18 @@ auto Query::addData(Query::Type type,
 
 auto Query::addData(Query::Type type,
                     const std::string &sessionHash,
-                    const tkm::msg::server::SysProcPressure &sysProcPressure,
-                    uint64_t ts,
-                    uint64_t recvTime) -> std::string
+                    const tkm::msg::monitor::SysProcPressure &sysProcPressure,
+                    uint64_t systemTime,
+                    uint64_t monotonicTime,
+                    uint64_t receiveTime) -> std::string
 {
   std::stringstream out;
 
   if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     out << "INSERT INTO " << m_sysProcPressureTableName << " ("
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::Timestamp) << ","
-        << m_sysProcPressureColumn.at(SysProcPressureColumn::RecvTime) << ","
+        << m_sysProcPressureColumn.at(SysProcPressureColumn::SystemTime) << ","
+        << m_sysProcPressureColumn.at(SysProcPressureColumn::MonotonicTime) << ","
+        << m_sysProcPressureColumn.at(SysProcPressureColumn::ReceiveTime) << ","
         << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg10) << ","
         << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg60) << ","
         << m_sysProcPressureColumn.at(SysProcPressureColumn::CPUSomeAvg300) << ","
@@ -785,24 +724,24 @@ auto Query::addData(Query::Type type,
         << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg60) << ","
         << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullAvg300) << ","
         << m_sysProcPressureColumn.at(SysProcPressureColumn::IOFullTotal) << ","
-        << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << ") VALUES ('" << ts << "', '"
-        << recvTime << "', '" << sysProcPressure.cpu_some().avg10() << "', '"
-        << sysProcPressure.cpu_some().avg60() << "', '" << sysProcPressure.cpu_some().avg300()
-        << "', '" << sysProcPressure.cpu_some().total() << "', '"
-        << sysProcPressure.cpu_full().avg10() << "', '" << sysProcPressure.cpu_full().avg60()
-        << "', '" << sysProcPressure.cpu_full().avg300() << "', '"
-        << sysProcPressure.cpu_full().total() << "', '" << sysProcPressure.mem_some().avg10()
-        << "', '" << sysProcPressure.mem_some().avg60() << "', '"
-        << sysProcPressure.mem_some().avg300() << "', '" << sysProcPressure.mem_some().total()
-        << "', '" << sysProcPressure.mem_full().avg10() << "', '"
-        << sysProcPressure.mem_full().avg60() << "', '" << sysProcPressure.mem_full().avg300()
-        << "', '" << sysProcPressure.mem_full().total() << "', '"
-        << sysProcPressure.io_some().avg10() << "', '" << sysProcPressure.io_some().avg60()
-        << "', '" << sysProcPressure.io_some().avg300() << "', '"
-        << sysProcPressure.io_some().total() << "', '" << sysProcPressure.io_full().avg10()
-        << "', '" << sysProcPressure.io_full().avg60() << "', '"
-        << sysProcPressure.io_full().avg300() << "', '" << sysProcPressure.io_full().total()
-        << "', ";
+        << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << ") VALUES ('" << systemTime
+        << "', '" << monotonicTime << "', '" << receiveTime << "', '"
+        << sysProcPressure.cpu_some().avg10() << "', '" << sysProcPressure.cpu_some().avg60()
+        << "', '" << sysProcPressure.cpu_some().avg300() << "', '"
+        << sysProcPressure.cpu_some().total() << "', '" << sysProcPressure.cpu_full().avg10()
+        << "', '" << sysProcPressure.cpu_full().avg60() << "', '"
+        << sysProcPressure.cpu_full().avg300() << "', '" << sysProcPressure.cpu_full().total()
+        << "', '" << sysProcPressure.mem_some().avg10() << "', '"
+        << sysProcPressure.mem_some().avg60() << "', '" << sysProcPressure.mem_some().avg300()
+        << "', '" << sysProcPressure.mem_some().total() << "', '"
+        << sysProcPressure.mem_full().avg10() << "', '" << sysProcPressure.mem_full().avg60()
+        << "', '" << sysProcPressure.mem_full().avg300() << "', '"
+        << sysProcPressure.mem_full().total() << "', '" << sysProcPressure.io_some().avg10()
+        << "', '" << sysProcPressure.io_some().avg60() << "', '"
+        << sysProcPressure.io_some().avg300() << "', '" << sysProcPressure.io_some().total()
+        << "', '" << sysProcPressure.io_full().avg10() << "', '"
+        << sysProcPressure.io_full().avg60() << "', '" << sysProcPressure.io_full().avg300()
+        << "', '" << sysProcPressure.io_full().total() << "', ";
 
     if (type == Query::Type::SQLite3) {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
@@ -820,16 +759,18 @@ auto Query::addData(Query::Type type,
 
 auto Query::addData(Query::Type type,
                     const std::string &sessionHash,
-                    const tkm::msg::server::ProcAcct &procAcct,
-                    uint64_t ts,
-                    uint64_t recvTime) -> std::string
+                    const tkm::msg::monitor::ProcAcct &procAcct,
+                    uint64_t systemTime,
+                    uint64_t monotonicTime,
+                    uint64_t receiveTime) -> std::string
 {
   std::stringstream out;
 
   if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     out << "INSERT INTO " << m_procAcctTableName << " ("
-        << m_procAcctColumn.at(ProcAcctColumn::Timestamp) << ","
-        << m_procAcctColumn.at(ProcAcctColumn::RecvTime) << ","
+        << m_procAcctColumn.at(ProcAcctColumn::SystemTime) << ","
+        << m_procAcctColumn.at(ProcAcctColumn::MonotonicTime) << ","
+        << m_procAcctColumn.at(ProcAcctColumn::ReceiveTime) << ","
         << m_procAcctColumn.at(ProcAcctColumn::AcComm) << ","
         << m_procAcctColumn.at(ProcAcctColumn::AcUid) << ","
         << m_procAcctColumn.at(ProcAcctColumn::AcGid) << ","
@@ -867,11 +808,11 @@ auto Query::addData(Query::Type type,
         << m_procAcctColumn.at(ProcAcctColumn::ThrashingCount) << ","
         << m_procAcctColumn.at(ProcAcctColumn::ThrashingDelayTotal) << ","
         << m_procAcctColumn.at(ProcAcctColumn::ThrashingDelayAverage) << ","
-        << m_procAcctColumn.at(ProcAcctColumn::SessionId) << ") VALUES ('" << ts << "', '"
-        << recvTime << "', '" << procAcct.ac_comm() << "', '" << procAcct.ac_uid() << "', '"
-        << procAcct.ac_gid() << "', '" << procAcct.ac_pid() << "', '" << procAcct.ac_ppid()
-        << "', '" << procAcct.ac_utime() << "', '" << procAcct.ac_stime() << "', '"
-        << procAcct.cpu_percent() << "', '" << procAcct.cpu().cpu_count() << "', '"
+        << m_procAcctColumn.at(ProcAcctColumn::SessionId) << ") VALUES ('" << systemTime << "', '"
+        << monotonicTime << "', '" << receiveTime << "', '" << procAcct.ac_comm() << "', '"
+        << procAcct.ac_uid() << "', '" << procAcct.ac_gid() << "', '" << procAcct.ac_pid() << "', '"
+        << procAcct.ac_ppid() << "', '" << procAcct.ac_utime() << "', '" << procAcct.ac_stime()
+        << "', '" << procAcct.cpu_percent() << "', '" << procAcct.cpu().cpu_count() << "', '"
         << procAcct.cpu().cpu_run_real_total() << "', '" << procAcct.cpu().cpu_run_virtual_total()
         << "', '" << procAcct.cpu().cpu_delay_total() << "', '"
         << procAcct.cpu().cpu_delay_average() << "', '" << procAcct.mem().coremem() << "', '"

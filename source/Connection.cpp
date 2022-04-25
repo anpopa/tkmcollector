@@ -21,9 +21,7 @@
 #include "Defaults.h"
 #include "Helpers.h"
 
-#include "Server.pb.h"
-
-namespace fs = std::filesystem;
+#include "Monitor.pb.h"
 
 namespace tkm::collector
 {
@@ -59,43 +57,43 @@ Connection::Connection(std::shared_ptr<IDevice> device)
           }
 
           // Check for valid origin
-          if (envelope.origin() != tkm::msg::Envelope_Recipient_Server) {
+          if (envelope.origin() != tkm::msg::Envelope_Recipient_Monitor) {
             continue;
           }
 
-          tkm::msg::server::Message msg;
+          tkm::msg::monitor::Message msg;
           envelope.mesg().UnpackTo(&msg);
 
           switch (msg.type()) {
-          case tkm::msg::server::Message_Type_SetSession: {
+          case tkm::msg::monitor::Message_Type_SetSession: {
             IDevice::Request rq{.action = IDevice::Action::SetSession};
-            tkm::msg::server::SessionInfo sessionInfo;
+            tkm::msg::monitor::SessionInfo sessionInfo;
 
             msg.payload().UnpackTo(&sessionInfo);
-            rq.bulkData = std::make_any<tkm::msg::server::SessionInfo>(sessionInfo);
+            rq.bulkData = std::make_any<tkm::msg::monitor::SessionInfo>(sessionInfo);
 
             m_device->pushRequest(rq);
             break;
           }
-          case tkm::msg::server::Message_Type_Data: {
+          case tkm::msg::monitor::Message_Type_Data: {
             IDevice::Request rq{.action = IDevice::Action::ProcessData};
-            tkm::msg::server::Data data;
+            tkm::msg::monitor::Data data;
 
             msg.payload().UnpackTo(&data);
 
             // Set the receive timestamp
-            data.set_recvtime(time(NULL));
-            rq.bulkData = std::make_any<tkm::msg::server::Data>(data);
+            data.set_receive_time_sec(time(NULL));
+            rq.bulkData = std::make_any<tkm::msg::monitor::Data>(data);
 
             m_device->pushRequest(rq);
             break;
           }
-          case tkm::msg::server::Message_Type_Status: {
+          case tkm::msg::monitor::Message_Type_Status: {
             IDevice::Request rq{.action = IDevice::Action::Status};
-            tkm::msg::server::Status status;
+            tkm::msg::monitor::Status status;
 
             msg.payload().UnpackTo(&status);
-            rq.bulkData = std::make_any<tkm::msg::server::Status>(status);
+            rq.bulkData = std::make_any<tkm::msg::monitor::Status>(status);
 
             m_device->pushRequest(rq);
             break;
@@ -134,7 +132,7 @@ Connection::~Connection()
 
 void Connection::disconnect()
 {
-  m_device->updateState(tkm::msg::collector::DeviceData_State_Disconnected);
+  m_device->updateState(tkm::msg::control::DeviceData_State_Disconnected);
   if (m_sockFd >= 0) {
     ::close(m_sockFd);
     m_sockFd = -1;

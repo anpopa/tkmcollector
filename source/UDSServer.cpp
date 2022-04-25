@@ -47,7 +47,7 @@ UDSServer::UDSServer()
         tv.tv_usec = 0;
         setsockopt(clientFd, SOL_SOCKET, SO_RCVTIMEO, (const char *) &tv, sizeof(tv));
 
-        tkm::msg::collector::Descriptor descriptor{};
+        tkm::msg::control::Descriptor descriptor{};
 
         if (!readControlDescriptor(clientFd, descriptor)) {
           logWarn() << "Control client " << clientFd << " read descriptor failed";

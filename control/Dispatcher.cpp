@@ -15,7 +15,7 @@
 #include "Dispatcher.h"
 #include "Helpers.h"
 
-#include "Collector.pb.h"
+#include "Control.pb.h"
 
 using std::shared_ptr;
 using std::string;
@@ -117,7 +117,7 @@ static bool doConnect(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Reque
 
 static bool doSendDescriptor(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &)
 {
-  tkm::msg::collector::Descriptor descriptor;
+  tkm::msg::control::Descriptor descriptor;
   descriptor.set_pid(getpid());
 
   if (!sendControlDescriptor(ControlApp()->getConnection()->getFD(), descriptor)) {
@@ -134,13 +134,13 @@ static bool doSendDescriptor(const shared_ptr<Dispatcher> &mgr, const Dispatcher
 static bool doRequestSession(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
-  tkm::msg::collector::Request requestMessage;
-  tkm::msg::collector::SessionInfo sessionInfo;
+  tkm::msg::control::Request requestMessage;
+  tkm::msg::control::SessionInfo sessionInfo;
 
   sessionInfo.set_id("Collector");
 
   requestMessage.set_id("RequestSession");
-  requestMessage.set_type(msg::collector::Request_Type_RequestSession);
+  requestMessage.set_type(msg::control::Request_Type_RequestSession);
   requestMessage.mutable_data()->PackFrom(sessionInfo);
 
   requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
@@ -153,7 +153,7 @@ static bool doRequestSession(const shared_ptr<Dispatcher> &mgr, const Dispatcher
 
 static bool doSetSession(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
-  const auto &sessionInfo = std::any_cast<tkm::msg::collector::SessionInfo>(rq.bulkData);
+  const auto &sessionInfo = std::any_cast<tkm::msg::control::SessionInfo>(rq.bulkData);
 
   logDebug() << "Server accepted: " << sessionInfo.id();
   ControlApp()->setSession(sessionInfo.id());
@@ -170,13 +170,13 @@ static bool doQuit(const shared_ptr<Dispatcher> &, const Dispatcher::Request &)
 static bool doInitDatabase(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
-  tkm::msg::collector::Request requestMessage;
+  tkm::msg::control::Request requestMessage;
 
   requestMessage.set_id("InitDatabase");
-  requestMessage.set_type(tkm::msg::collector::Request_Type_InitDatabase);
+  requestMessage.set_type(tkm::msg::control::Request_Type_InitDatabase);
   if (rq.args.count(Defaults::Arg::Forced)) {
     if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
-      requestMessage.set_forced(tkm::msg::collector::Request_Forced_Enforced);
+      requestMessage.set_forced(tkm::msg::control::Request_Forced_Enforced);
     }
   }
   requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
@@ -190,10 +190,10 @@ static bool doInitDatabase(const shared_ptr<Dispatcher> &mgr, const Dispatcher::
 static bool doGetDevices(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &)
 {
   tkm::msg::Envelope requestEnvelope;
-  tkm::msg::collector::Request requestMessage;
+  tkm::msg::control::Request requestMessage;
 
   requestMessage.set_id("GetDevices");
-  requestMessage.set_type(tkm::msg::collector::Request_Type_GetDevices);
+  requestMessage.set_type(tkm::msg::control::Request_Type_GetDevices);
   requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
   requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Collector);
   requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Control);
@@ -205,18 +205,18 @@ static bool doGetDevices(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Re
 static bool doAddDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
-  tkm::msg::collector::Request requestMessage;
-  tkm::msg::collector::DeviceData deviceData;
+  tkm::msg::control::Request requestMessage;
+  tkm::msg::control::DeviceData deviceData;
 
   requestMessage.set_id("AddDevice");
-  requestMessage.set_type(tkm::msg::collector::Request_Type_AddDevice);
+  requestMessage.set_type(tkm::msg::control::Request_Type_AddDevice);
   if (rq.args.count(Defaults::Arg::Forced)) {
     if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
-      requestMessage.set_forced(tkm::msg::collector::Request_Forced_Enforced);
+      requestMessage.set_forced(tkm::msg::control::Request_Forced_Enforced);
     }
   }
 
-  deviceData.set_state(tkm::msg::collector::DeviceData_State_Unknown);
+  deviceData.set_state(tkm::msg::control::DeviceData_State_Unknown);
   deviceData.set_name(rq.args.at(Defaults::Arg::DeviceName));
   deviceData.set_address(rq.args.at(Defaults::Arg::DeviceAddress));
   deviceData.set_port(std::stoi(rq.args.at(Defaults::Arg::DevicePort)));
@@ -236,14 +236,14 @@ static bool doAddDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Req
 static bool doRemoveDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
-  tkm::msg::collector::Request requestMessage;
-  tkm::msg::collector::DeviceData deviceData;
+  tkm::msg::control::Request requestMessage;
+  tkm::msg::control::DeviceData deviceData;
 
   requestMessage.set_id("RemoveDevice");
-  requestMessage.set_type(tkm::msg::collector::Request_Type_RemoveDevice);
+  requestMessage.set_type(tkm::msg::control::Request_Type_RemoveDevice);
   if (rq.args.count(Defaults::Arg::Forced)) {
     if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
-      requestMessage.set_forced(tkm::msg::collector::Request_Forced_Enforced);
+      requestMessage.set_forced(tkm::msg::control::Request_Forced_Enforced);
     }
   }
 
@@ -261,14 +261,14 @@ static bool doRemoveDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::
 static bool doRemoveSession(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
-  tkm::msg::collector::Request requestMessage;
-  tkm::msg::collector::SessionData sessionData;
+  tkm::msg::control::Request requestMessage;
+  tkm::msg::control::SessionData sessionData;
 
   requestMessage.set_id("RemoveSession");
-  requestMessage.set_type(tkm::msg::collector::Request_Type_RemoveSession);
+  requestMessage.set_type(tkm::msg::control::Request_Type_RemoveSession);
   if (rq.args.count(Defaults::Arg::Forced)) {
     if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
-      requestMessage.set_forced(tkm::msg::collector::Request_Forced_Enforced);
+      requestMessage.set_forced(tkm::msg::control::Request_Forced_Enforced);
     }
   }
 
@@ -286,14 +286,14 @@ static bool doRemoveSession(const shared_ptr<Dispatcher> &mgr, const Dispatcher:
 static bool doConnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
-  tkm::msg::collector::Request requestMessage;
-  tkm::msg::collector::DeviceData deviceData;
+  tkm::msg::control::Request requestMessage;
+  tkm::msg::control::DeviceData deviceData;
 
   requestMessage.set_id("ConnectDevice");
-  requestMessage.set_type(tkm::msg::collector::Request_Type_ConnectDevice);
+  requestMessage.set_type(tkm::msg::control::Request_Type_ConnectDevice);
   if (rq.args.count(Defaults::Arg::Forced)) {
     if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
-      requestMessage.set_forced(tkm::msg::collector::Request_Forced_Enforced);
+      requestMessage.set_forced(tkm::msg::control::Request_Forced_Enforced);
     }
   }
 
@@ -311,14 +311,14 @@ static bool doConnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher:
 static bool doDisconnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
-  tkm::msg::collector::Request requestMessage;
-  tkm::msg::collector::DeviceData deviceData;
+  tkm::msg::control::Request requestMessage;
+  tkm::msg::control::DeviceData deviceData;
 
   requestMessage.set_id("DisconnectDevice");
-  requestMessage.set_type(tkm::msg::collector::Request_Type_DisconnectDevice);
+  requestMessage.set_type(tkm::msg::control::Request_Type_DisconnectDevice);
   if (rq.args.count(Defaults::Arg::Forced)) {
     if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
-      requestMessage.set_forced(tkm::msg::collector::Request_Forced_Enforced);
+      requestMessage.set_forced(tkm::msg::control::Request_Forced_Enforced);
     }
   }
 
@@ -336,14 +336,14 @@ static bool doDisconnectDevice(const shared_ptr<Dispatcher> &mgr, const Dispatch
 static bool doStartCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
-  tkm::msg::collector::Request requestMessage;
-  tkm::msg::collector::DeviceData deviceData;
+  tkm::msg::control::Request requestMessage;
+  tkm::msg::control::DeviceData deviceData;
 
   requestMessage.set_id("StartCollecting");
-  requestMessage.set_type(tkm::msg::collector::Request_Type_StartCollecting);
+  requestMessage.set_type(tkm::msg::control::Request_Type_StartCollecting);
   if (rq.args.count(Defaults::Arg::Forced)) {
     if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
-      requestMessage.set_forced(tkm::msg::collector::Request_Forced_Enforced);
+      requestMessage.set_forced(tkm::msg::control::Request_Forced_Enforced);
     }
   }
 
@@ -361,14 +361,14 @@ static bool doStartCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatche
 static bool doStopCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
-  tkm::msg::collector::Request requestMessage;
-  tkm::msg::collector::DeviceData deviceData;
+  tkm::msg::control::Request requestMessage;
+  tkm::msg::control::DeviceData deviceData;
 
   requestMessage.set_id("StartCollecting");
-  requestMessage.set_type(tkm::msg::collector::Request_Type_StopCollecting);
+  requestMessage.set_type(tkm::msg::control::Request_Type_StopCollecting);
   if (rq.args.count(Defaults::Arg::Forced)) {
     if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
-      requestMessage.set_forced(tkm::msg::collector::Request_Forced_Enforced);
+      requestMessage.set_forced(tkm::msg::control::Request_Forced_Enforced);
     }
   }
 
@@ -386,14 +386,14 @@ static bool doStopCollecting(const shared_ptr<Dispatcher> &mgr, const Dispatcher
 static bool doGetSessions(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
-  tkm::msg::collector::Request requestMessage;
-  tkm::msg::collector::DeviceData deviceData;
+  tkm::msg::control::Request requestMessage;
+  tkm::msg::control::DeviceData deviceData;
 
   requestMessage.set_id("GetSessions");
-  requestMessage.set_type(tkm::msg::collector::Request_Type_GetSessions);
+  requestMessage.set_type(tkm::msg::control::Request_Type_GetSessions);
   if (rq.args.count(Defaults::Arg::Forced)) {
     if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
-      requestMessage.set_forced(tkm::msg::collector::Request_Forced_Enforced);
+      requestMessage.set_forced(tkm::msg::control::Request_Forced_Enforced);
     }
   }
 
@@ -413,13 +413,13 @@ static bool doGetSessions(const shared_ptr<Dispatcher> &mgr, const Dispatcher::R
 static bool doQuitCollector(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
-  tkm::msg::collector::Request requestMessage;
+  tkm::msg::control::Request requestMessage;
 
   requestMessage.set_id("QuitCollector");
-  requestMessage.set_type(tkm::msg::collector::Request_Type_QuitCollector);
+  requestMessage.set_type(tkm::msg::control::Request_Type_QuitCollector);
   if (rq.args.count(Defaults::Arg::Forced)) {
     if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
-      requestMessage.set_forced(tkm::msg::collector::Request_Forced_Enforced);
+      requestMessage.set_forced(tkm::msg::control::Request_Forced_Enforced);
     }
   }
   requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
@@ -440,15 +440,15 @@ static bool doQuitCollector(const shared_ptr<Dispatcher> &mgr, const Dispatcher:
 
 static bool doCollectorStatus(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Request &rq)
 {
-  const auto &requestStatus = std::any_cast<tkm::msg::collector::Status>(rq.bulkData);
-  const auto &statusText = (requestStatus.what() == tkm::msg::collector::Status_What_OK)
+  const auto &requestStatus = std::any_cast<tkm::msg::control::Status>(rq.bulkData);
+  const auto &statusText = (requestStatus.what() == tkm::msg::control::Status_What_OK)
                                ? tkmDefaults.valFor(Defaults::Val::StatusOkay)
                                : tkmDefaults.valFor(Defaults::Val::StatusError);
 
-  logDebug() << "Collector status(" << requestStatus.requestid() << "): " << statusText
+  logDebug() << "Collector status(" << requestStatus.request_id() << "): " << statusText
              << " Reason: " << requestStatus.reason();
 
-  if (requestStatus.requestid() == "RequestSession") {
+  if (requestStatus.request_id() == "RequestSession") {
     return true;
   }
 
@@ -465,34 +465,34 @@ static bool doDeviceList(const shared_ptr<Dispatcher> &mgr, const Dispatcher::Re
 {
   std::cout << "--------------------------------------------------" << std::endl;
 
-  const auto &deviceList = std::any_cast<tkm::msg::collector::DeviceList>(rq.bulkData);
+  const auto &deviceList = std::any_cast<tkm::msg::control::DeviceList>(rq.bulkData);
   for (int i = 0; i < deviceList.device_size(); i++) {
-    const tkm::msg::collector::DeviceData &deviceData = deviceList.device(i);
+    const tkm::msg::control::DeviceData &deviceData = deviceList.device(i);
     std::cout << "Id\t: " << deviceData.hash() << std::endl;
     std::cout << "Name\t: " << deviceData.name() << std::endl;
     std::cout << "Address\t: " << deviceData.address() << std::endl;
     std::cout << "Port\t: " << deviceData.port() << std::endl;
     std::cout << "State\t: ";
     switch (deviceData.state()) {
-    case tkm::msg::collector::DeviceData_State_Loaded:
+    case tkm::msg::control::DeviceData_State_Loaded:
       std::cout << "Loaded" << std::endl;
       break;
-    case tkm::msg::collector::DeviceData_State_Connected:
+    case tkm::msg::control::DeviceData_State_Connected:
       std::cout << "Connected" << std::endl;
       break;
-    case tkm::msg::collector::DeviceData_State_Disconnected:
+    case tkm::msg::control::DeviceData_State_Disconnected:
       std::cout << "Disconnected" << std::endl;
       break;
-    case tkm::msg::collector::DeviceData_State_Reconnecting:
+    case tkm::msg::control::DeviceData_State_Reconnecting:
       std::cout << "Reconnecting" << std::endl;
       break;
-    case tkm::msg::collector::DeviceData_State_Collecting:
+    case tkm::msg::control::DeviceData_State_Collecting:
       std::cout << "Collecting" << std::endl;
       break;
-    case tkm::msg::collector::DeviceData_State_Idle:
+    case tkm::msg::control::DeviceData_State_Idle:
       std::cout << "Idle" << std::endl;
       break;
-    case tkm::msg::collector::DeviceData_State_Unknown:
+    case tkm::msg::control::DeviceData_State_Unknown:
     default:
       std::cout << "Unknown" << std::endl;
       break;
@@ -509,22 +509,22 @@ static bool doSessionList(const shared_ptr<Dispatcher> &mgr, const Dispatcher::R
 {
   std::cout << "--------------------------------------------------" << std::endl;
 
-  const auto &sessionList = std::any_cast<tkm::msg::collector::SessionList>(rq.bulkData);
+  const auto &sessionList = std::any_cast<tkm::msg::control::SessionList>(rq.bulkData);
   for (int i = 0; i < sessionList.session_size(); i++) {
-    const tkm::msg::collector::SessionData &sessionData = sessionList.session(i);
+    const tkm::msg::control::SessionData &sessionData = sessionList.session(i);
     std::cout << "Id\t: " << sessionData.hash() << std::endl;
     std::cout << "Name\t: " << sessionData.name() << std::endl;
     std::cout << "Started\t: " << sessionData.started() << std::endl;
     std::cout << "Ended\t: " << sessionData.ended() << std::endl;
     std::cout << "State\t: ";
     switch (sessionData.state()) {
-    case tkm::msg::collector::SessionData_State_Progress:
+    case tkm::msg::control::SessionData_State_Progress:
       std::cout << "Progress" << std::endl;
       break;
-    case tkm::msg::collector::SessionData_State_Complete:
+    case tkm::msg::control::SessionData_State_Complete:
       std::cout << "Complete" << std::endl;
       break;
-    case tkm::msg::collector::SessionData_State_Unknown:
+    case tkm::msg::control::SessionData_State_Unknown:
     default:
       std::cout << "Unknown" << std::endl;
       break;

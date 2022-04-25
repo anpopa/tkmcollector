@@ -15,7 +15,7 @@
 #include <sstream>
 #include <string>
 
-#include "Server.pb.h"
+#include "Monitor.pb.h"
 
 namespace tkm
 {
@@ -55,29 +55,34 @@ public:
   // Add device data
   auto addData(Query::Type type,
                const std::string &sessionHash,
-               const tkm::msg::server::SysProcStat &sysProcStat,
-               uint64_t ts,
-               uint64_t recvTime) -> std::string;
+               const tkm::msg::monitor::SysProcStat &sysProcStat,
+               uint64_t systemTime,
+               uint64_t monotonicTime,
+               uint64_t receiveTime) -> std::string;
   auto addData(Query::Type type,
                const std::string &sessionHash,
-               const tkm::msg::server::SysProcMeminfo &sysProcMem,
-               uint64_t ts,
-               uint64_t recvTime) -> std::string;
+               const tkm::msg::monitor::SysProcMeminfo &sysProcMem,
+               uint64_t systemTime,
+               uint64_t monotonicTime,
+               uint64_t receiveTime) -> std::string;
   auto addData(Query::Type type,
                const std::string &sessionHash,
-               const tkm::msg::server::SysProcPressure &sysProcPressure,
-               uint64_t ts,
-               uint64_t recvTime) -> std::string;
+               const tkm::msg::monitor::SysProcPressure &sysProcPressure,
+               uint64_t systemTime,
+               uint64_t monotonicTime,
+               uint64_t receiveTime) -> std::string;
   auto addData(Query::Type type,
                const std::string &sessionHash,
-               const tkm::msg::server::ProcAcct &procAcct,
-               uint64_t ts,
-               uint64_t recvTime) -> std::string;
+               const tkm::msg::monitor::ProcAcct &procAcct,
+               uint64_t systemTime,
+               uint64_t monotonicTime,
+               uint64_t receiveTime) -> std::string;
   auto addData(Query::Type type,
                const std::string &sessionHash,
-               const tkm::msg::server::ProcEvent &procEvent,
-               uint64_t ts,
-               uint64_t recvTime) -> std::string;
+               const tkm::msg::monitor::ProcEvent &procEvent,
+               uint64_t systemTime,
+               uint64_t monotonicTime,
+               uint64_t receiveTime) -> std::string;
 
 public:
   enum class DeviceColumn {
@@ -113,52 +118,46 @@ public:
   };
 
   enum class ProcEventColumn {
-    Id,          // int: Primary key
-    Timestamp,   // int: Timestamp
-    RecvTime,    // int: Received timestamp
-    What,        // str: What
-    ProcessPID,  // int: ProcessID
-    ProcessTGID, // int: ProcessTGID
-    ParentPID,   // int: ParentPID
-    ParentTGID,  // int: ParentTGID
-    ChildPID,    // int: ChildPID
-    ChildTGID,   // int: ChildTGID
-    ExitCode,    // int: ExitCode
-    ProcessRID,  // int: User or group RID
-    ProcessEID,  // int: User or group EID
-    SessionId,   // int: Session id key
+    Id,            // int: Primary key
+    SystemTime,    // int: SystemTime
+    MonotonicTime, // int: MonotonicTime
+    ReceiveTime,   // int: Receive timestamp
+    ForkCount,     // int: fork_count
+    ExecCount,     // int: exec_count
+    ExitCount,     // int: exit_count
+    UIdCount,      // int: uid_count
+    GIdCount,      // int: gid_count
+    SessionId,     // int: Session id key
   };
   const std::map<ProcEventColumn, std::string> m_procEventColumn{
       std::make_pair(ProcEventColumn::Id, "Id"),
-      std::make_pair(ProcEventColumn::Timestamp, "Timestamp"),
-      std::make_pair(ProcEventColumn::RecvTime, "RecvTime"),
-      std::make_pair(ProcEventColumn::What, "What"),
-      std::make_pair(ProcEventColumn::ProcessPID, "ProcessPID"),
-      std::make_pair(ProcEventColumn::ProcessTGID, "ProcessTGID"),
-      std::make_pair(ProcEventColumn::ParentPID, "ParentPID"),
-      std::make_pair(ProcEventColumn::ParentTGID, "ParentTGID"),
-      std::make_pair(ProcEventColumn::ChildPID, "ChildPID"),
-      std::make_pair(ProcEventColumn::ChildTGID, "ChildTGID"),
-      std::make_pair(ProcEventColumn::ExitCode, "ExitCode"),
-      std::make_pair(ProcEventColumn::ProcessRID, "ProcessRID"),
-      std::make_pair(ProcEventColumn::ProcessEID, "ProcessEID"),
+      std::make_pair(ProcEventColumn::SystemTime, "SystemTime"),
+      std::make_pair(ProcEventColumn::MonotonicTime, "MonotonicTime"),
+      std::make_pair(ProcEventColumn::ReceiveTime, "ReceiveTime"),
+      std::make_pair(ProcEventColumn::ForkCount, "ForkCount"),
+      std::make_pair(ProcEventColumn::ExecCount, "ExecCount"),
+      std::make_pair(ProcEventColumn::ExitCount, "ExitCount"),
+      std::make_pair(ProcEventColumn::UIdCount, "UIdCount"),
+      std::make_pair(ProcEventColumn::GIdCount, "GIdCount"),
       std::make_pair(ProcEventColumn::SessionId, "SessionId"),
   };
 
   enum class SysProcStatColumn {
-    Id,          // int: Primary key
-    Timestamp,   // int: Timestamp
-    RecvTime,    // int: RecvTime
-    CPUStatName, // str: CPUStat.name
-    CPUStatAll,  // int: CPUStat.all
-    CPUStatUsr,  // int: CPUStat.usr
-    CPUStatSys,  // int: CPUStat.sys
-    SessionId,   // int: Session id key
+    Id,            // int: Primary key
+    SystemTime,    // int: SystemTime
+    MonotonicTime, // int: MonotonicTime
+    ReceiveTime,   // int: Receive timestamp
+    CPUStatName,   // str: CPUStat.name
+    CPUStatAll,    // int: CPUStat.all
+    CPUStatUsr,    // int: CPUStat.usr
+    CPUStatSys,    // int: CPUStat.sys
+    SessionId,     // int: Session id key
   };
   const std::map<SysProcStatColumn, std::string> m_sysProcStatColumn{
       std::make_pair(SysProcStatColumn::Id, "Id"),
-      std::make_pair(SysProcStatColumn::Timestamp, "Timestamp"),
-      std::make_pair(SysProcStatColumn::RecvTime, "RecvTime"),
+      std::make_pair(SysProcStatColumn::SystemTime, "SystemTime"),
+      std::make_pair(SysProcStatColumn::MonotonicTime, "MonotonicTime"),
+      std::make_pair(SysProcStatColumn::ReceiveTime, "ReceiveTime"),
       std::make_pair(SysProcStatColumn::CPUStatName, "CPUStatName"),
       std::make_pair(SysProcStatColumn::CPUStatAll, "CPUStatAll"),
       std::make_pair(SysProcStatColumn::CPUStatUsr, "CPUStatUsr"),
@@ -168,8 +167,9 @@ public:
 
   enum class SysProcMemColumn {
     Id,              // int: Primary key
-    Timestamp,       // int: Timestamp
-    RecvTime,        // int: RecvTime
+    SystemTime,      // int: SystemTime
+    MonotonicTime,   // int: MonotonicTime
+    ReceiveTime,     // int: Receive timestamp
     MemTotal,        // int: MemTotal
     MemFree,         // int: MemFree
     MemAvail,        // int: MemAvail
@@ -183,8 +183,9 @@ public:
   };
   const std::map<SysProcMemColumn, std::string> m_sysProcMemColumn{
       std::make_pair(SysProcMemColumn::Id, "Id"),
-      std::make_pair(SysProcMemColumn::Timestamp, "Timestamp"),
-      std::make_pair(SysProcMemColumn::RecvTime, "RecvTime"),
+      std::make_pair(SysProcMemColumn::SystemTime, "SystemTime"),
+      std::make_pair(SysProcMemColumn::MonotonicTime, "MonotonicTime"),
+      std::make_pair(SysProcMemColumn::ReceiveTime, "ReceiveTime"),
       std::make_pair(SysProcMemColumn::MemTotal, "MemTotal"),
       std::make_pair(SysProcMemColumn::MemFree, "MemFree"),
       std::make_pair(SysProcMemColumn::MemAvail, "MemAvail"),
@@ -199,8 +200,9 @@ public:
 
   enum class SysProcPressureColumn {
     Id,            // int: Primary key
-    Timestamp,     // int: Timestamp
-    RecvTime,      // int: Receive timestamp
+    SystemTime,    // int: SystemTime
+    MonotonicTime, // int: MonotonicTime
+    ReceiveTime,   // int: Receive timestamp
     CPUSomeAvg10,  // float: cpu_some_avg10
     CPUSomeAvg60,  // float: cpu_some_avg60
     CPUSomeAvg300, // float: cpu_some_avg300
@@ -229,8 +231,9 @@ public:
   };
   const std::map<SysProcPressureColumn, std::string> m_sysProcPressureColumn{
       std::make_pair(SysProcPressureColumn::Id, "Id"),
-      std::make_pair(SysProcPressureColumn::Timestamp, "Timestamp"),
-      std::make_pair(SysProcPressureColumn::RecvTime, "RecvTime"),
+      std::make_pair(SysProcPressureColumn::SystemTime, "SystemTime"),
+      std::make_pair(SysProcPressureColumn::MonotonicTime, "MonotonicTime"),
+      std::make_pair(SysProcPressureColumn::ReceiveTime, "ReceiveTime"),
       std::make_pair(SysProcPressureColumn::CPUSomeAvg10, "CPUSomeAvg10"),
       std::make_pair(SysProcPressureColumn::CPUSomeAvg60, "CPUSomeAvg60"),
       std::make_pair(SysProcPressureColumn::CPUSomeAvg300, "CPUSomeAvg300"),
@@ -260,8 +263,9 @@ public:
 
   enum class ProcAcctColumn {
     Id,                    // int: Primary key
-    Timestamp,             // int: Timestamp
-    RecvTime,              // int: Receive timestamp
+    SystemTime,            // int: SystemTime
+    MonotonicTime,         // int: MonotonicTime
+    ReceiveTime,           // int: Receive timestamp
     AcComm,                // str: ac_comm
     AcUid,                 // int: ac_uid
     AcGid,                 // int: ac_gid
@@ -303,8 +307,9 @@ public:
   };
   const std::map<ProcAcctColumn, std::string> m_procAcctColumn{
       std::make_pair(ProcAcctColumn::Id, "Id"),
-      std::make_pair(ProcAcctColumn::Timestamp, "Timestamp"),
-      std::make_pair(ProcAcctColumn::RecvTime, "RecvTime"),
+      std::make_pair(ProcAcctColumn::SystemTime, "SystemTime"),
+      std::make_pair(ProcAcctColumn::MonotonicTime, "MonotonicTime"),
+      std::make_pair(ProcAcctColumn::ReceiveTime, "ReceiveTime"),
       std::make_pair(ProcAcctColumn::AcComm, "AcComm"),
       std::make_pair(ProcAcctColumn::AcUid, "AcUid"),
       std::make_pair(ProcAcctColumn::AcGid, "AcGid"),

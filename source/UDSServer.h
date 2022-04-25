@@ -20,7 +20,7 @@
 
 #include "../bswinfra/source/Pollable.h"
 
-#include "Collector.pb.h"
+#include "Control.pb.h"
 
 using namespace bswi::log;
 using namespace bswi::event;

@@ -14,8 +14,8 @@
 #include "Defaults.h"
 #include "Query.h"
 
-#include "Collector.pb.h"
-#include "Server.pb.h"
+#include "Control.pb.h"
+#include "Monitor.pb.h"
 
 #include <Envelope.pb.h>
 #include <Helpers.h>
@@ -203,7 +203,7 @@ static bool doInitDatabase(const shared_ptr<PQDatabase> &db, const IDatabase::Re
 
 static bool doLoadDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
-  auto deviceList = std::vector<tkm::msg::collector::DeviceData>();
+  auto deviceList = std::vector<tkm::msg::control::DeviceData>();
   bool status = true;
 
   logDebug() << "Handling DB LoadDevices";
@@ -212,7 +212,7 @@ static bool doLoadDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Req
     auto result = db->runTransaction(tkmQuery.getDevices(Query::Type::PostgreSQL));
 
     for (pqxx::result::const_iterator c = result.begin(); c != result.end(); ++c) {
-      tkm::msg::collector::DeviceData deviceData;
+      tkm::msg::control::DeviceData deviceData;
 
       deviceData.set_id(
           c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Id)].as<long>());
@@ -239,7 +239,7 @@ static bool doLoadDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Req
 
       auto newDevice = std::make_shared<MonitorDevice>(deviceData);
       CollectorApp()->getDeviceManager()->addDevice(newDevice);
-      newDevice->getDeviceData().set_state(tkm::msg::collector::DeviceData_State_Loaded);
+      newDevice->getDeviceData().set_state(tkm::msg::control::DeviceData_State_Loaded);
       newDevice->enableEvents();
     }
   } else {
@@ -251,7 +251,7 @@ static bool doLoadDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Req
 
 static bool doCleanSessions(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
-  auto sessionList = std::vector<tkm::msg::collector::SessionData>();
+  auto sessionList = std::vector<tkm::msg::control::SessionData>();
   bool status = true;
 
   logDebug() << "Handling DB CleanSessions";
@@ -260,7 +260,7 @@ static bool doCleanSessions(const shared_ptr<PQDatabase> &db, const IDatabase::R
     auto result = db->runTransaction(tkmQuery.getSessions(Query::Type::PostgreSQL));
 
     for (pqxx::result::const_iterator c = result.begin(); c != result.end(); ++c) {
-      tkm::msg::collector::SessionData sessionData;
+      tkm::msg::control::SessionData sessionData;
 
       sessionData.set_id(
           c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Id)].as<long>());
@@ -298,7 +298,7 @@ static bool doCleanSessions(const shared_ptr<PQDatabase> &db, const IDatabase::R
 static bool doGetDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
-  auto deviceList = std::vector<tkm::msg::collector::DeviceData>();
+  auto deviceList = std::vector<tkm::msg::control::DeviceData>();
   bool status = true;
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
@@ -311,7 +311,7 @@ static bool doGetDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
     auto result = db->runTransaction(tkmQuery.getDevices(Query::Type::PostgreSQL));
 
     for (pqxx::result::const_iterator c = result.begin(); c != result.end(); ++c) {
-      tkm::msg::collector::DeviceData deviceData;
+      tkm::msg::control::DeviceData deviceData;
 
       deviceData.set_id(
           c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Id)].as<long>());
@@ -333,8 +333,8 @@ static bool doGetDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
 
   if (status) {
     tkm::msg::Envelope envelope;
-    tkm::msg::collector::Message message;
-    tkm::msg::collector::DeviceList devList;
+    tkm::msg::control::Message message;
+    tkm::msg::control::DeviceList devList;
 
     for (auto &dev : deviceList) {
       auto activeDevice = CollectorApp()->getDeviceManager()->getDevice(dev.hash());
@@ -347,7 +347,7 @@ static bool doGetDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
       tmpDev->CopyFrom(dev);
     }
 
-    message.set_type(tkm::msg::collector::Message_Type_DeviceList);
+    message.set_type(tkm::msg::control::Message_Type_DeviceList);
     message.mutable_data()->PackFrom(devList);
     envelope.mutable_mesg()->PackFrom(message);
 
@@ -374,7 +374,7 @@ static bool doGetDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
 static bool doGetSessions(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
-  auto sessionList = std::vector<tkm::msg::collector::SessionData>();
+  auto sessionList = std::vector<tkm::msg::control::SessionData>();
   bool status = true;
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
@@ -382,7 +382,7 @@ static bool doGetSessions(const shared_ptr<PQDatabase> &db, const IDatabase::Req
   }
 
   logDebug() << "Handling DB GetSessions request from client: " << rq.client->getName();
-  const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
+  const auto &deviceData = std::any_cast<tkm::msg::control::DeviceData>(rq.bulkData);
 
   try {
     pqxx::result result;
@@ -394,7 +394,7 @@ static bool doGetSessions(const shared_ptr<PQDatabase> &db, const IDatabase::Req
     }
 
     for (pqxx::result::const_iterator c = result.begin(); c != result.end(); ++c) {
-      tkm::msg::collector::SessionData sessionData;
+      tkm::msg::control::SessionData sessionData;
 
       sessionData.set_id(
           c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Id)].as<long>());
@@ -416,20 +416,20 @@ static bool doGetSessions(const shared_ptr<PQDatabase> &db, const IDatabase::Req
 
   if (status) {
     tkm::msg::Envelope envelope;
-    tkm::msg::collector::Message message;
-    tkm::msg::collector::SessionList msgSessionList;
+    tkm::msg::control::Message message;
+    tkm::msg::control::SessionList msgSessionList;
 
     for (auto &session : sessionList) {
       if (session.ended() == 0) {
-        session.set_state(tkm::msg::collector::SessionData_State_Progress);
+        session.set_state(tkm::msg::control::SessionData_State_Progress);
       } else {
-        session.set_state(tkm::msg::collector::SessionData_State_Complete);
+        session.set_state(tkm::msg::control::SessionData_State_Complete);
       }
       auto tmpSession = msgSessionList.add_session();
       tmpSession->CopyFrom(session);
     }
 
-    message.set_type(tkm::msg::collector::Message_Type_SessionList);
+    message.set_type(tkm::msg::control::Message_Type_SessionList);
     message.mutable_data()->PackFrom(msgSessionList);
     envelope.mutable_mesg()->PackFrom(message);
 
@@ -464,7 +464,7 @@ static bool doAddDevice(const shared_ptr<PQDatabase> &db, const IDatabase::Reque
   }
 
   logDebug() << "Handling DB AddDevice request from client: " << rq.client->getName();
-  const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
+  const auto &deviceData = std::any_cast<tkm::msg::control::DeviceData>(rq.bulkData);
 
   try {
     auto result =
@@ -533,7 +533,7 @@ static bool doRemoveDevice(const shared_ptr<PQDatabase> &db, const IDatabase::Re
   }
 
   logDebug() << "Handling DB RemoveDevice request from client: " << rq.client->getName();
-  const auto &deviceData = std::any_cast<tkm::msg::collector::DeviceData>(rq.bulkData);
+  const auto &deviceData = std::any_cast<tkm::msg::control::DeviceData>(rq.bulkData);
 
   try {
     auto result =
@@ -639,7 +639,7 @@ static bool doRemSession(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
   }
 
   logDebug() << "Handling DB RemoveSession request from client: " << rq.client->getName();
-  const auto &sessionData = std::any_cast<tkm::msg::collector::SessionData>(rq.bulkData);
+  const auto &sessionData = std::any_cast<tkm::msg::control::SessionData>(rq.bulkData);
 
   try {
     auto result =
@@ -701,7 +701,7 @@ static bool doEndSession(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
 
 static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
-  const auto &data = std::any_cast<tkm::msg::server::Data>(rq.bulkData);
+  const auto &data = std::any_cast<tkm::msg::monitor::Data>(rq.bulkData);
   bool status = true;
 
   if ((rq.args.count(Defaults::Arg::SessionHash) == 0)) {
@@ -710,12 +710,13 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
   }
 
   auto writeProcAcct = [&db, &rq, &status](const std::string &sessionHash,
-                                           const tkm::msg::server::ProcAcct &acct,
-                                           uint64_t ts,
-                                           uint64_t recvTime) {
+                                           const tkm::msg::monitor::ProcAcct &acct,
+                                           uint64_t systemTime,
+                                           uint64_t monotonicTime,
+                                           uint64_t receiveTime) {
     try {
-      db->runTransaction(
-          tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, acct, ts, recvTime));
+      db->runTransaction(tkmQuery.addData(
+          Query::Type::PostgreSQL, sessionHash, acct, systemTime, monotonicTime, receiveTime));
     } catch (std::exception &e) {
       logError() << "Query failed to addData. Database query fails: " << e.what();
       status = false;
@@ -723,52 +724,69 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
   };
 
   auto writeSysProcStat = [&db, &rq, &status](const std::string &sessionHash,
-                                              const tkm::msg::server::SysProcStat &sysProcStat,
-                                              uint64_t ts,
-                                              uint64_t recvTime) {
+                                              const tkm::msg::monitor::SysProcStat &sysProcStat,
+                                              uint64_t systemTime,
+                                              uint64_t monotonicTime,
+                                              uint64_t receiveTime) {
     try {
-      db->runTransaction(
-          tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, sysProcStat, ts, recvTime));
+      db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
+                                          sessionHash,
+                                          sysProcStat,
+                                          systemTime,
+                                          monotonicTime,
+                                          receiveTime));
     } catch (std::exception &e) {
       logError() << "Query failed to addData. Database query fails: " << e.what();
       status = false;
     }
   };
 
-  auto writeSysProcMeminfo = [&db, &rq, &status](const std::string &sessionHash,
-                                                 const tkm::msg::server::SysProcMeminfo &sysProcMem,
-                                                 uint64_t ts,
-                                                 uint64_t recvTime) {
-    try {
-      db->runTransaction(
-          tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, sysProcMem, ts, recvTime));
-    } catch (std::exception &e) {
-      logError() << "Query failed to addData. Database query fails: " << e.what();
-      status = false;
-    }
-  };
+  auto writeSysProcMeminfo =
+      [&db, &rq, &status](const std::string &sessionHash,
+                          const tkm::msg::monitor::SysProcMeminfo &sysProcMem,
+                          uint64_t systemTime,
+                          uint64_t monotonicTime,
+                          uint64_t receiveTime) {
+        try {
+          db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
+                                              sessionHash,
+                                              sysProcMem,
+                                              systemTime,
+                                              monotonicTime,
+                                              receiveTime));
+        } catch (std::exception &e) {
+          logError() << "Query failed to addData. Database query fails: " << e.what();
+          status = false;
+        }
+      };
 
-  auto writeSysProcPressure = [&db, &rq, &status](
-                                  const std::string &sessionHash,
-                                  const tkm::msg::server::SysProcPressure &sysProcPressure,
-                                  uint64_t ts,
-                                  uint64_t recvTime) {
-    try {
-      db->runTransaction(
-          tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, sysProcPressure, ts, recvTime));
-    } catch (std::exception &e) {
-      logError() << "Query failed to addData. Database query fails: " << e.what();
-      status = false;
-    }
-  };
+  auto writeSysProcPressure =
+      [&db, &rq, &status](const std::string &sessionHash,
+                          const tkm::msg::monitor::SysProcPressure &sysProcPressure,
+                          uint64_t systemTime,
+                          uint64_t monotonicTime,
+                          uint64_t receiveTime) {
+        try {
+          db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
+                                              sessionHash,
+                                              sysProcPressure,
+                                              systemTime,
+                                              monotonicTime,
+                                              receiveTime));
+        } catch (std::exception &e) {
+          logError() << "Query failed to addData. Database query fails: " << e.what();
+          status = false;
+        }
+      };
 
   auto writeProcEvent = [&db, &rq, &status](const std::string &sessionHash,
-                                            const tkm::msg::server::ProcEvent &procEvent,
-                                            uint64_t ts,
-                                            uint64_t recvTime) {
+                                            const tkm::msg::monitor::ProcEvent &procEvent,
+                                            uint64_t systemTime,
+                                            uint64_t monotonicTime,
+                                            uint64_t receiveTime) {
     try {
-      db->runTransaction(
-          tkmQuery.addData(Query::Type::PostgreSQL, sessionHash, procEvent, ts, recvTime));
+      db->runTransaction(tkmQuery.addData(
+          Query::Type::PostgreSQL, sessionHash, procEvent, systemTime, monotonicTime, receiveTime));
     } catch (std::exception &e) {
       logError() << "Query failed to addData. Database query fails: " << e.what();
       status = false;
@@ -776,39 +794,54 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
   };
 
   switch (data.what()) {
-  case tkm::msg::server::Data_What_ProcEvent: {
-    tkm::msg::server::ProcEvent procEvent;
+  case tkm::msg::monitor::Data_What_ProcEvent: {
+    tkm::msg::monitor::ProcEvent procEvent;
     data.payload().UnpackTo(&procEvent);
-    writeProcEvent(
-        rq.args.at(Defaults::Arg::SessionHash), procEvent, data.timestamp(), data.recvtime());
+    writeProcEvent(rq.args.at(Defaults::Arg::SessionHash),
+                   procEvent,
+                   data.system_time_sec(),
+                   data.monotonic_time_sec(),
+                   data.receive_time_sec());
     break;
   }
-  case tkm::msg::server::Data_What_ProcAcct: {
-    tkm::msg::server::ProcAcct procAcct;
+  case tkm::msg::monitor::Data_What_ProcAcct: {
+    tkm::msg::monitor::ProcAcct procAcct;
     data.payload().UnpackTo(&procAcct);
-    writeProcAcct(
-        rq.args.at(Defaults::Arg::SessionHash), procAcct, data.timestamp(), data.recvtime());
+    writeProcAcct(rq.args.at(Defaults::Arg::SessionHash),
+                  procAcct,
+                  data.system_time_sec(),
+                  data.monotonic_time_sec(),
+                  data.receive_time_sec());
     break;
   }
-  case tkm::msg::server::Data_What_SysProcStat: {
-    tkm::msg::server::SysProcStat sysProcStat;
+  case tkm::msg::monitor::Data_What_SysProcStat: {
+    tkm::msg::monitor::SysProcStat sysProcStat;
     data.payload().UnpackTo(&sysProcStat);
-    writeSysProcStat(
-        rq.args.at(Defaults::Arg::SessionHash), sysProcStat, data.timestamp(), data.recvtime());
+    writeSysProcStat(rq.args.at(Defaults::Arg::SessionHash),
+                     sysProcStat,
+                     data.system_time_sec(),
+                     data.monotonic_time_sec(),
+                     data.receive_time_sec());
     break;
   }
-  case tkm::msg::server::Data_What_SysProcMeminfo: {
-    tkm::msg::server::SysProcMeminfo sysProcMem;
+  case tkm::msg::monitor::Data_What_SysProcMeminfo: {
+    tkm::msg::monitor::SysProcMeminfo sysProcMem;
     data.payload().UnpackTo(&sysProcMem);
-    writeSysProcMeminfo(
-        rq.args.at(Defaults::Arg::SessionHash), sysProcMem, data.timestamp(), data.recvtime());
+    writeSysProcMeminfo(rq.args.at(Defaults::Arg::SessionHash),
+                        sysProcMem,
+                        data.system_time_sec(),
+                        data.monotonic_time_sec(),
+                        data.receive_time_sec());
     break;
   }
-  case tkm::msg::server::Data_What_SysProcPressure: {
-    tkm::msg::server::SysProcPressure sysProcPressure;
+  case tkm::msg::monitor::Data_What_SysProcPressure: {
+    tkm::msg::monitor::SysProcPressure sysProcPressure;
     data.payload().UnpackTo(&sysProcPressure);
-    writeSysProcPressure(
-        rq.args.at(Defaults::Arg::SessionHash), sysProcPressure, data.timestamp(), data.recvtime());
+    writeSysProcPressure(rq.args.at(Defaults::Arg::SessionHash),
+                         sysProcPressure,
+                         data.system_time_sec(),
+                         data.monotonic_time_sec(),
+                         data.receive_time_sec());
     break;
   }
   default:

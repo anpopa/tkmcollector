@@ -89,7 +89,7 @@ if(WITH_POSTGRESQL)
 endif()
 
 # Enable collector interfaces
-set(WITH_COLLECTOR ON)
+set(WITH_COLLECTOR_CONTROL ON)
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
     link_directories(/usr/local/lib)

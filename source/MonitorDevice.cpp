@@ -24,7 +24,8 @@
 #include "MonitorDevice.h"
 
 #include "Collector.pb.h"
-#include "Server.pb.h"
+#include "Control.pb.h"
+#include "Monitor.pb.h"
 
 using std::shared_ptr;
 using std::string;
@@ -76,11 +77,11 @@ bool MonitorDevice::pushRequest(Request &request)
   return m_queue->push(request);
 }
 
-void MonitorDevice::updateState(tkm::msg::collector::DeviceData_State state)
+void MonitorDevice::updateState(tkm::msg::control::DeviceData_State state)
 {
   m_deviceData.set_state(state);
 
-  if (state == tkm::msg::collector::DeviceData_State_Disconnected) {
+  if (state == tkm::msg::control::DeviceData_State_Disconnected) {
     if (m_sessionData.hash().length() > 0) {
       IDatabase::Request dbrq{.action = IDatabase::Action::EndSession};
       dbrq.args.emplace(Defaults::Arg::SessionHash, m_sessionData.hash());
@@ -162,10 +163,10 @@ static bool doConnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice:
 static bool doSendDescriptor(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
-  tkm::msg::client::Descriptor descriptor;
+  tkm::msg::collector::Descriptor descriptor;
   descriptor.set_id("Collector");
 
-  if (!sendClientDescriptor(mgr->getConnection()->getFD(), descriptor)) {
+  if (!sendCollectorDescriptor(mgr->getConnection()->getFD(), descriptor)) {
     if (rq.args.count(Defaults::Arg::RequestId)) {
       mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
     }
@@ -183,7 +184,7 @@ static bool doSendDescriptor(const shared_ptr<MonitorDevice> &mgr, const Monitor
   mrq.args.emplace(Defaults::Arg::Reason, "Connected");
 
   // We consider the state to be connected after descriptor was sent
-  mgr->updateState(tkm::msg::collector::DeviceData_State_Connected);
+  mgr->updateState(tkm::msg::control::DeviceData_State_Connected);
 
   logDebug() << "Client connected";
   return CollectorApp()->getDispatcher()->pushRequest(mrq);
@@ -192,14 +193,14 @@ static bool doSendDescriptor(const shared_ptr<MonitorDevice> &mgr, const Monitor
 static bool doRequestSession(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
 {
   tkm::msg::Envelope envelope;
-  tkm::msg::client::Request request;
+  tkm::msg::collector::Request request;
 
   request.set_id("CreateSession");
-  request.set_type(tkm::msg::client::Request::Type::Request_Type_CreateSession);
+  request.set_type(tkm::msg::collector::Request::Type::Request_Type_CreateSession);
 
   envelope.mutable_mesg()->PackFrom(request);
-  envelope.set_target(tkm::msg::Envelope_Recipient_Server);
-  envelope.set_origin(tkm::msg::Envelope_Recipient_Client);
+  envelope.set_target(tkm::msg::Envelope_Recipient_Monitor);
+  envelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
 
   logDebug() << "Request session to server";
   return mgr->getConnection()->writeEnvelope(envelope);
@@ -207,12 +208,18 @@ static bool doRequestSession(const shared_ptr<MonitorDevice> &mgr, const Monitor
 
 static bool doSetSession(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
 {
-  const auto &sessionInfo = std::any_cast<tkm::msg::server::SessionInfo>(rq.bulkData);
+  const auto &sessionInfo = std::any_cast<tkm::msg::monitor::SessionInfo>(rq.bulkData);
 
   // Update our session data
   logDebug() << "Session created: " << sessionInfo.id();
   mgr->getSessionData().set_hash(sessionInfo.id());
-  mgr->updateState(tkm::msg::collector::DeviceData_State_SessionSet);
+  mgr->getSessionData().set_proc_acct_poll_interval(sessionInfo.proc_acct_poll_interval());
+  mgr->getSessionData().set_sys_proc_stat_poll_interval(sessionInfo.sys_proc_stat_poll_interval());
+  mgr->getSessionData().set_sys_proc_meminfo_poll_interval(
+      sessionInfo.sys_proc_meminfo_poll_interval());
+  mgr->getSessionData().set_sys_proc_pressure_poll_interval(
+      sessionInfo.sys_proc_pressure_poll_interval());
+  mgr->updateState(tkm::msg::control::DeviceData_State_SessionSet);
 
   // Create session
   IDatabase::Request dbrq{.action = IDatabase::Action::AddSession};
@@ -233,7 +240,7 @@ static bool doDisconnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevi
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
   }
 
-  if (mgr->getDeviceData().state() != tkm::msg::collector::DeviceData_State_Disconnected) {
+  if (mgr->getDeviceData().state() != tkm::msg::control::DeviceData_State_Disconnected) {
     mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
     mrq.args.emplace(Defaults::Arg::Reason, "Device disconnected");
 
@@ -251,42 +258,147 @@ static bool doDisconnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevi
 
 static bool doStartStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &)
 {
-  tkm::msg::Envelope requestEnvelope;
-  tkm::msg::client::Request requestMessage;
-  tkm::msg::client::StreamState streamState;
+  // ProcAcct timer
+  if (mgr->getProcAcctTimer() != nullptr) {
+    if (mgr->getProcAcctTimer()->isArmed()) {
+      mgr->getProcAcctTimer()->stop();
+    }
+    mgr->getProcAcctTimer().reset();
+    mgr->getProcAcctTimer() = nullptr;
+  }
+  mgr->getProcAcctTimer() = std::make_shared<Timer>("ProcAcctTimer", [&mgr]() {
+    tkm::msg::Envelope requestEnvelope;
+    tkm::msg::collector::Request requestMessage;
 
-  streamState.set_state(true);
-  requestMessage.set_id("StartStream");
-  requestMessage.set_type(tkm::msg::client::Request_Type_StreamState);
-  requestMessage.mutable_data()->PackFrom(streamState);
+    logDebug() << "Request ProcAcct from " << mgr->getDeviceData().name();
 
-  requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
-  requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Server);
-  requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Client);
+    requestMessage.set_id("GetProcAcct");
+    requestMessage.set_type(tkm::msg::collector::Request_Type_GetProcAcct);
+    requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
+    requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Monitor);
+    requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
 
-  logDebug() << "Request start stream";
-  mgr->getDeviceData().set_state(tkm::msg::collector::DeviceData_State_Collecting);
-  return mgr->getConnection()->writeEnvelope(requestEnvelope);
+    return mgr->getConnection()->writeEnvelope(requestEnvelope);
+  });
+  mgr->getProcAcctTimer()->start(mgr->getSessionData().proc_acct_poll_interval(), true);
+  CollectorApp()->addEventSource(mgr->getProcAcctTimer());
+
+  // SysProcStat timer
+  if (mgr->getSysProcStatTimer() != nullptr) {
+    if (mgr->getSysProcStatTimer()->isArmed()) {
+      mgr->getSysProcStatTimer()->stop();
+    }
+    mgr->getSysProcStatTimer().reset();
+    mgr->getSysProcStatTimer() = nullptr;
+  }
+  mgr->getSysProcStatTimer() = std::make_shared<Timer>("SysProcStatTimer", [&mgr]() {
+    tkm::msg::Envelope requestEnvelope;
+    tkm::msg::collector::Request requestMessage;
+
+    logDebug() << "Request SysProcStat from " << mgr->getDeviceData().name();
+
+    requestMessage.set_id("GetSysProcStat");
+    requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcStat);
+    requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
+    requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Monitor);
+    requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
+
+    return mgr->getConnection()->writeEnvelope(requestEnvelope);
+  });
+  mgr->getSysProcStatTimer()->start(mgr->getSessionData().sys_proc_stat_poll_interval(), true);
+  CollectorApp()->addEventSource(mgr->getSysProcStatTimer());
+
+  // SysProcMemInfo timer
+  if (mgr->getSysProcMemInfoTimer() != nullptr) {
+    if (mgr->getSysProcMemInfoTimer()->isArmed()) {
+      mgr->getSysProcMemInfoTimer()->stop();
+    }
+    mgr->getSysProcMemInfoTimer().reset();
+    mgr->getSysProcMemInfoTimer() = nullptr;
+  }
+  mgr->getSysProcMemInfoTimer() = std::make_shared<Timer>("SysProcMemInfoTimer", [&mgr]() {
+    tkm::msg::Envelope requestEnvelope;
+    tkm::msg::collector::Request requestMessage;
+
+    logDebug() << "Request SysProcMemInfo from " << mgr->getDeviceData().name();
+
+    requestMessage.set_id("GetSysProcMemInfo");
+    requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcMeminfo);
+    requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
+    requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Monitor);
+    requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
+
+    return mgr->getConnection()->writeEnvelope(requestEnvelope);
+  });
+  mgr->getSysProcMemInfoTimer()->start(mgr->getSessionData().sys_proc_meminfo_poll_interval(),
+                                       true);
+  CollectorApp()->addEventSource(mgr->getSysProcMemInfoTimer());
+
+  // SysProcPressure timer
+  if (mgr->getSysProcPressureTimer() != nullptr) {
+    if (mgr->getSysProcPressureTimer()->isArmed()) {
+      mgr->getSysProcPressureTimer()->stop();
+    }
+    mgr->getSysProcPressureTimer().reset();
+    mgr->getSysProcPressureTimer() = nullptr;
+  }
+  mgr->getSysProcPressureTimer() = std::make_shared<Timer>("SysProcPressureTimer", [&mgr]() {
+    tkm::msg::Envelope requestEnvelope;
+    tkm::msg::collector::Request requestMessage;
+
+    logDebug() << "Request SysProcPressure from " << mgr->getDeviceData().name();
+
+    requestMessage.set_id("GetSysProcPressure");
+    requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcPressure);
+    requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
+    requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Monitor);
+    requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
+
+    return mgr->getConnection()->writeEnvelope(requestEnvelope);
+  });
+  mgr->getSysProcPressureTimer()->start(mgr->getSessionData().sys_proc_pressure_poll_interval(),
+                                        true);
+  CollectorApp()->addEventSource(mgr->getSysProcPressureTimer());
+
+  mgr->getDeviceData().set_state(tkm::msg::control::DeviceData_State_Collecting);
+
+  return true;
 }
 
 static bool doStopStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &)
 {
-  tkm::msg::Envelope requestEnvelope;
-  tkm::msg::client::Request requestMessage;
-  tkm::msg::client::StreamState streamState;
+  if (mgr->getProcAcctTimer() != nullptr) {
+    if (mgr->getProcAcctTimer()->isArmed()) {
+      mgr->getProcAcctTimer()->stop();
+    }
+    mgr->getProcAcctTimer().reset();
+    mgr->getProcAcctTimer() = nullptr;
+  }
+  if (mgr->getSysProcStatTimer() != nullptr) {
+    if (mgr->getSysProcStatTimer()->isArmed()) {
+      mgr->getSysProcStatTimer()->stop();
+    }
+    mgr->getSysProcStatTimer().reset();
+    mgr->getSysProcStatTimer() = nullptr;
+  }
+  if (mgr->getSysProcMemInfoTimer() != nullptr) {
+    if (mgr->getSysProcMemInfoTimer()->isArmed()) {
+      mgr->getSysProcMemInfoTimer()->stop();
+    }
+    mgr->getSysProcMemInfoTimer().reset();
+    mgr->getSysProcMemInfoTimer() = nullptr;
+  }
+  if (mgr->getSysProcPressureTimer() != nullptr) {
+    if (mgr->getSysProcPressureTimer()->isArmed()) {
+      mgr->getSysProcPressureTimer()->stop();
+    }
+    mgr->getSysProcPressureTimer().reset();
+    mgr->getSysProcPressureTimer() = nullptr;
+  }
 
-  streamState.set_state(false);
-  requestMessage.set_id("StopStream");
-  requestMessage.set_type(tkm::msg::client::Request_Type_StreamState);
-  requestMessage.mutable_data()->PackFrom(streamState);
+  mgr->getDeviceData().set_state(tkm::msg::control::DeviceData_State_Idle);
 
-  requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
-  requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Server);
-  requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Client);
-
-  logDebug() << "Request stop stream";
-  mgr->getDeviceData().set_state(tkm::msg::collector::DeviceData_State_Idle);
-  return mgr->getConnection()->writeEnvelope(requestEnvelope);
+  return true;
 }
 
 static bool doStartCollecting(const shared_ptr<MonitorDevice> &mgr,
@@ -298,16 +410,16 @@ static bool doStartCollecting(const shared_ptr<MonitorDevice> &mgr,
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
   }
 
-  if ((mgr->getDeviceData().state() == tkm::msg::collector::DeviceData_State_Connected) ||
-      (mgr->getDeviceData().state() == tkm::msg::collector::DeviceData_State_Idle)) {
+  if ((mgr->getDeviceData().state() == tkm::msg::control::DeviceData_State_Connected) ||
+      (mgr->getDeviceData().state() == tkm::msg::control::DeviceData_State_Idle)) {
     mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
     mrq.args.emplace(Defaults::Arg::Reason, "Collecting requested");
 
     MonitorDevice::Request nrq = {.action = MonitorDevice::Action::RequestSession};
     mgr->pushRequest(nrq);
-  } else if (mgr->getDeviceData().state() == tkm::msg::collector::DeviceData_State_SessionSet) {
+  } else if (mgr->getDeviceData().state() == tkm::msg::control::DeviceData_State_SessionSet) {
     mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
-    mrq.args.emplace(Defaults::Arg::Reason, "Collecting requested");
+    mrq.args.emplace(Defaults::Arg::Reason, "Collecting start requested");
 
     MonitorDevice::Request nrq = {.action = MonitorDevice::Action::StartStream};
     mgr->pushRequest(nrq);
@@ -327,7 +439,7 @@ static bool doStopCollecting(const shared_ptr<MonitorDevice> &mgr, const Monitor
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
   }
 
-  if (mgr->getDeviceData().state() == tkm::msg::collector::DeviceData_State_Collecting) {
+  if (mgr->getDeviceData().state() == tkm::msg::control::DeviceData_State_Collecting) {
     mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
     mrq.args.emplace(Defaults::Arg::Reason, "Collecting stop requested");
 
@@ -351,23 +463,23 @@ static bool doProcessData(const shared_ptr<MonitorDevice> &mgr, const MonitorDev
 
 static bool doStatus(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
 {
-  const auto &serverStatus = std::any_cast<tkm::msg::server::Status>(rq.bulkData);
+  const auto &serverStatus = std::any_cast<tkm::msg::monitor::Status>(rq.bulkData);
   std::string what;
 
   switch (serverStatus.what()) {
-  case tkm::msg::server::Status_What_OK:
+  case tkm::msg::monitor::Status_What_OK:
     what = tkmDefaults.valFor(Defaults::Val::StatusOkay);
     break;
-  case tkm::msg::server::Status_What_Busy:
+  case tkm::msg::monitor::Status_What_Busy:
     what = tkmDefaults.valFor(Defaults::Val::StatusBusy);
     break;
-  case tkm::msg::server::Status_What_Error:
+  case tkm::msg::monitor::Status_What_Error:
   default:
     what = tkmDefaults.valFor(Defaults::Val::StatusError);
     break;
   }
 
-  logDebug() << "Server status (" << serverStatus.requestid() << "): " << what
+  logDebug() << "Server status (" << serverStatus.request_id() << "): " << what
              << " Reason: " << serverStatus.reason();
 
   return true;

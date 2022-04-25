@@ -19,10 +19,9 @@
 #include "Options.h"
 
 #include "../bswinfra/source/AsyncQueue.h"
-#include "../bswinfra/source/Exceptions.h"
-#include "../bswinfra/source/Logger.h"
+#include "../bswinfra/source/Timer.h"
 
-#include "Collector.pb.h"
+#include "Control.pb.h"
 
 using namespace bswi::event;
 
@@ -32,10 +31,7 @@ namespace tkm::collector
 class MonitorDevice : public IDevice, public std::enable_shared_from_this<MonitorDevice>
 {
 public:
-  explicit MonitorDevice(const tkm::msg::collector::DeviceData &data)
-  {
-    m_deviceData.CopyFrom(data);
-  }
+  explicit MonitorDevice(const tkm::msg::control::DeviceData &data) { m_deviceData.CopyFrom(data); }
   ~MonitorDevice() = default;
 
   bool createConnection() final;
@@ -46,13 +42,22 @@ public:
   auto getConnection() -> std::shared_ptr<Connection> & { return m_connection; }
   void enableEvents();
   bool pushRequest(Request &request);
-  void updateState(tkm::msg::collector::DeviceData_State state) final;
+  void updateState(tkm::msg::control::DeviceData_State state) final;
+
+  auto getProcAcctTimer() -> std::shared_ptr<Timer> & { return m_procAcctTimer; }
+  auto getSysProcStatTimer() -> std::shared_ptr<Timer> & { return m_sysProcStatTimer; }
+  auto getSysProcMemInfoTimer() -> std::shared_ptr<Timer> & { return m_sysProcMemInfoTimer; }
+  auto getSysProcPressureTimer() -> std::shared_ptr<Timer> & { return m_sysProcPressureTimer; }
 
 private:
   bool requestHandler(const Request &request) final;
 
 private:
   std::shared_ptr<Connection> m_connection = nullptr;
+  std::shared_ptr<Timer> m_procAcctTimer = nullptr;
+  std::shared_ptr<Timer> m_sysProcStatTimer = nullptr;
+  std::shared_ptr<Timer> m_sysProcMemInfoTimer = nullptr;
+  std::shared_ptr<Timer> m_sysProcPressureTimer = nullptr;
 };
 
 } // namespace tkm::collector
