@@ -31,7 +31,11 @@ namespace tkm::collector
 class MonitorDevice : public IDevice, public std::enable_shared_from_this<MonitorDevice>
 {
 public:
-  explicit MonitorDevice(const tkm::msg::control::DeviceData &data) { m_deviceData.CopyFrom(data); }
+  explicit MonitorDevice(const tkm::msg::control::DeviceData &data)
+  {
+    m_deviceData.CopyFrom(data);
+    initTimers();
+  }
   ~MonitorDevice() = default;
 
   bool createConnection() final;
@@ -45,16 +49,19 @@ public:
   void updateState(tkm::msg::control::DeviceData_State state) final;
 
   auto getProcAcctTimer() -> std::shared_ptr<Timer> & { return m_procAcctTimer; }
+  auto getProcEventTimer() -> std::shared_ptr<Timer> & { return m_procEventTimer; }
   auto getSysProcStatTimer() -> std::shared_ptr<Timer> & { return m_sysProcStatTimer; }
   auto getSysProcMemInfoTimer() -> std::shared_ptr<Timer> & { return m_sysProcMemInfoTimer; }
   auto getSysProcPressureTimer() -> std::shared_ptr<Timer> & { return m_sysProcPressureTimer; }
 
 private:
   bool requestHandler(const Request &request) final;
+  void initTimers(void);
 
 private:
   std::shared_ptr<Connection> m_connection = nullptr;
   std::shared_ptr<Timer> m_procAcctTimer = nullptr;
+  std::shared_ptr<Timer> m_procEventTimer = nullptr;
   std::shared_ptr<Timer> m_sysProcStatTimer = nullptr;
   std::shared_ptr<Timer> m_sysProcMemInfoTimer = nullptr;
   std::shared_ptr<Timer> m_sysProcPressureTimer = nullptr;
