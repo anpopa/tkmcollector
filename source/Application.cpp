@@ -109,6 +109,8 @@ Application::Application(const string &name, const string &description, const st
     // Mark all in progress sessions as complete
     m_deviceManager->cleanSessions();
   }
+
+  startWatchdog();
 }
 
 void Application::startWatchdog(void)
