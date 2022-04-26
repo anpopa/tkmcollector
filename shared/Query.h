@@ -273,7 +273,6 @@ public:
     AcPPid,                // int: ac_ppid
     AcUTime,               // int: ac_utime
     AcSTime,               // int: ac_stime
-    CpuPercent,            // int: cpu usage percent
     CpuCount,              // int: cpu_count
     CpuRunRealTotal,       // int: cpu_run_real_total
     CpuRunVirtualTotal,    // int: cpu_run_virtual_total
@@ -317,7 +316,6 @@ public:
       std::make_pair(ProcAcctColumn::AcPPid, "AcPPid"),
       std::make_pair(ProcAcctColumn::AcUTime, "AcUTime"),
       std::make_pair(ProcAcctColumn::AcSTime, "AcSTime"),
-      std::make_pair(ProcAcctColumn::CpuPercent, "CpuPercent"),
       std::make_pair(ProcAcctColumn::CpuCount, "CpuCount"),
       std::make_pair(ProcAcctColumn::CpuRunRealTotal, "CpuRunRealTotal"),
       std::make_pair(ProcAcctColumn::CpuRunVirtualTotal, "CpuRunVirtualTotal"),

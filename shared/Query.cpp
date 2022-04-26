@@ -235,7 +235,6 @@ auto Query::createTables(Query::Type type) -> std::string
           << m_procAcctColumn.at(ProcAcctColumn::AcPPid) << " INTEGER NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::AcUTime) << " INTEGER NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::AcSTime) << " INTEGER NOT NULL, "
-          << m_procAcctColumn.at(ProcAcctColumn::CpuPercent) << " INTEGER NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::CpuCount) << " INTEGER NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::CpuRunRealTotal) << " INTEGER NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::CpuRunVirtualTotal) << " INTEGER NOT NULL, "
@@ -278,7 +277,6 @@ auto Query::createTables(Query::Type type) -> std::string
           << m_procAcctColumn.at(ProcAcctColumn::AcPPid) << " BIGINT NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::AcUTime) << " BIGINT NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::AcSTime) << " BIGINT NOT NULL, "
-          << m_procAcctColumn.at(ProcAcctColumn::CpuPercent) << " INTEGER NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::CpuCount) << " BIGINT NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::CpuRunRealTotal) << " BIGINT NOT NULL, "
           << m_procAcctColumn.at(ProcAcctColumn::CpuRunVirtualTotal) << " BIGINT NOT NULL, "
@@ -778,7 +776,6 @@ auto Query::addData(Query::Type type,
         << m_procAcctColumn.at(ProcAcctColumn::AcPPid) << ","
         << m_procAcctColumn.at(ProcAcctColumn::AcUTime) << ","
         << m_procAcctColumn.at(ProcAcctColumn::AcSTime) << ","
-        << m_procAcctColumn.at(ProcAcctColumn::CpuPercent) << ","
         << m_procAcctColumn.at(ProcAcctColumn::CpuCount) << ","
         << m_procAcctColumn.at(ProcAcctColumn::CpuRunRealTotal) << ","
         << m_procAcctColumn.at(ProcAcctColumn::CpuRunVirtualTotal) << ","
@@ -812,20 +809,20 @@ auto Query::addData(Query::Type type,
         << monotonicTime << "', '" << receiveTime << "', '" << procAcct.ac_comm() << "', '"
         << procAcct.ac_uid() << "', '" << procAcct.ac_gid() << "', '" << procAcct.ac_pid() << "', '"
         << procAcct.ac_ppid() << "', '" << procAcct.ac_utime() << "', '" << procAcct.ac_stime()
-        << "', '" << procAcct.cpu_percent() << "', '" << procAcct.cpu().cpu_count() << "', '"
-        << procAcct.cpu().cpu_run_real_total() << "', '" << procAcct.cpu().cpu_run_virtual_total()
-        << "', '" << procAcct.cpu().cpu_delay_total() << "', '"
-        << procAcct.cpu().cpu_delay_average() << "', '" << procAcct.mem().coremem() << "', '"
-        << procAcct.mem().virtmem() << "', '" << procAcct.mem().hiwater_rss() << "', '"
-        << procAcct.mem().hiwater_vm() << "', '" << procAcct.ctx().nvcsw() << "', '"
-        << procAcct.ctx().nivcsw() << "', '" << procAcct.swp().swapin_count() << "', '"
-        << procAcct.swp().swapin_delay_total() << "', '" << procAcct.swp().swapin_delay_average()
-        << "', '" << procAcct.io().blkio_count() << "', '" << procAcct.io().blkio_delay_total()
-        << "', '" << procAcct.io().blkio_delay_average() << "', '" << procAcct.io().read_bytes()
-        << "', '" << procAcct.io().write_bytes() << "', '" << procAcct.io().read_char() << "', '"
-        << procAcct.io().write_char() << "', '" << procAcct.io().read_syscalls() << "', '"
-        << procAcct.io().write_syscalls() << "', '" << procAcct.reclaim().freepages_count()
-        << "', '" << procAcct.reclaim().freepages_delay_total() << "', '"
+        << "', '" << procAcct.cpu().cpu_count() << "', '" << procAcct.cpu().cpu_run_real_total()
+        << "', '" << procAcct.cpu().cpu_run_virtual_total() << "', '"
+        << procAcct.cpu().cpu_delay_total() << "', '" << procAcct.cpu().cpu_delay_average()
+        << "', '" << procAcct.mem().coremem() << "', '" << procAcct.mem().virtmem() << "', '"
+        << procAcct.mem().hiwater_rss() << "', '" << procAcct.mem().hiwater_vm() << "', '"
+        << procAcct.ctx().nvcsw() << "', '" << procAcct.ctx().nivcsw() << "', '"
+        << procAcct.swp().swapin_count() << "', '" << procAcct.swp().swapin_delay_total() << "', '"
+        << procAcct.swp().swapin_delay_average() << "', '" << procAcct.io().blkio_count() << "', '"
+        << procAcct.io().blkio_delay_total() << "', '" << procAcct.io().blkio_delay_average()
+        << "', '" << procAcct.io().read_bytes() << "', '" << procAcct.io().write_bytes() << "', '"
+        << procAcct.io().read_char() << "', '" << procAcct.io().write_char() << "', '"
+        << procAcct.io().read_syscalls() << "', '" << procAcct.io().write_syscalls() << "', '"
+        << procAcct.reclaim().freepages_count() << "', '"
+        << procAcct.reclaim().freepages_delay_total() << "', '"
         << procAcct.reclaim().freepages_delay_average() << "', '"
         << procAcct.thrashing().thrashing_count() << "', '"
         << procAcct.thrashing().thrashing_delay_total() << "', '"
