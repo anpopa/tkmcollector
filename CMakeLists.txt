@@ -80,6 +80,10 @@ if(WITH_SYSLOG)
     add_compile_options("-DWITH_SYSLOG")
 endif()
 
+if(WITH_SYSTEMD)
+    add_compile_options("-DWITH_SYSTEMD")
+endif()
+
 if(WITH_SQLITE3)
     add_compile_options("-DWITH_SQLITE3")
 endif()
