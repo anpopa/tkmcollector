@@ -24,8 +24,9 @@
 #endif
 
 namespace fs = std::filesystem;
-using std::shared_ptr;
 using std::string;
+
+#define USEC2SEC(x) (x / 1000000)
 
 namespace tkm::collector
 {
