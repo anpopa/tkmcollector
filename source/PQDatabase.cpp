@@ -576,9 +576,10 @@ static bool doRemoveDevice(const shared_ptr<PQDatabase> &db, const IDatabase::Re
 
 static bool doAddSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
+  const auto &sessionInfo = std::any_cast<tkm::msg::monitor::SessionInfo>(rq.bulkData);
+
   logDebug() << "Handling DB AddSession request";
-  if ((rq.args.count(Defaults::Arg::DeviceHash) == 0) ||
-      (rq.args.count(Defaults::Arg::SessionHash) == 0)) {
+  if (rq.args.count(Defaults::Arg::DeviceHash) == 0) {
     logError() << "Invalid session data";
     throw std::runtime_error("Invalid arguments");
   }
@@ -606,16 +607,11 @@ static bool doAddSession(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
     }
   }
 
-  const std::string sessionName =
-      "Collector." + std::to_string(getpid()) + "." + std::to_string(time(NULL));
   bool status = true;
 
   try {
-    db->runTransaction(tkmQuery.addSession(Query::Type::PostgreSQL,
-                                           rq.args.at(Defaults::Arg::SessionHash),
-                                           sessionName,
-                                           time(NULL),
-                                           rq.args.at(Defaults::Arg::DeviceHash)));
+    db->runTransaction(tkmQuery.addSession(
+        Query::Type::PostgreSQL, sessionInfo, rq.args.at(Defaults::Arg::DeviceHash), time(NULL)));
   } catch (std::exception &e) {
     logError() << "Database query fails: " << e.what();
     status = false;

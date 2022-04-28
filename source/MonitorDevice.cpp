@@ -315,8 +315,8 @@ static bool doSetSession(const shared_ptr<MonitorDevice> &mgr, const MonitorDevi
   const auto &sessionInfo = std::any_cast<tkm::msg::monitor::SessionInfo>(rq.bulkData);
 
   // Update our session data
-  logDebug() << "Session created: " << sessionInfo.id();
-  mgr->getSessionData().set_hash(sessionInfo.id());
+  logDebug() << "Session created: " << sessionInfo.hash();
+  mgr->getSessionData().set_hash(sessionInfo.hash());
   mgr->getSessionData().set_proc_acct_poll_interval(sessionInfo.proc_acct_poll_interval());
   mgr->getSessionData().set_proc_event_poll_interval(sessionInfo.proc_event_poll_interval());
   mgr->getSessionData().set_sys_proc_stat_poll_interval(sessionInfo.sys_proc_stat_poll_interval());
@@ -327,9 +327,8 @@ static bool doSetSession(const shared_ptr<MonitorDevice> &mgr, const MonitorDevi
   mgr->updateState(tkm::msg::control::DeviceData_State_SessionSet);
 
   // Create session
-  IDatabase::Request dbrq{.action = IDatabase::Action::AddSession};
+  IDatabase::Request dbrq{.action = IDatabase::Action::AddSession, .bulkData = sessionInfo};
   dbrq.args.emplace(Defaults::Arg::DeviceHash, mgr->getDeviceData().hash());
-  dbrq.args.emplace(Defaults::Arg::SessionHash, mgr->getSessionData().hash());
   CollectorApp()->getDatabase()->pushRequest(dbrq);
 
   // Start data stream

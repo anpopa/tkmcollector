@@ -524,9 +524,10 @@ static bool doRemoveDevice(const shared_ptr<SQLiteDatabase> &db, const IDatabase
 
 static bool doAddSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::Request &rq)
 {
+  const auto &sessionInfo = std::any_cast<tkm::msg::monitor::SessionInfo>(rq.bulkData);
+
   logDebug() << "Handling DB AddSession request";
-  if ((rq.args.count(Defaults::Arg::DeviceHash) == 0) ||
-      (rq.args.count(Defaults::Arg::SessionHash) == 0)) {
+  if (rq.args.count(Defaults::Arg::DeviceHash) == 0) {
     logError() << "Invalid session data";
     throw std::runtime_error("Invalid arguments");
   }
@@ -555,16 +556,11 @@ static bool doAddSession(const shared_ptr<SQLiteDatabase> &db, const IDatabase::
     logError() << "Failed to check existing session";
   }
 
-  const std::string sessionName =
-      "Collector." + std::to_string(getpid()) + "." + std::to_string(time(NULL));
-
   SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::AddSession};
-  status = db->runQuery(tkmQuery.addSession(Query::Type::SQLite3,
-                                            rq.args.at(Defaults::Arg::SessionHash),
-                                            sessionName,
-                                            time(NULL),
-                                            rq.args.at(Defaults::Arg::DeviceHash)),
-                        query);
+  status = db->runQuery(
+      tkmQuery.addSession(
+          Query::Type::SQLite3, sessionInfo, rq.args.at(Defaults::Arg::DeviceHash), time(NULL)),
+      query);
   if (!status) {
     logError() << "Query failed to add session";
   }
