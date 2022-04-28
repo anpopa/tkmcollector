@@ -20,7 +20,7 @@ bool DeviceManager::addDevice(std::shared_ptr<MonitorDevice> device)
 {
   auto found = false;
 
-  m_devices.foreach ([this, &device, &found](const std::shared_ptr<MonitorDevice> &entry) {
+  m_devices.foreach ([this, &device, &found](const std::shared_ptr<MonitorDevice> entry) {
     if (entry->getDeviceData().hash() == device->getDeviceData().hash()) {
       found = true;
     }
@@ -38,7 +38,7 @@ bool DeviceManager::remDevice(std::shared_ptr<MonitorDevice> device)
 {
   auto found = false;
 
-  m_devices.foreach ([this, &device, &found](const std::shared_ptr<MonitorDevice> &entry) {
+  m_devices.foreach ([this, &device, &found](const std::shared_ptr<MonitorDevice> entry) {
     if (entry->getDeviceData().hash() == device->getDeviceData().hash()) {
       logDebug() << "Found device to remove with hash " << entry->getDeviceData().hash();
       entry->getConnection()->disconnect();
@@ -55,7 +55,7 @@ auto DeviceManager::getDevice(const std::string &hash) -> std::shared_ptr<Monito
 {
   std::shared_ptr<MonitorDevice> retEntry = nullptr;
 
-  m_devices.foreach ([this, &hash, &retEntry](const std::shared_ptr<MonitorDevice> &entry) {
+  m_devices.foreach ([this, &hash, &retEntry](const std::shared_ptr<MonitorDevice> entry) {
     if (entry->getDeviceData().hash() == hash) {
       retEntry = entry;
     }

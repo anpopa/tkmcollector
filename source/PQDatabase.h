@@ -32,7 +32,7 @@ public:
 
   void enableEvents() final;
   auto getShared() -> std::shared_ptr<PQDatabase> { return shared_from_this(); }
-  auto getConnection() -> std::unique_ptr<pqxx::connection> & { return m_connection; }
+  auto getConnection() -> const std::unique_ptr<pqxx::connection> & { return m_connection; }
   bool requestHandler(const IDatabase::Request &request) final;
 
   auto runTransaction(const std::string &sql) -> pqxx::result;

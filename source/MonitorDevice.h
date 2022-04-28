@@ -43,16 +43,16 @@ public:
   void deleteConnection() final;
 
   auto getShared() -> std::shared_ptr<MonitorDevice> { return shared_from_this(); }
-  auto getConnection() -> std::shared_ptr<Connection> & { return m_connection; }
+  auto getConnection() -> std::shared_ptr<Connection> { return m_connection; }
   void enableEvents();
   bool pushRequest(Request &request);
   void updateState(tkm::msg::control::DeviceData_State state) final;
 
-  auto getProcAcctTimer() -> std::shared_ptr<Timer> & { return m_procAcctTimer; }
-  auto getProcEventTimer() -> std::shared_ptr<Timer> & { return m_procEventTimer; }
-  auto getSysProcStatTimer() -> std::shared_ptr<Timer> & { return m_sysProcStatTimer; }
-  auto getSysProcMemInfoTimer() -> std::shared_ptr<Timer> & { return m_sysProcMemInfoTimer; }
-  auto getSysProcPressureTimer() -> std::shared_ptr<Timer> & { return m_sysProcPressureTimer; }
+  auto getProcAcctTimer() -> std::shared_ptr<Timer> { return m_procAcctTimer; }
+  auto getProcEventTimer() -> std::shared_ptr<Timer> { return m_procEventTimer; }
+  auto getSysProcStatTimer() -> std::shared_ptr<Timer> { return m_sysProcStatTimer; }
+  auto getSysProcMemInfoTimer() -> std::shared_ptr<Timer> { return m_sysProcMemInfoTimer; }
+  auto getSysProcPressureTimer() -> std::shared_ptr<Timer> { return m_sysProcPressureTimer; }
 
 private:
   bool requestHandler(const Request &request) final;

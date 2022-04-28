@@ -11,24 +11,21 @@ using std::string;
 namespace tkm::collector
 {
 
-static bool doInitDatabase(const shared_ptr<ControlClient> &client, tkm::msg::control::Request &rq);
-static bool doRequestSession(const shared_ptr<ControlClient> &client,
+static bool doInitDatabase(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq);
+static bool doRequestSession(const shared_ptr<ControlClient> client,
                              tkm::msg::control::Request &rq);
-static bool doQuitCollector(const shared_ptr<ControlClient> &client,
-                            tkm::msg::control::Request &rq);
-static bool doGetDevices(const shared_ptr<ControlClient> &client, tkm::msg::control::Request &rq);
-static bool doGetSessions(const shared_ptr<ControlClient> &client, tkm::msg::control::Request &rq);
-static bool doRemoveSession(const shared_ptr<ControlClient> &client,
-                            tkm::msg::control::Request &rq);
-static bool doAddDevice(const shared_ptr<ControlClient> &client, tkm::msg::control::Request &rq);
-static bool doRemoveDevice(const shared_ptr<ControlClient> &client, tkm::msg::control::Request &rq);
-static bool doConnectDevice(const shared_ptr<ControlClient> &client,
-                            tkm::msg::control::Request &rq);
-static bool doDisconnectDevice(const shared_ptr<ControlClient> &client,
+static bool doQuitCollector(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq);
+static bool doGetDevices(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq);
+static bool doGetSessions(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq);
+static bool doRemoveSession(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq);
+static bool doAddDevice(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq);
+static bool doRemoveDevice(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq);
+static bool doConnectDevice(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq);
+static bool doDisconnectDevice(const shared_ptr<ControlClient> client,
                                tkm::msg::control::Request &rq);
-static bool doStartCollecting(const shared_ptr<ControlClient> &client,
+static bool doStartCollecting(const shared_ptr<ControlClient> client,
                               tkm::msg::control::Request &rq);
-static bool doStopCollecting(const shared_ptr<ControlClient> &client,
+static bool doStopCollecting(const shared_ptr<ControlClient> client,
                              tkm::msg::control::Request &rq);
 
 ControlClient::ControlClient(int clientFd)
@@ -126,8 +123,7 @@ ControlClient::~ControlClient()
   }
 }
 
-static bool doRequestSession(const shared_ptr<ControlClient> &client,
-                             tkm::msg::control::Request &rq)
+static bool doRequestSession(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq)
 {
   tkm::msg::control::SessionInfo sessionInfo;
   rq.data().UnpackTo(&sessionInfo);
@@ -157,7 +153,7 @@ static bool doRequestSession(const shared_ptr<ControlClient> &client,
   return CollectorApp()->getDispatcher()->pushRequest(nrq);
 }
 
-static bool doInitDatabase(const shared_ptr<ControlClient> &client, tkm::msg::control::Request &rq)
+static bool doInitDatabase(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq)
 {
   Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::InitDatabase};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
@@ -169,7 +165,7 @@ static bool doInitDatabase(const shared_ptr<ControlClient> &client, tkm::msg::co
   return CollectorApp()->getDispatcher()->pushRequest(nrq);
 }
 
-static bool doQuitCollector(const shared_ptr<ControlClient> &client, tkm::msg::control::Request &rq)
+static bool doQuitCollector(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq)
 {
   Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::QuitCollector};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
@@ -181,14 +177,14 @@ static bool doQuitCollector(const shared_ptr<ControlClient> &client, tkm::msg::c
   return CollectorApp()->getDispatcher()->pushRequest(nrq);
 }
 
-static bool doGetDevices(const shared_ptr<ControlClient> &client, tkm::msg::control::Request &rq)
+static bool doGetDevices(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq)
 {
   Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::GetDevices};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
   return CollectorApp()->getDispatcher()->pushRequest(nrq);
 }
 
-static bool doRemoveSession(const shared_ptr<ControlClient> &client, tkm::msg::control::Request &rq)
+static bool doRemoveSession(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq)
 {
   Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::RemoveSession};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
@@ -204,7 +200,7 @@ static bool doRemoveSession(const shared_ptr<ControlClient> &client, tkm::msg::c
   return CollectorApp()->getDispatcher()->pushRequest(nrq);
 }
 
-static bool doAddDevice(const shared_ptr<ControlClient> &client, tkm::msg::control::Request &rq)
+static bool doAddDevice(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq)
 {
   Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::AddDevice};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
@@ -220,7 +216,7 @@ static bool doAddDevice(const shared_ptr<ControlClient> &client, tkm::msg::contr
   return CollectorApp()->getDispatcher()->pushRequest(nrq);
 }
 
-static bool doRemoveDevice(const shared_ptr<ControlClient> &client, tkm::msg::control::Request &rq)
+static bool doRemoveDevice(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq)
 {
   Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::RemoveDevice};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
@@ -236,7 +232,7 @@ static bool doRemoveDevice(const shared_ptr<ControlClient> &client, tkm::msg::co
   return CollectorApp()->getDispatcher()->pushRequest(nrq);
 }
 
-static bool doConnectDevice(const shared_ptr<ControlClient> &client, tkm::msg::control::Request &rq)
+static bool doConnectDevice(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq)
 {
   Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::ConnectDevice};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
@@ -252,7 +248,7 @@ static bool doConnectDevice(const shared_ptr<ControlClient> &client, tkm::msg::c
   return CollectorApp()->getDispatcher()->pushRequest(nrq);
 }
 
-static bool doDisconnectDevice(const shared_ptr<ControlClient> &client,
+static bool doDisconnectDevice(const shared_ptr<ControlClient> client,
                                tkm::msg::control::Request &rq)
 {
   Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::DisconnectDevice};
@@ -269,7 +265,7 @@ static bool doDisconnectDevice(const shared_ptr<ControlClient> &client,
   return CollectorApp()->getDispatcher()->pushRequest(nrq);
 }
 
-static bool doStartCollecting(const shared_ptr<ControlClient> &client,
+static bool doStartCollecting(const shared_ptr<ControlClient> client,
                               tkm::msg::control::Request &rq)
 {
   Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::StartCollecting};
@@ -286,8 +282,7 @@ static bool doStartCollecting(const shared_ptr<ControlClient> &client,
   return CollectorApp()->getDispatcher()->pushRequest(nrq);
 }
 
-static bool doStopCollecting(const shared_ptr<ControlClient> &client,
-                             tkm::msg::control::Request &rq)
+static bool doStopCollecting(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq)
 {
   Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::StopCollecting};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
@@ -303,7 +298,7 @@ static bool doStopCollecting(const shared_ptr<ControlClient> &client,
   return CollectorApp()->getDispatcher()->pushRequest(nrq);
 }
 
-static bool doGetSessions(const shared_ptr<ControlClient> &client, tkm::msg::control::Request &rq)
+static bool doGetSessions(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq)
 {
   Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::GetSessions};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());

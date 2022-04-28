@@ -32,21 +32,18 @@ using std::string;
 
 namespace tkm::collector
 {
-static bool doConnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq);
-static bool doDisconnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq);
-static bool doSendDescriptor(const shared_ptr<MonitorDevice> &mgr,
-                             const MonitorDevice::Request &rq);
-static bool doRequestSession(const shared_ptr<MonitorDevice> &mgr,
-                             const MonitorDevice::Request &rq);
-static bool doSetSession(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq);
-static bool doStartCollecting(const shared_ptr<MonitorDevice> &mgr,
+static bool doConnect(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq);
+static bool doDisconnect(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq);
+static bool doSendDescriptor(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq);
+static bool doRequestSession(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq);
+static bool doSetSession(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq);
+static bool doStartCollecting(const shared_ptr<MonitorDevice> mgr,
                               const MonitorDevice::Request &rq);
-static bool doStopCollecting(const shared_ptr<MonitorDevice> &mgr,
-                             const MonitorDevice::Request &rq);
-static bool doStartStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq);
-static bool doStopStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq);
-static bool doProcessData(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq);
-static bool doStatus(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq);
+static bool doStopCollecting(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq);
+static bool doStartStream(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq);
+static bool doStopStream(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq);
+static bool doProcessData(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq);
+static bool doStatus(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq);
 
 void MonitorDevice::enableEvents()
 {
@@ -227,7 +224,7 @@ bool MonitorDevice::requestHandler(const Request &request)
   return false;
 }
 
-static bool doConnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
+static bool doConnect(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
 
@@ -264,7 +261,7 @@ static bool doConnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice:
   return mgr->pushRequest(nrq);
 }
 
-static bool doSendDescriptor(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
+static bool doSendDescriptor(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
   tkm::msg::collector::Descriptor descriptor;
@@ -294,7 +291,7 @@ static bool doSendDescriptor(const shared_ptr<MonitorDevice> &mgr, const Monitor
   return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
-static bool doRequestSession(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
+static bool doRequestSession(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq)
 {
   tkm::msg::Envelope envelope;
   tkm::msg::collector::Request request;
@@ -310,7 +307,7 @@ static bool doRequestSession(const shared_ptr<MonitorDevice> &mgr, const Monitor
   return mgr->getConnection()->writeEnvelope(envelope);
 }
 
-static bool doSetSession(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
+static bool doSetSession(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq)
 {
   const auto &sessionInfo = std::any_cast<tkm::msg::monitor::SessionInfo>(rq.bulkData);
 
@@ -336,7 +333,7 @@ static bool doSetSession(const shared_ptr<MonitorDevice> &mgr, const MonitorDevi
   return mgr->pushRequest(nrq);
 }
 
-static bool doDisconnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
+static bool doDisconnect(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
 
@@ -360,7 +357,7 @@ static bool doDisconnect(const shared_ptr<MonitorDevice> &mgr, const MonitorDevi
   return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
-static bool doStartStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &)
+static bool doStartStream(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &)
 {
   mgr->getDeviceData().set_state(tkm::msg::control::DeviceData_State_Collecting);
   mgr->getProcAcctTimer()->start(mgr->getSessionData().proc_acct_poll_interval(), true);
@@ -373,7 +370,7 @@ static bool doStartStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDev
   return true;
 }
 
-static bool doStopStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &)
+static bool doStopStream(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &)
 {
   mgr->getProcAcctTimer()->stop();
   mgr->getProcEventTimer()->stop();
@@ -385,8 +382,7 @@ static bool doStopStream(const shared_ptr<MonitorDevice> &mgr, const MonitorDevi
   return true;
 }
 
-static bool doStartCollecting(const shared_ptr<MonitorDevice> &mgr,
-                              const MonitorDevice::Request &rq)
+static bool doStartCollecting(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
 
@@ -415,7 +411,7 @@ static bool doStartCollecting(const shared_ptr<MonitorDevice> &mgr,
   return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
-static bool doStopCollecting(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
+static bool doStopCollecting(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
 
@@ -437,7 +433,7 @@ static bool doStopCollecting(const shared_ptr<MonitorDevice> &mgr, const Monitor
   return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
-static bool doProcessData(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
+static bool doProcessData(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq)
 {
   // Add entry to database
   IDatabase::Request dbrq{.action = IDatabase::Action::AddData, .bulkData = rq.bulkData};
@@ -445,7 +441,7 @@ static bool doProcessData(const shared_ptr<MonitorDevice> &mgr, const MonitorDev
   return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
-static bool doStatus(const shared_ptr<MonitorDevice> &mgr, const MonitorDevice::Request &rq)
+static bool doStatus(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq)
 {
   const auto &serverStatus = std::any_cast<tkm::msg::monitor::Status>(rq.bulkData);
   std::string what;

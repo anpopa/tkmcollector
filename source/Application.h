@@ -55,10 +55,10 @@ public:
       m_mainEventLoop->stop();
     }
   }
-  auto getDispatcher() -> std::shared_ptr<Dispatcher> & { return m_dispatcher; }
-  auto getDatabase() -> std::shared_ptr<IDatabase> & { return m_database; }
-  auto getOptions() -> std::shared_ptr<Options> & { return m_options; }
-  auto getDeviceManager() -> std::shared_ptr<DeviceManager> & { return m_deviceManager; }
+  auto getDispatcher() -> std::shared_ptr<Dispatcher> { return m_dispatcher; }
+  auto getDatabase() -> std::shared_ptr<IDatabase> { return m_database; }
+  auto getOptions() -> std::shared_ptr<Options> { return m_options; }
+  auto getDeviceManager() -> std::shared_ptr<DeviceManager> { return m_deviceManager; }
 
 public:
   Application(Application const &) = delete;
