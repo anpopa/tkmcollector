@@ -589,7 +589,7 @@ static bool doAddSession(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
   auto sesId = -1;
   try {
     auto result = db->runTransaction(
-        tkmQuery.hasSession(Query::Type::PostgreSQL, rq.args.at(Defaults::Arg::SessionHash)));
+        tkmQuery.hasSession(Query::Type::PostgreSQL, sessionInfo.hash());
     for (pqxx::result::const_iterator c = result.begin(); c != result.end(); ++c) {
       sesId = c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Id)].as<long>();
     }
@@ -597,11 +597,9 @@ static bool doAddSession(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
     logError() << "Database query fails: " << e.what();
   }
   if (sesId != -1) {
-    logError() << "Session hash collision detected. Remove old session "
-               << rq.args.at(Defaults::Arg::SessionHash);
+    logError() << "Session hash collision detected. Remove old session " << sessionInfo.hash();
     try {
-      db->runTransaction(
-          tkmQuery.remSession(Query::Type::PostgreSQL, rq.args.at(Defaults::Arg::SessionHash)));
+      db->runTransaction(tkmQuery.remSession(Query::Type::PostgreSQL, sessionInfo.hash()));
     } catch (std::exception &e) {
       logError() << "Failed to remove existing session. Database query fails: " << e.what();
     }

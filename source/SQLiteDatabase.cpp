@@ -537,16 +537,13 @@ static bool doAddSession(const shared_ptr<SQLiteDatabase> db, const IDatabase::R
   SQLiteDatabase::Query queryCheckExisting{.type = SQLiteDatabase::QueryType::HasSession};
   queryCheckExisting.raw = &sesId;
 
-  auto status = db->runQuery(
-      tkmQuery.hasSession(Query::Type::SQLite3, rq.args.at(Defaults::Arg::SessionHash)),
-      queryCheckExisting);
+  auto status = db->runQuery(tkmQuery.hasSession(Query::Type::SQLite3, sessionInfo.hash()),
+                             queryCheckExisting);
   if (status) {
     if (sesId != -1) {
-      logError() << "Session hash collision detected. Remove old session "
-                 << rq.args.at(Defaults::Arg::SessionHash);
+      logError() << "Session hash collision detected. Remove old session " << sessionInfo.hash();
       SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::RemSession};
-      status = db->runQuery(
-          tkmQuery.remSession(Query::Type::SQLite3, rq.args.at(Defaults::Arg::SessionHash)), query);
+      status = db->runQuery(tkmQuery.remSession(Query::Type::SQLite3, sessionInfo.hash()), query);
       if (!status) {
         logError() << "Failed to remove existing session";
       }
