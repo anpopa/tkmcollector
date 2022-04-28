@@ -588,8 +588,8 @@ static bool doAddSession(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
   // we disconnect the device. Maybe is to harsh but this should not happen often in practice
   auto sesId = -1;
   try {
-    auto result = db->runTransaction(
-        tkmQuery.hasSession(Query::Type::PostgreSQL, sessionInfo.hash());
+    auto result =
+        db->runTransaction(tkmQuery.hasSession(Query::Type::PostgreSQL, sessionInfo.hash()));
     for (pqxx::result::const_iterator c = result.begin(); c != result.end(); ++c) {
       sesId = c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Id)].as<long>();
     }
