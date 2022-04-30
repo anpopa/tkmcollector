@@ -167,7 +167,7 @@ bool sendControlDescriptor(int fd, tkm::msg::control::Descriptor &descriptor)
     return false;
   }
 
-  if (write(fd, buffer, envelopeSize + sizeof(uint64_t)) !=
+  if (::send(fd, buffer, envelopeSize + sizeof(uint64_t), MSG_WAITALL) !=
       (static_cast<ssize_t>(envelopeSize + sizeof(uint64_t)))) {
     return false;
   }

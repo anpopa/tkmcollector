@@ -12,6 +12,7 @@
 #include <cstring>
 #include <errno.h>
 #include <stdexcept>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include "EnvelopeWriter.h"
@@ -74,7 +75,7 @@ bool EnvelopeWriter::flushInternal()
   auto status = true;
 
   while ((sizeToSend > 0) && status) {
-    auto retVal = write(m_fd, m_buffer + (m_bufferOffset - sizeToSend), sizeToSend);
+    auto retVal = ::send(m_fd, m_buffer + (m_bufferOffset - sizeToSend), sizeToSend, MSG_DONTWAIT);
     if (retVal < 0) {
       if (errno == EWOULDBLOCK || (EWOULDBLOCK != EAGAIN && errno == EAGAIN)) {
         if (sendRetry++ < maxRetry) {

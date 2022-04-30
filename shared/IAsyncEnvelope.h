@@ -11,12 +11,12 @@
 
 #pragma once
 
+#include <cstring>
 #include <fcntl.h>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <unistd.h>
-#include <cstring>
 
 namespace tkm
 {
