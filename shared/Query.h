@@ -60,7 +60,13 @@ public:
                uint64_t receiveTime) -> std::string;
   auto addData(Query::Type type,
                const std::string &sessionHash,
-               const tkm::msg::monitor::SysProcMeminfo &sysProcMem,
+               const tkm::msg::monitor::SysProcMemInfo &sysProcMem,
+               uint64_t systemTime,
+               uint64_t monotonicTime,
+               uint64_t receiveTime) -> std::string;
+  auto addData(Query::Type type,
+               const std::string &sessionHash,
+               const tkm::msg::monitor::SysProcDiskStats &sysDiskStats,
                uint64_t systemTime,
                uint64_t monotonicTime,
                uint64_t receiveTime) -> std::string;
@@ -78,7 +84,19 @@ public:
                uint64_t receiveTime) -> std::string;
   auto addData(Query::Type type,
                const std::string &sessionHash,
+               const tkm::msg::monitor::ProcInfo &procInfo,
+               uint64_t systemTime,
+               uint64_t monotonicTime,
+               uint64_t receiveTime) -> std::string;
+  auto addData(Query::Type type,
+               const std::string &sessionHash,
                const tkm::msg::monitor::ProcEvent &procEvent,
+               uint64_t systemTime,
+               uint64_t monotonicTime,
+               uint64_t receiveTime) -> std::string;
+  auto addData(Query::Type type,
+               const std::string &sessionHash,
+               const tkm::msg::monitor::ContextInfo &ctxInfo,
                uint64_t systemTime,
                uint64_t monotonicTime,
                uint64_t receiveTime) -> std::string;
@@ -205,6 +223,45 @@ public:
       std::make_pair(SysProcMemColumn::SwapCached, "SwapCached"),
       std::make_pair(SysProcMemColumn::SwapFreePercent, "SwapFreePercent"),
       std::make_pair(SysProcMemColumn::SessionId, "SessionId"),
+  };
+
+  enum class SysProcDiskColumn {
+    Id,              // int: Primary key
+    SystemTime,      // int: SystemTime
+    MonotonicTime,   // int: MonotonicTime
+    ReceiveTime,     // int: Receive timestamp
+    Major,           // int: Device major number
+    Minor,           // int: Device minor number
+    Name,            // str: Device name
+    ReadsCompleted,  // int: reads completed
+    ReadsMerged,     // int: reads merged
+    ReadsSpentMs,    // int: reads spent ms
+    WritesCompleted, // int: writes completed
+    WritesMerged,    // int: writes merged
+    WritesSpentMs,   // int: writes spent ms
+    IOInProgress,    // int: io in progress
+    IOSpentMs,       // int: io spent ms
+    IOWeightedMs,    // int: io weighted ms
+    SessionId,       // int: Session id key
+  };
+  const std::map<SysProcDiskColumn, std::string> m_sysProcDiskColumn{
+      std::make_pair(SysProcDiskColumn::Id, "Id"),
+      std::make_pair(SysProcDiskColumn::SystemTime, "SystemTime"),
+      std::make_pair(SysProcDiskColumn::MonotonicTime, "MonotonicTime"),
+      std::make_pair(SysProcDiskColumn::ReceiveTime, "ReceiveTime"),
+      std::make_pair(SysProcDiskColumn::Major, "Major"),
+      std::make_pair(SysProcDiskColumn::Minor, "Minor"),
+      std::make_pair(SysProcDiskColumn::Name, "Name"),
+      std::make_pair(SysProcDiskColumn::ReadsCompleted, "ReadsCompleted"),
+      std::make_pair(SysProcDiskColumn::ReadsMerged, "ReadsMerged"),
+      std::make_pair(SysProcDiskColumn::ReadsSpentMs, "ReadsSpent"),
+      std::make_pair(SysProcDiskColumn::WritesCompleted, "WritesCompleted"),
+      std::make_pair(SysProcDiskColumn::WritesMerged, "WritesMerged"),
+      std::make_pair(SysProcDiskColumn::WritesSpentMs, "WritesSpent"),
+      std::make_pair(SysProcDiskColumn::IOInProgress, "IOInProgress"),
+      std::make_pair(SysProcDiskColumn::IOSpentMs, "IOSpent"),
+      std::make_pair(SysProcDiskColumn::IOWeightedMs, "IOWeightedMs"),
+      std::make_pair(SysProcDiskColumn::SessionId, "SessionId"),
   };
 
   enum class SysProcPressureColumn {
@@ -357,13 +414,72 @@ public:
       std::make_pair(ProcAcctColumn::SessionId, "SessionId"),
   };
 
+  enum class ProcInfoColumn {
+    Id,            // int: Primary key
+    SystemTime,    // int: SystemTime
+    MonotonicTime, // int: MonotonicTime
+    ReceiveTime,   // int: Receive timestamp
+    Comm,          // str: Process name
+    Pid,           // int: Process pid
+    PPid,          // int: Process ppid
+    CtxId,         // int: Context id
+    CtxName,       // str: Context name
+    CpuTime,       // int: Total cpu time
+    CpuPercent,    // int: Cpu percent in interval
+    MemVmRSS,      // int: VmRSS memory usage
+    SessionId,     // int: Session id key
+  };
+  const std::map<ProcInfoColumn, std::string> m_procInfoColumn{
+      std::make_pair(ProcInfoColumn::Id, "Id"),
+      std::make_pair(ProcInfoColumn::SystemTime, "SystemTime"),
+      std::make_pair(ProcInfoColumn::MonotonicTime, "MonotonicTime"),
+      std::make_pair(ProcInfoColumn::ReceiveTime, "ReceiveTime"),
+      std::make_pair(ProcInfoColumn::Comm, "Comm"),
+      std::make_pair(ProcInfoColumn::Pid, "PID"),
+      std::make_pair(ProcInfoColumn::PPid, "PPID"),
+      std::make_pair(ProcInfoColumn::CtxId, "ContextId"),
+      std::make_pair(ProcInfoColumn::CtxName, "ContextName"),
+      std::make_pair(ProcInfoColumn::CpuTime, "CpuTime"),
+      std::make_pair(ProcInfoColumn::CpuPercent, "CpuPercent"),
+      std::make_pair(ProcInfoColumn::MemVmRSS, "VmRSS"),
+      std::make_pair(ProcInfoColumn::SessionId, "SessionId"),
+  };
+
+  enum class ContextInfoColumn {
+    Id,              // int: Primary key
+    SystemTime,      // int: SystemTime
+    MonotonicTime,   // int: MonotonicTime
+    ReceiveTime,     // int: Receive timestamp
+    CtxId,           // int: Context id
+    CtxName,         // str: Context name
+    TotalCpuTime,    // int: Total cpu time
+    TotalCpuPercent, // int: Total Cpu percent in interval
+    TotalMemVmRSS,   // int: Total VmRSS memory usage
+    SessionId,       // int: Session id key
+  };
+  const std::map<ContextInfoColumn, std::string> m_contextInfoColumn{
+      std::make_pair(ContextInfoColumn::Id, "Id"),
+      std::make_pair(ContextInfoColumn::SystemTime, "SystemTime"),
+      std::make_pair(ContextInfoColumn::MonotonicTime, "MonotonicTime"),
+      std::make_pair(ContextInfoColumn::ReceiveTime, "ReceiveTime"),
+      std::make_pair(ContextInfoColumn::CtxId, "ContextId"),
+      std::make_pair(ContextInfoColumn::CtxName, "ContextName"),
+      std::make_pair(ContextInfoColumn::TotalCpuTime, "TotalCpuTime"),
+      std::make_pair(ContextInfoColumn::TotalCpuPercent, "TotalCpuPercent"),
+      std::make_pair(ContextInfoColumn::TotalMemVmRSS, "TotalVmRSS"),
+      std::make_pair(ContextInfoColumn::SessionId, "SessionId"),
+  };
+
   const std::string m_devicesTableName = "tkmDevices";
   const std::string m_sessionsTableName = "tkmSessions";
   const std::string m_sysProcStatTableName = "tkmSysProcStat";
-  const std::string m_sysProcMeminfoTableName = "tkmSysProcMeminfo";
+  const std::string m_sysProcMemInfoTableName = "tkmSysProcMemInfo";
+  const std::string m_sysProcDiskStatsTableName = "tkmSysProcDiskStats";
   const std::string m_sysProcPressureTableName = "tkmSysProcPressure";
   const std::string m_procAcctTableName = "tkmProcAcct";
+  const std::string m_procInfoTableName = "tkmProcInfo";
   const std::string m_procEventTableName = "tkmProcEvent";
+  const std::string m_contextInfoTableName = "tkmContextInfo";
 };
 
 static Query tkmQuery{};

@@ -108,6 +108,44 @@ void MonitorDevice::initTimers()
     return getConnection()->writeEnvelope(requestEnvelope);
   });
 
+  // ProcInfo timer
+  m_procInfoTimer = std::make_shared<Timer>("ProcInfoTimer", [this]() {
+    if (getDeviceData().state() != tkm::msg::control::DeviceData_State_Collecting) {
+      return true;
+    }
+    tkm::msg::Envelope requestEnvelope;
+    tkm::msg::collector::Request requestMessage;
+
+    logDebug() << "Request ProcInfo from " << getDeviceData().name();
+
+    requestMessage.set_id("GetProcInfo");
+    requestMessage.set_type(tkm::msg::collector::Request_Type_GetProcInfo);
+    requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
+    requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Monitor);
+    requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
+
+    return getConnection()->writeEnvelope(requestEnvelope);
+  });
+
+  // ContextInfo timer
+  m_contextInfoTimer = std::make_shared<Timer>("ContextInfoTimer", [this]() {
+    if (getDeviceData().state() != tkm::msg::control::DeviceData_State_Collecting) {
+      return true;
+    }
+    tkm::msg::Envelope requestEnvelope;
+    tkm::msg::collector::Request requestMessage;
+
+    logDebug() << "Request ContextInfo from " << getDeviceData().name();
+
+    requestMessage.set_id("GetContextInfo");
+    requestMessage.set_type(tkm::msg::collector::Request_Type_GetContextInfo);
+    requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
+    requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Monitor);
+    requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
+
+    return getConnection()->writeEnvelope(requestEnvelope);
+  });
+
   // ProcEvent timer
   m_procEventTimer = std::make_shared<Timer>("ProcEventTimer", [this]() {
     if (getDeviceData().state() != tkm::msg::control::DeviceData_State_Collecting) {
@@ -157,7 +195,7 @@ void MonitorDevice::initTimers()
     logDebug() << "Request SysProcMemInfo from " << getDeviceData().name();
 
     requestMessage.set_id("GetSysProcMemInfo");
-    requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcMeminfo);
+    requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcMemInfo);
     requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
     requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Monitor);
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
@@ -184,11 +222,33 @@ void MonitorDevice::initTimers()
     return getConnection()->writeEnvelope(requestEnvelope);
   });
 
+  // SysProcDiskStats timer
+  m_sysProcDiskStatsTimer = std::make_shared<Timer>("SysProcDiskStatsTimer", [this]() {
+    if (getDeviceData().state() != tkm::msg::control::DeviceData_State_Collecting) {
+      return true;
+    }
+    tkm::msg::Envelope requestEnvelope;
+    tkm::msg::collector::Request requestMessage;
+
+    logDebug() << "Request SysProcDiskStats from " << getDeviceData().name();
+
+    requestMessage.set_id("GetSysProcDiskStats");
+    requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcDiskStats);
+    requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
+    requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Monitor);
+    requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
+
+    return getConnection()->writeEnvelope(requestEnvelope);
+  });
+
   CollectorApp()->addEventSource(getProcAcctTimer());
+  CollectorApp()->addEventSource(getProcInfoTimer());
+  CollectorApp()->addEventSource(getContextInfoTimer());
   CollectorApp()->addEventSource(getProcEventTimer());
   CollectorApp()->addEventSource(getSysProcStatTimer());
   CollectorApp()->addEventSource(getSysProcMemInfoTimer());
   CollectorApp()->addEventSource(getSysProcPressureTimer());
+  CollectorApp()->addEventSource(getSysProcDiskStatsTimer());
 }
 
 bool MonitorDevice::requestHandler(const Request &request)
@@ -315,12 +375,17 @@ static bool doSetSession(const shared_ptr<MonitorDevice> mgr, const MonitorDevic
   logDebug() << "Session created: " << sessionInfo.hash();
   mgr->getSessionData().set_hash(sessionInfo.hash());
   mgr->getSessionData().set_proc_acct_poll_interval(sessionInfo.proc_acct_poll_interval());
+  mgr->getSessionData().set_proc_info_poll_interval(sessionInfo.proc_info_poll_interval());
+  mgr->getSessionData().set_context_information_poll_interval(
+      sessionInfo.context_information_poll_interval());
   mgr->getSessionData().set_proc_event_poll_interval(sessionInfo.proc_event_poll_interval());
   mgr->getSessionData().set_sys_proc_stat_poll_interval(sessionInfo.sys_proc_stat_poll_interval());
   mgr->getSessionData().set_sys_proc_meminfo_poll_interval(
       sessionInfo.sys_proc_meminfo_poll_interval());
   mgr->getSessionData().set_sys_proc_pressure_poll_interval(
       sessionInfo.sys_proc_pressure_poll_interval());
+  mgr->getSessionData().set_sys_proc_diskstats_poll_interval(
+      sessionInfo.sys_proc_diskstats_poll_interval());
   mgr->updateState(tkm::msg::control::DeviceData_State_SessionSet);
 
   // Create session
@@ -361,22 +426,30 @@ static bool doStartStream(const shared_ptr<MonitorDevice> mgr, const MonitorDevi
 {
   mgr->getDeviceData().set_state(tkm::msg::control::DeviceData_State_Collecting);
   mgr->getProcAcctTimer()->start(mgr->getSessionData().proc_acct_poll_interval(), true);
+  mgr->getProcInfoTimer()->start(mgr->getSessionData().proc_info_poll_interval(), true);
+  mgr->getContextInfoTimer()->start(mgr->getSessionData().context_information_poll_interval(),
+                                    true);
   mgr->getProcEventTimer()->start(mgr->getSessionData().proc_event_poll_interval(), true);
   mgr->getSysProcStatTimer()->start(mgr->getSessionData().sys_proc_stat_poll_interval(), true);
   mgr->getSysProcMemInfoTimer()->start(mgr->getSessionData().sys_proc_meminfo_poll_interval(),
                                        true);
   mgr->getSysProcPressureTimer()->start(mgr->getSessionData().sys_proc_pressure_poll_interval(),
                                         true);
+  mgr->getSysProcDiskStatsTimer()->start(mgr->getSessionData().sys_proc_diskstats_poll_interval(),
+                                         true);
   return true;
 }
 
 static bool doStopStream(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &)
 {
   mgr->getProcAcctTimer()->stop();
+  mgr->getProcInfoTimer()->stop();
+  mgr->getContextInfoTimer()->stop();
   mgr->getProcEventTimer()->stop();
   mgr->getSysProcStatTimer()->stop();
   mgr->getSysProcMemInfoTimer()->stop();
   mgr->getSysProcPressureTimer()->stop();
+  mgr->getSysProcDiskStatsTimer()->stop();
   mgr->getDeviceData().set_state(tkm::msg::control::DeviceData_State_Idle);
 
   return true;

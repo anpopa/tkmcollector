@@ -717,6 +717,34 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
     }
   };
 
+  auto writeProcInfo = [&db, &rq, &status](const std::string &sessionHash,
+                                           const tkm::msg::monitor::ProcInfo &info,
+                                           uint64_t systemTime,
+                                           uint64_t monotonicTime,
+                                           uint64_t receiveTime) {
+    try {
+      db->runTransaction(tkmQuery.addData(
+          Query::Type::PostgreSQL, sessionHash, info, systemTime, monotonicTime, receiveTime));
+    } catch (std::exception &e) {
+      logError() << "Query failed to addData. Database query fails: " << e.what();
+      status = false;
+    }
+  };
+
+  auto writeContextInfo = [&db, &rq, &status](const std::string &sessionHash,
+                                              const tkm::msg::monitor::ContextInfo &info,
+                                              uint64_t systemTime,
+                                              uint64_t monotonicTime,
+                                              uint64_t receiveTime) {
+    try {
+      db->runTransaction(tkmQuery.addData(
+          Query::Type::PostgreSQL, sessionHash, info, systemTime, monotonicTime, receiveTime));
+    } catch (std::exception &e) {
+      logError() << "Query failed to addData. Database query fails: " << e.what();
+      status = false;
+    }
+  };
+
   auto writeSysProcStat = [&db, &rq, &status](const std::string &sessionHash,
                                               const tkm::msg::monitor::SysProcStat &sysProcStat,
                                               uint64_t systemTime,
@@ -735,9 +763,9 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
     }
   };
 
-  auto writeSysProcMeminfo =
+  auto writeSysProcMemInfo =
       [&db, &rq, &status](const std::string &sessionHash,
-                          const tkm::msg::monitor::SysProcMeminfo &sysProcMem,
+                          const tkm::msg::monitor::SysProcMemInfo &sysProcMem,
                           uint64_t systemTime,
                           uint64_t monotonicTime,
                           uint64_t receiveTime) {
@@ -764,6 +792,25 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
           db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
                                               sessionHash,
                                               sysProcPressure,
+                                              systemTime,
+                                              monotonicTime,
+                                              receiveTime));
+        } catch (std::exception &e) {
+          logError() << "Query failed to addData. Database query fails: " << e.what();
+          status = false;
+        }
+      };
+
+  auto writeSysProcDiskStats =
+      [&db, &rq, &status](const std::string &sessionHash,
+                          const tkm::msg::monitor::SysProcDiskStats &sysProcDiskStats,
+                          uint64_t systemTime,
+                          uint64_t monotonicTime,
+                          uint64_t receiveTime) {
+        try {
+          db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
+                                              sessionHash,
+                                              sysProcDiskStats,
                                               systemTime,
                                               monotonicTime,
                                               receiveTime));
@@ -808,6 +855,26 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
                   data.receive_time_sec());
     break;
   }
+  case tkm::msg::monitor::Data_What_ProcInfo: {
+    tkm::msg::monitor::ProcInfo procInfo;
+    data.payload().UnpackTo(&procInfo);
+    writeProcInfo(rq.args.at(Defaults::Arg::SessionHash),
+                  procInfo,
+                  data.system_time_sec(),
+                  data.monotonic_time_sec(),
+                  data.receive_time_sec());
+    break;
+  }
+  case tkm::msg::monitor::Data_What_ContextInfo: {
+    tkm::msg::monitor::ContextInfo ctxInfo;
+    data.payload().UnpackTo(&ctxInfo);
+    writeContextInfo(rq.args.at(Defaults::Arg::SessionHash),
+                     ctxInfo,
+                     data.system_time_sec(),
+                     data.monotonic_time_sec(),
+                     data.receive_time_sec());
+    break;
+  }
   case tkm::msg::monitor::Data_What_SysProcStat: {
     tkm::msg::monitor::SysProcStat sysProcStat;
     data.payload().UnpackTo(&sysProcStat);
@@ -818,10 +885,10 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
                      data.receive_time_sec());
     break;
   }
-  case tkm::msg::monitor::Data_What_SysProcMeminfo: {
-    tkm::msg::monitor::SysProcMeminfo sysProcMem;
+  case tkm::msg::monitor::Data_What_SysProcMemInfo: {
+    tkm::msg::monitor::SysProcMemInfo sysProcMem;
     data.payload().UnpackTo(&sysProcMem);
-    writeSysProcMeminfo(rq.args.at(Defaults::Arg::SessionHash),
+    writeSysProcMemInfo(rq.args.at(Defaults::Arg::SessionHash),
                         sysProcMem,
                         data.system_time_sec(),
                         data.monotonic_time_sec(),
@@ -836,6 +903,16 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
                          data.system_time_sec(),
                          data.monotonic_time_sec(),
                          data.receive_time_sec());
+    break;
+  }
+  case tkm::msg::monitor::Data_What_SysProcDiskStats: {
+    tkm::msg::monitor::SysProcDiskStats sysProcDiskStats;
+    data.payload().UnpackTo(&sysProcDiskStats);
+    writeSysProcDiskStats(rq.args.at(Defaults::Arg::SessionHash),
+                          sysProcDiskStats,
+                          data.system_time_sec(),
+                          data.monotonic_time_sec(),
+                          data.receive_time_sec());
     break;
   }
   default:
