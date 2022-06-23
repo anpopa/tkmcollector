@@ -11,6 +11,8 @@ cmake-build-debug/
 node_modules/
 dist/
 
+*.kdev4
+
 # Cache
 .cache/
 

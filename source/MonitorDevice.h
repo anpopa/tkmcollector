@@ -45,7 +45,7 @@ public:
   auto getShared() -> std::shared_ptr<MonitorDevice> { return shared_from_this(); }
   auto getConnection() -> std::shared_ptr<Connection> { return m_connection; }
   void enableEvents();
-  bool pushRequest(Request &request);
+  bool pushRequest(Request &request) override;
   void updateState(tkm::msg::control::DeviceData_State state) final;
 
   auto getProcAcctTimer() -> std::shared_ptr<Timer> { return m_procAcctTimer; }

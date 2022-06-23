@@ -59,6 +59,7 @@ public:
     m_queue = std::make_shared<AsyncQueue<IDatabase::Request>>(
         "DBQueue", [this](const IDatabase::Request &rq) { return requestHandler(rq); });
   }
+  virtual ~IDatabase() = default;
 
   bool pushRequest(Request &rq) { return m_queue->push(rq); }
   virtual void enableEvents() = 0;

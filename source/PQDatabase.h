@@ -26,7 +26,7 @@ namespace tkm::collector
 class PQDatabase : public IDatabase, public std::enable_shared_from_this<PQDatabase>
 {
 public:
-  PQDatabase(std::shared_ptr<Options> options);
+  explicit PQDatabase(std::shared_ptr<Options> options);
   PQDatabase(PQDatabase const &) = delete;
   void operator=(PQDatabase const &) = delete;
 

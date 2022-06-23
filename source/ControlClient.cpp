@@ -115,14 +115,6 @@ void ControlClient::enableEvents()
   CollectorApp()->addEventSource(getShared());
 }
 
-ControlClient::~ControlClient()
-{
-  if (m_clientFd > 0) {
-    ::close(m_clientFd);
-    m_clientFd = -1;
-  }
-}
-
 static bool doRequestSession(const shared_ptr<ControlClient> client, tkm::msg::control::Request &rq)
 {
   tkm::msg::control::SessionInfo sessionInfo;

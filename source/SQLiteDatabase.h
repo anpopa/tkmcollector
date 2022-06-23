@@ -50,7 +50,7 @@ public:
   } Query;
 
 public:
-  SQLiteDatabase(std::shared_ptr<Options> options);
+  explicit SQLiteDatabase(std::shared_ptr<Options> options);
   SQLiteDatabase(SQLiteDatabase const &) = delete;
   void operator=(SQLiteDatabase const &) = delete;
 

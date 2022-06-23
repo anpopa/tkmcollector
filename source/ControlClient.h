@@ -20,10 +20,10 @@ class ControlClient : public IClient, public std::enable_shared_from_this<Contro
 {
 public:
   explicit ControlClient(int clientFd);
-  ~ControlClient();
 
-  void enableEvents();
+public:
   auto getShared() -> std::shared_ptr<ControlClient> { return shared_from_this(); }
+  void enableEvents();
 
 public:
   ControlClient(ControlClient const &) = delete;

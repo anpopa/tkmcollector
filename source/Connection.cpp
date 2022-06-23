@@ -95,10 +95,10 @@ Connection::Connection(std::shared_ptr<IDevice> device)
           }
           case tkm::msg::monitor::Message_Type_Status: {
             IDevice::Request rq{.action = IDevice::Action::Status};
-            tkm::msg::monitor::Status status;
+            tkm::msg::monitor::Status s;
 
-            msg.payload().UnpackTo(&status);
-            rq.bulkData = std::make_any<tkm::msg::monitor::Status>(status);
+            msg.payload().UnpackTo(&s);
+            rq.bulkData = std::make_any<tkm::msg::monitor::Status>(s);
 
             m_device->pushRequest(rq);
             break;
@@ -150,7 +150,7 @@ auto Connection::connect() -> int
   struct hostent *server = gethostbyname(serverAddress.c_str());
 
   m_addr.sin_family = AF_INET;
-  bcopy(server->h_addr, (char *) &m_addr.sin_addr.s_addr, (size_t) server->h_length);
+  memcpy(&m_addr.sin_addr.s_addr, server->h_addr, (size_t) server->h_length);
   m_addr.sin_port = htons(m_device->getDeviceData().port());
 
   if (::connect(m_sockFd, (struct sockaddr *) &m_addr, sizeof(struct sockaddr_in)) == -1) {

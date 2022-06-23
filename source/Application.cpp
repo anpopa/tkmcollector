@@ -124,7 +124,7 @@ void Application::startWatchdog(void)
   if (status > 0) {
     logInfo() << "Systemd watchdog enabled with timeout seconds: " << USEC2SEC(usec);
 
-    auto timer = std::make_shared<Timer>("Watchdog", [this]() {
+    auto timer = std::make_shared<Timer>("Watchdog", []() {
       if (sd_notify(0, "WATCHDOG=1") < 0) {
         logWarn() << "Fail to send the heartbeet to systemd";
       } else {

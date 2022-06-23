@@ -31,20 +31,19 @@ class IClient : public Pollable
 {
 public:
   explicit IClient(const std::string &name, int fd)
-  : Pollable(name)
-  , m_clientFd(fd)
+  : Pollable(name, fd)
+  , m_reader(std::make_unique<EnvelopeReader>(fd))
+  , m_writer(std::make_unique<EnvelopeWriter>(fd))
   {
-    m_reader = std::make_unique<EnvelopeReader>(fd);
-    m_writer = std::make_unique<EnvelopeWriter>(fd);
   }
 
-  ~IClient() { disconnect(); }
+  virtual ~IClient() { disconnect(); }
 
   void disconnect()
   {
-    if (m_clientFd > 0) {
-      ::close(m_clientFd);
-      m_clientFd = -1;
+    if (m_fd > 0) {
+      ::close(m_fd);
+      m_fd = -1;
     }
   }
 
@@ -64,14 +63,11 @@ public:
   IClient(IClient const &) = delete;
   void operator=(IClient const &) = delete;
 
-  [[nodiscard]] int getFD() const { return m_clientFd; }
+  [[nodiscard]] int getFD() const { return m_fd; }
 
 private:
   std::unique_ptr<EnvelopeReader> m_reader = nullptr;
   std::unique_ptr<EnvelopeWriter> m_writer = nullptr;
-
-protected:
-  int m_clientFd = -1;
 };
 
 } // namespace tkm::collector

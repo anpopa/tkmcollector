@@ -74,9 +74,8 @@ static void daemonize()
 
 static int create_pidfile(const char *path)
 {
-  int status = 0;
   FILE *file = NULL;
-  int pid = -1;
+  int status = 0;
 
   file = fopen(path, "w");
   if (file == NULL) {
@@ -84,7 +83,7 @@ static int create_pidfile(const char *path)
   }
 
   if (status >= 0) {
-    pid = getpid();
+    int pid = getpid();
     if (!fprintf(file, "%d\n", pid)) {
       status = -1;
     }
