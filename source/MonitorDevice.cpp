@@ -61,6 +61,7 @@ bool MonitorDevice::createConnection()
 
 void MonitorDevice::deleteConnection()
 {
+  stopUpdateLanes();
   m_connection.reset();
 }
 
@@ -519,6 +520,7 @@ static bool doSetSession(const shared_ptr<MonitorDevice> mgr, const MonitorDevic
   logDebug() << "Session created: " << sessionInfo.hash();
   mgr->getSessionInfo().CopyFrom(sessionInfo);
   mgr->getSessionData().set_hash(sessionInfo.hash());
+  mgr->updateState(tkm::msg::control::DeviceData_State_SessionSet);
 
   // Create session
   IDatabase::Request dbrq{.action = IDatabase::Action::AddSession, .bulkData = sessionInfo};
@@ -556,6 +558,7 @@ static bool doDisconnect(const shared_ptr<MonitorDevice> mgr, const MonitorDevic
 
 static bool doStartStream(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &)
 {
+  mgr->getDeviceData().set_state(tkm::msg::control::DeviceData_State_Collecting);
   mgr->startUpdateLanes();
   return true;
 }
@@ -563,6 +566,7 @@ static bool doStartStream(const shared_ptr<MonitorDevice> mgr, const MonitorDevi
 static bool doStopStream(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &)
 {
   mgr->stopUpdateLanes();
+  mgr->getDeviceData().set_state(tkm::msg::control::DeviceData_State_Idle);
   return true;
 }
 
