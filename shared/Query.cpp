@@ -39,11 +39,6 @@ auto Query::createTables(Query::Type type) -> std::string
       out << m_sessionColumn.at(SessionColumn::Id) << " INTEGER PRIMARY KEY, "
           << m_sessionColumn.at(SessionColumn::Name) << " TEXT NOT NULL, "
           << m_sessionColumn.at(SessionColumn::Hash) << " TEXT NOT NULL, "
-          << m_sessionColumn.at(SessionColumn::ProcAcctPollInterval) << " INTEGER NOT NULL, "
-          << m_sessionColumn.at(SessionColumn::ProcEventPollInterval) << " INTEGER NOT NULL, "
-          << m_sessionColumn.at(SessionColumn::SysProcStatPollInterval) << " INTEGER NOT NULL, "
-          << m_sessionColumn.at(SessionColumn::SysProcMemInfoPollInterval) << " INTEGER NOT NULL, "
-          << m_sessionColumn.at(SessionColumn::SysProcPressurePollInterval) << " INTEGER NOT NULL, "
           << m_sessionColumn.at(SessionColumn::StartTimestamp) << " INTEGER NOT NULL, "
           << m_sessionColumn.at(SessionColumn::EndTimestamp) << " INTEGER NOT NULL, "
           << m_sessionColumn.at(SessionColumn::Device) << " INTEGER NOT NULL, ";
@@ -51,11 +46,6 @@ auto Query::createTables(Query::Type type) -> std::string
       out << m_sessionColumn.at(SessionColumn::Id) << " SERIAL PRIMARY KEY, "
           << m_sessionColumn.at(SessionColumn::Name) << " TEXT NOT NULL, "
           << m_sessionColumn.at(SessionColumn::Hash) << " TEXT NOT NULL, "
-          << m_sessionColumn.at(SessionColumn::ProcAcctPollInterval) << " BIGINT NOT NULL, "
-          << m_sessionColumn.at(SessionColumn::ProcEventPollInterval) << " BIGINT NOT NULL, "
-          << m_sessionColumn.at(SessionColumn::SysProcStatPollInterval) << " BIGINT NOT NULL, "
-          << m_sessionColumn.at(SessionColumn::SysProcMemInfoPollInterval) << " BIGINT NOT NULL, "
-          << m_sessionColumn.at(SessionColumn::SysProcPressurePollInterval) << " BIGINT NOT NULL, "
           << m_sessionColumn.at(SessionColumn::StartTimestamp) << " BIGINT NOT NULL, "
           << m_sessionColumn.at(SessionColumn::EndTimestamp) << " BIGINT NOT NULL, "
           << m_sessionColumn.at(SessionColumn::Device) << " INTEGER NOT NULL, ";
@@ -596,19 +586,10 @@ auto Query::addSession(Query::Type type,
   if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     out << "INSERT INTO " << m_sessionsTableName << " (" << m_sessionColumn.at(SessionColumn::Hash)
         << "," << m_sessionColumn.at(SessionColumn::Name) << ","
-        << m_sessionColumn.at(SessionColumn::ProcAcctPollInterval) << ","
-        << m_sessionColumn.at(SessionColumn::ProcEventPollInterval) << ","
-        << m_sessionColumn.at(SessionColumn::SysProcStatPollInterval) << ","
-        << m_sessionColumn.at(SessionColumn::SysProcMemInfoPollInterval) << ","
-        << m_sessionColumn.at(SessionColumn::SysProcPressurePollInterval) << ","
         << m_sessionColumn.at(SessionColumn::StartTimestamp) << ","
         << m_sessionColumn.at(SessionColumn::EndTimestamp) << ","
         << m_sessionColumn.at(SessionColumn::Device) << ") VALUES ('" << sessionInfo.hash()
-        << "', '" << sessionInfo.name() << "', '" << sessionInfo.proc_acct_poll_interval() << "', '"
-        << sessionInfo.proc_event_poll_interval() << "', '"
-        << sessionInfo.sys_proc_stat_poll_interval() << "', '"
-        << sessionInfo.sys_proc_meminfo_poll_interval() << "', '"
-        << sessionInfo.sys_proc_pressure_poll_interval() << "', '" << startTimestamp << "', '"
+        << "', '" << sessionInfo.name() << "', '" << startTimestamp << "', '"
         << "0"
         << "', ";
   }

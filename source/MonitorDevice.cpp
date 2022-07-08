@@ -87,17 +87,74 @@ void MonitorDevice::updateState(tkm::msg::control::DeviceData_State state)
   }
 }
 
-void MonitorDevice::initTimers()
+void MonitorDevice::startUpdateLanes(void)
 {
-  // ProcAcct timer
-  m_procAcctTimer = std::make_shared<Timer>("ProcAcctTimer", [this]() {
-    if (getDeviceData().state() != tkm::msg::control::DeviceData_State_Collecting) {
-      return true;
-    }
+  m_fastLaneTimer = std::make_shared<Timer>("FastLaneTimer", [this]() {
+    m_dataSources.foreach ([](const std::shared_ptr<DataSource> &entry) {
+      if ((entry->getUpdateLane() == DataSource::UpdateLane::Fast) ||
+          (entry->getUpdateLane() == DataSource::UpdateLane::Any)) {
+        entry->update();
+      }
+    });
+    return true;
+  });
+
+  m_paceLaneTimer = std::make_shared<Timer>("PaceLaneTimer", [this]() {
+    m_dataSources.foreach ([](const std::shared_ptr<DataSource> &entry) {
+      if ((entry->getUpdateLane() == DataSource::UpdateLane::Pace) ||
+          (entry->getUpdateLane() == DataSource::UpdateLane::Any)) {
+        entry->update();
+      }
+    });
+    return true;
+  });
+
+  m_slowLaneTimer = std::make_shared<Timer>("SlowLaneTimer", [this]() {
+    m_dataSources.foreach ([](const std::shared_ptr<DataSource> &entry) {
+      if ((entry->getUpdateLane() == DataSource::UpdateLane::Slow) ||
+          (entry->getUpdateLane() == DataSource::UpdateLane::Any)) {
+        entry->update();
+      }
+    });
+    return true;
+  });
+
+  configUpdateLanes();
+
+  m_fastLaneTimer->start(getSessionInfo().fast_lane_interval(), true);
+  m_paceLaneTimer->start(getSessionInfo().pace_lane_interval(), true);
+  m_slowLaneTimer->start(getSessionInfo().slow_lane_interval(), true);
+
+  CollectorApp()->addEventSource(m_fastLaneTimer);
+  CollectorApp()->addEventSource(m_paceLaneTimer);
+  CollectorApp()->addEventSource(m_slowLaneTimer);
+}
+
+void MonitorDevice::stopUpdateLanes(void)
+{
+  if (m_fastLaneTimer != nullptr) {
+    m_fastLaneTimer->stop();
+    CollectorApp()->remEventSource(m_fastLaneTimer);
+  }
+
+  if (m_paceLaneTimer != nullptr) {
+    m_paceLaneTimer->stop();
+    CollectorApp()->remEventSource(m_paceLaneTimer);
+  }
+
+  if (m_slowLaneTimer != nullptr) {
+    m_slowLaneTimer->stop();
+    CollectorApp()->remEventSource(m_slowLaneTimer);
+  }
+}
+
+void MonitorDevice::configUpdateLanes(void)
+{
+  const auto procAcctUpdateCallback = [this]() {
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logDebug() << "Request ProcAcct from " << getDeviceData().name();
+    logInfo() << "Request ProcAcct data to " << getDeviceData().name();
 
     requestMessage.set_id("GetProcAcct");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetProcAcct);
@@ -106,17 +163,13 @@ void MonitorDevice::initTimers()
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
 
     return getConnection()->writeEnvelope(requestEnvelope);
-  });
+  };
 
-  // ProcInfo timer
-  m_procInfoTimer = std::make_shared<Timer>("ProcInfoTimer", [this]() {
-    if (getDeviceData().state() != tkm::msg::control::DeviceData_State_Collecting) {
-      return true;
-    }
+  const auto procInfoUpdateCallback = [this]() -> bool {
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logDebug() << "Request ProcInfo from " << getDeviceData().name();
+    logInfo() << "Request ProcInfo data to " << getDeviceData().name();
 
     requestMessage.set_id("GetProcInfo");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetProcInfo);
@@ -125,17 +178,13 @@ void MonitorDevice::initTimers()
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
 
     return getConnection()->writeEnvelope(requestEnvelope);
-  });
+  };
 
-  // ContextInfo timer
-  m_contextInfoTimer = std::make_shared<Timer>("ContextInfoTimer", [this]() {
-    if (getDeviceData().state() != tkm::msg::control::DeviceData_State_Collecting) {
-      return true;
-    }
+  const auto contextInfoUpdateCallback = [this]() {
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logDebug() << "Request ContextInfo from " << getDeviceData().name();
+    logInfo() << "Request ContextInfo data to " << getDeviceData().name();
 
     requestMessage.set_id("GetContextInfo");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetContextInfo);
@@ -144,17 +193,13 @@ void MonitorDevice::initTimers()
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
 
     return getConnection()->writeEnvelope(requestEnvelope);
-  });
+  };
 
-  // ProcEvent timer
-  m_procEventTimer = std::make_shared<Timer>("ProcEventTimer", [this]() {
-    if (getDeviceData().state() != tkm::msg::control::DeviceData_State_Collecting) {
-      return true;
-    }
+  const auto procEventUpdateCallback = [this]() {
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logDebug() << "Request ProcEvent from " << getDeviceData().name();
+    logInfo() << "Request ProcEvent data to " << getDeviceData().name();
 
     requestMessage.set_id("GetProcEvent");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetProcEventStats);
@@ -163,17 +208,13 @@ void MonitorDevice::initTimers()
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
 
     return getConnection()->writeEnvelope(requestEnvelope);
-  });
+  };
 
-  // SysProcStat timer
-  m_sysProcStatTimer = std::make_shared<Timer>("SysProcStatTimer", [this]() {
-    if (getDeviceData().state() != tkm::msg::control::DeviceData_State_Collecting) {
-      return true;
-    }
+  const auto sysProcStatUpdateCallback = [this]() {
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logDebug() << "Request SysProcStat from " << getDeviceData().name();
+    logInfo() << "Request SysProcStat data to " << getDeviceData().name();
 
     requestMessage.set_id("GetSysProcStat");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcStat);
@@ -182,17 +223,13 @@ void MonitorDevice::initTimers()
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
 
     return getConnection()->writeEnvelope(requestEnvelope);
-  });
+  };
 
-  // SysProcMemInfo timer
-  m_sysProcMemInfoTimer = std::make_shared<Timer>("SysProcMemInfoTimer", [this]() {
-    if (getDeviceData().state() != tkm::msg::control::DeviceData_State_Collecting) {
-      return true;
-    }
+  const auto sysProcMemInfoUpdateCallback = [this]() {
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logDebug() << "Request SysProcMemInfo from " << getDeviceData().name();
+    logInfo() << "Request SysProcMemInfo data to " << getDeviceData().name();
 
     requestMessage.set_id("GetSysProcMemInfo");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcMemInfo);
@@ -201,36 +238,13 @@ void MonitorDevice::initTimers()
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
 
     return getConnection()->writeEnvelope(requestEnvelope);
-  });
+  };
 
-  // SysProcPressure timer
-  m_sysProcPressureTimer = std::make_shared<Timer>("SysProcPressureTimer", [this]() {
-    if (getDeviceData().state() != tkm::msg::control::DeviceData_State_Collecting) {
-      return true;
-    }
+  const auto sysProcDiskStatsUpdateCallback = [this]() {
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logDebug() << "Request SysProcPressure from " << getDeviceData().name();
-
-    requestMessage.set_id("GetSysProcPressure");
-    requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcPressure);
-    requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
-    requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Monitor);
-    requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
-
-    return getConnection()->writeEnvelope(requestEnvelope);
-  });
-
-  // SysProcDiskStats timer
-  m_sysProcDiskStatsTimer = std::make_shared<Timer>("SysProcDiskStatsTimer", [this]() {
-    if (getDeviceData().state() != tkm::msg::control::DeviceData_State_Collecting) {
-      return true;
-    }
-    tkm::msg::Envelope requestEnvelope;
-    tkm::msg::collector::Request requestMessage;
-
-    logDebug() << "Request SysProcDiskStats from " << getDeviceData().name();
+    logInfo() << "Request SysProcDiskStats data to " << getDeviceData().name();
 
     requestMessage.set_id("GetSysProcDiskStats");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcDiskStats);
@@ -239,16 +253,146 @@ void MonitorDevice::initTimers()
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
 
     return getConnection()->writeEnvelope(requestEnvelope);
-  });
+  };
 
-  CollectorApp()->addEventSource(getProcAcctTimer());
-  CollectorApp()->addEventSource(getProcInfoTimer());
-  CollectorApp()->addEventSource(getContextInfoTimer());
-  CollectorApp()->addEventSource(getProcEventTimer());
-  CollectorApp()->addEventSource(getSysProcStatTimer());
-  CollectorApp()->addEventSource(getSysProcMemInfoTimer());
-  CollectorApp()->addEventSource(getSysProcPressureTimer());
-  CollectorApp()->addEventSource(getSysProcDiskStatsTimer());
+  const auto sysProcPressureUpdateCallback = [this]() -> bool {
+    tkm::msg::Envelope requestEnvelope;
+    tkm::msg::collector::Request requestMessage;
+
+    logInfo() << "Request SysProcPressure data to " << getDeviceData().name();
+
+    requestMessage.set_id("GetSysProcPressure");
+    requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcPressure);
+    requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
+    requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Monitor);
+    requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
+
+    return getConnection()->writeEnvelope(requestEnvelope);
+  };
+
+  // Clear the existing list
+  m_dataSources.foreach (
+      [this](const std::shared_ptr<DataSource> &entry) { m_dataSources.remove(entry); });
+  m_dataSources.commit();
+
+  for (const auto &dataSourceType : m_sessionInfo.fast_lane_sources()) {
+    switch (dataSourceType) {
+    case msg::monitor::SessionInfo_DataSource_ProcInfo:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "ProcInfo", DataSource::UpdateLane::Fast, procInfoUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_ProcAcct:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "ProcAcct", DataSource::UpdateLane::Fast, procAcctUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_ProcEvent:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "ProcEvent", DataSource::UpdateLane::Fast, procEventUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_ContextInfo:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "ContextInfo", DataSource::UpdateLane::Fast, contextInfoUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_SysProcStat:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcStat", DataSource::UpdateLane::Fast, sysProcStatUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_SysProcMemInfo:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcMemInfo", DataSource::UpdateLane::Fast, sysProcMemInfoUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_SysProcPressure:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcPressure", DataSource::UpdateLane::Fast, sysProcPressureUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_SysProcDiskStats:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcDiskStats", DataSource::UpdateLane::Fast, sysProcDiskStatsUpdateCallback));
+      break;
+    default:
+      break;
+    }
+  }
+
+  for (const auto &dataSourceType : m_sessionInfo.pace_lane_sources()) {
+    switch (dataSourceType) {
+    case msg::monitor::SessionInfo_DataSource_ProcInfo:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "ProcInfo", DataSource::UpdateLane::Pace, procInfoUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_ProcAcct:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "ProcAcct", DataSource::UpdateLane::Pace, procAcctUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_ProcEvent:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "ProcEvent", DataSource::UpdateLane::Pace, procEventUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_ContextInfo:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "ContextInfo", DataSource::UpdateLane::Pace, contextInfoUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_SysProcStat:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcStat", DataSource::UpdateLane::Pace, sysProcStatUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_SysProcMemInfo:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcMemInfo", DataSource::UpdateLane::Pace, sysProcMemInfoUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_SysProcPressure:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcPressure", DataSource::UpdateLane::Pace, sysProcPressureUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_SysProcDiskStats:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcDiskStats", DataSource::UpdateLane::Pace, sysProcDiskStatsUpdateCallback));
+      break;
+    default:
+      break;
+    }
+  }
+
+  for (const auto &dataSourceType : m_sessionInfo.slow_lane_sources()) {
+    switch (dataSourceType) {
+    case msg::monitor::SessionInfo_DataSource_ProcInfo:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "ProcInfo", DataSource::UpdateLane::Slow, procInfoUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_ProcAcct:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "ProcAcct", DataSource::UpdateLane::Slow, procAcctUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_ProcEvent:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "ProcEvent", DataSource::UpdateLane::Slow, procEventUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_ContextInfo:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "ContextInfo", DataSource::UpdateLane::Slow, contextInfoUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_SysProcStat:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcStat", DataSource::UpdateLane::Slow, sysProcStatUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_SysProcMemInfo:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcMemInfo", DataSource::UpdateLane::Slow, sysProcMemInfoUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_SysProcPressure:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcPressure", DataSource::UpdateLane::Slow, sysProcPressureUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_SysProcDiskStats:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcDiskStats", DataSource::UpdateLane::Slow, sysProcDiskStatsUpdateCallback));
+      break;
+    default:
+      break;
+    }
+  }
+
+  m_dataSources.commit();
 }
 
 bool MonitorDevice::requestHandler(const Request &request)
@@ -373,20 +517,8 @@ static bool doSetSession(const shared_ptr<MonitorDevice> mgr, const MonitorDevic
 
   // Update our session data
   logDebug() << "Session created: " << sessionInfo.hash();
+  mgr->getSessionInfo().CopyFrom(sessionInfo);
   mgr->getSessionData().set_hash(sessionInfo.hash());
-  mgr->getSessionData().set_proc_acct_poll_interval(sessionInfo.proc_acct_poll_interval());
-  mgr->getSessionData().set_proc_info_poll_interval(sessionInfo.proc_info_poll_interval());
-  mgr->getSessionData().set_context_information_poll_interval(
-      sessionInfo.context_information_poll_interval());
-  mgr->getSessionData().set_proc_event_poll_interval(sessionInfo.proc_event_poll_interval());
-  mgr->getSessionData().set_sys_proc_stat_poll_interval(sessionInfo.sys_proc_stat_poll_interval());
-  mgr->getSessionData().set_sys_proc_meminfo_poll_interval(
-      sessionInfo.sys_proc_meminfo_poll_interval());
-  mgr->getSessionData().set_sys_proc_pressure_poll_interval(
-      sessionInfo.sys_proc_pressure_poll_interval());
-  mgr->getSessionData().set_sys_proc_diskstats_poll_interval(
-      sessionInfo.sys_proc_diskstats_poll_interval());
-  mgr->updateState(tkm::msg::control::DeviceData_State_SessionSet);
 
   // Create session
   IDatabase::Request dbrq{.action = IDatabase::Action::AddSession, .bulkData = sessionInfo};
@@ -424,34 +556,13 @@ static bool doDisconnect(const shared_ptr<MonitorDevice> mgr, const MonitorDevic
 
 static bool doStartStream(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &)
 {
-  mgr->getDeviceData().set_state(tkm::msg::control::DeviceData_State_Collecting);
-  mgr->getProcAcctTimer()->start(mgr->getSessionData().proc_acct_poll_interval(), true);
-  mgr->getProcInfoTimer()->start(mgr->getSessionData().proc_info_poll_interval(), true);
-  mgr->getContextInfoTimer()->start(mgr->getSessionData().context_information_poll_interval(),
-                                    true);
-  mgr->getProcEventTimer()->start(mgr->getSessionData().proc_event_poll_interval(), true);
-  mgr->getSysProcStatTimer()->start(mgr->getSessionData().sys_proc_stat_poll_interval(), true);
-  mgr->getSysProcMemInfoTimer()->start(mgr->getSessionData().sys_proc_meminfo_poll_interval(),
-                                       true);
-  mgr->getSysProcPressureTimer()->start(mgr->getSessionData().sys_proc_pressure_poll_interval(),
-                                        true);
-  mgr->getSysProcDiskStatsTimer()->start(mgr->getSessionData().sys_proc_diskstats_poll_interval(),
-                                         true);
+  mgr->startUpdateLanes();
   return true;
 }
 
 static bool doStopStream(const shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &)
 {
-  mgr->getProcAcctTimer()->stop();
-  mgr->getProcInfoTimer()->stop();
-  mgr->getContextInfoTimer()->stop();
-  mgr->getProcEventTimer()->stop();
-  mgr->getSysProcStatTimer()->stop();
-  mgr->getSysProcMemInfoTimer()->stop();
-  mgr->getSysProcPressureTimer()->stop();
-  mgr->getSysProcDiskStatsTimer()->stop();
-  mgr->getDeviceData().set_state(tkm::msg::control::DeviceData_State_Idle);
-
+  mgr->stopUpdateLanes();
   return true;
 }
 

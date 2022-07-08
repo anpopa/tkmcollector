@@ -21,6 +21,7 @@
 #include "../bswinfra/source/Timer.h"
 
 #include "Control.pb.h"
+#include "Monitor.pb.h"
 
 using namespace bswi::event;
 
@@ -64,6 +65,7 @@ public:
 
   auto getDeviceData() -> tkm::msg::control::DeviceData & { return m_deviceData; }
   auto getSessionData() -> tkm::msg::control::SessionData & { return m_sessionData; }
+  auto getSessionInfo() -> tkm::msg::monitor::SessionInfo & { return m_sessionInfo; }
 
   virtual bool pushRequest(Request &request) = 0;
   virtual void updateState(tkm::msg::control::DeviceData_State state) = 0;
@@ -75,6 +77,7 @@ protected:
   std::shared_ptr<AsyncQueue<Request>> m_queue = nullptr;
   tkm::msg::control::DeviceData m_deviceData{};
   tkm::msg::control::SessionData m_sessionData{};
+  tkm::msg::monitor::SessionInfo m_sessionInfo{};
 };
 
 } // namespace tkm::collector

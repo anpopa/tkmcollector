@@ -15,10 +15,12 @@
 #include <string>
 
 #include "Connection.h"
+#include "DataSource.h"
 #include "IDevice.h"
 #include "Options.h"
 
 #include "../bswinfra/source/AsyncQueue.h"
+#include "../bswinfra/source/SafeList.h"
 #include "../bswinfra/source/Timer.h"
 
 #include "Control.pb.h"
@@ -31,11 +33,7 @@ namespace tkm::collector
 class MonitorDevice : public IDevice, public std::enable_shared_from_this<MonitorDevice>
 {
 public:
-  explicit MonitorDevice(const tkm::msg::control::DeviceData &data)
-  {
-    m_deviceData.CopyFrom(data);
-    initTimers();
-  }
+  explicit MonitorDevice(const tkm::msg::control::DeviceData &data) { m_deviceData.CopyFrom(data); }
   ~MonitorDevice() = default;
 
   bool createConnection() final;
@@ -48,29 +46,19 @@ public:
   bool pushRequest(Request &request) override;
   void updateState(tkm::msg::control::DeviceData_State state) final;
 
-  auto getProcAcctTimer() -> std::shared_ptr<Timer> { return m_procAcctTimer; }
-  auto getProcInfoTimer() -> std::shared_ptr<Timer> { return m_procInfoTimer; }
-  auto getContextInfoTimer() -> std::shared_ptr<Timer> { return m_contextInfoTimer; }
-  auto getProcEventTimer() -> std::shared_ptr<Timer> { return m_procEventTimer; }
-  auto getSysProcStatTimer() -> std::shared_ptr<Timer> { return m_sysProcStatTimer; }
-  auto getSysProcMemInfoTimer() -> std::shared_ptr<Timer> { return m_sysProcMemInfoTimer; }
-  auto getSysProcPressureTimer() -> std::shared_ptr<Timer> { return m_sysProcPressureTimer; }
-  auto getSysProcDiskStatsTimer() -> std::shared_ptr<Timer> { return m_sysProcDiskStatsTimer; }
+  void startUpdateLanes(void);
+  void stopUpdateLanes(void);
 
 private:
   bool requestHandler(const Request &request) final;
-  void initTimers(void);
+  void configUpdateLanes(void);
 
 private:
+  bswi::util::SafeList<std::shared_ptr<DataSource>> m_dataSources{"DataSourceList"};
   std::shared_ptr<Connection> m_connection = nullptr;
-  std::shared_ptr<Timer> m_procAcctTimer = nullptr;
-  std::shared_ptr<Timer> m_procInfoTimer = nullptr;
-  std::shared_ptr<Timer> m_contextInfoTimer = nullptr;
-  std::shared_ptr<Timer> m_procEventTimer = nullptr;
-  std::shared_ptr<Timer> m_sysProcStatTimer = nullptr;
-  std::shared_ptr<Timer> m_sysProcMemInfoTimer = nullptr;
-  std::shared_ptr<Timer> m_sysProcPressureTimer = nullptr;
-  std::shared_ptr<Timer> m_sysProcDiskStatsTimer = nullptr;
+  std::shared_ptr<Timer> m_fastLaneTimer = nullptr;
+  std::shared_ptr<Timer> m_paceLaneTimer = nullptr;
+  std::shared_ptr<Timer> m_slowLaneTimer = nullptr;
 };
 
 } // namespace tkm::collector
