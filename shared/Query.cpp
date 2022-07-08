@@ -137,6 +137,8 @@ auto Query::createTables(Query::Type type) -> std::string
           << m_sysProcMemColumn.at(SysProcMemColumn::SwapFree) << " INTEGER NOT NULL, "
           << m_sysProcMemColumn.at(SysProcMemColumn::SwapCached) << " INTEGER NOT NULL, "
           << m_sysProcMemColumn.at(SysProcMemColumn::SwapFreePercent) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::CmaTotal) << " INTEGER NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::CmaFree) << " INTEGER NOT NULL, "
           << m_sysProcMemColumn.at(SysProcMemColumn::SessionId) << " INTEGER NOT NULL, ";
     } else {
       out << m_sysProcMemColumn.at(SysProcMemColumn::Id) << " SERIAL PRIMARY KEY, "
@@ -152,6 +154,8 @@ auto Query::createTables(Query::Type type) -> std::string
           << m_sysProcMemColumn.at(SysProcMemColumn::SwapFree) << " BIGINT NOT NULL, "
           << m_sysProcMemColumn.at(SysProcMemColumn::SwapCached) << " BIGINT NOT NULL, "
           << m_sysProcMemColumn.at(SysProcMemColumn::SwapFreePercent) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::CmaTotal) << " BIGINT NOT NULL, "
+          << m_sysProcMemColumn.at(SysProcMemColumn::CmaFree) << " BIGINT NOT NULL, "
           << m_sysProcMemColumn.at(SysProcMemColumn::SessionId) << " INTEGER NOT NULL, ";
     }
     out << "CONSTRAINT KFSession FOREIGN KEY(" << m_sysProcMemColumn.at(SysProcMemColumn::SessionId)
@@ -792,12 +796,15 @@ auto Query::addData(Query::Type type,
         << m_sysProcMemColumn.at(SysProcMemColumn::SwapFree) << ","
         << m_sysProcMemColumn.at(SysProcMemColumn::SwapCached) << ","
         << m_sysProcMemColumn.at(SysProcMemColumn::SwapFreePercent) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::CmaTotal) << ","
+        << m_sysProcMemColumn.at(SysProcMemColumn::CmaFree) << ","
         << m_sysProcMemColumn.at(SysProcMemColumn::SessionId) << ") VALUES ('" << systemTime
         << "', '" << monotonicTime << "', '" << receiveTime << "', '" << sysProcMem.mem_total()
         << "', '" << sysProcMem.mem_free() << "', '" << sysProcMem.mem_available() << "', '"
         << sysProcMem.mem_cached() << "', '" << sysProcMem.mem_percent() << "', '"
         << sysProcMem.swap_total() << "', '" << sysProcMem.swap_free() << "', '"
-        << sysProcMem.swap_cached() << "', '" << sysProcMem.swap_percent() << "', ";
+        << sysProcMem.swap_cached() << "', '" << sysProcMem.swap_percent() << "', '"
+        << sysProcMem.cma_total() << "', '" << sysProcMem.cma_free() << "', ";
 
     if (type == Query::Type::SQLite3) {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName

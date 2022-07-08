@@ -206,6 +206,8 @@ public:
     SwapFree,        // int: SwapFree
     SwapCached,      // int: SwapCached
     SwapFreePercent, // int: SwapFreePercent
+    CmaTotal,        // int: CmaTotal
+    CmaFree,         // int: CmaFree
     SessionId,       // int: Session id key
   };
   const std::map<SysProcMemColumn, std::string> m_sysProcMemColumn{
@@ -222,6 +224,8 @@ public:
       std::make_pair(SysProcMemColumn::SwapFree, "SwapFree"),
       std::make_pair(SysProcMemColumn::SwapCached, "SwapCached"),
       std::make_pair(SysProcMemColumn::SwapFreePercent, "SwapFreePercent"),
+      std::make_pair(SysProcMemColumn::CmaTotal, "CmaTotal"),
+      std::make_pair(SysProcMemColumn::CmaFree, "CmaFree"),
       std::make_pair(SysProcMemColumn::SessionId, "SessionId"),
   };
 
