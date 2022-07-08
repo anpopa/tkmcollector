@@ -155,7 +155,7 @@ void MonitorDevice::configUpdateLanes(void)
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logInfo() << "Request ProcAcct data to " << getDeviceData().name();
+    logDebug() << "Request ProcAcct data to " << getDeviceData().name();
 
     requestMessage.set_id("GetProcAcct");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetProcAcct);
@@ -170,7 +170,7 @@ void MonitorDevice::configUpdateLanes(void)
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logInfo() << "Request ProcInfo data to " << getDeviceData().name();
+    logDebug() << "Request ProcInfo data to " << getDeviceData().name();
 
     requestMessage.set_id("GetProcInfo");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetProcInfo);
@@ -185,7 +185,7 @@ void MonitorDevice::configUpdateLanes(void)
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logInfo() << "Request ContextInfo data to " << getDeviceData().name();
+    logDebug() << "Request ContextInfo data to " << getDeviceData().name();
 
     requestMessage.set_id("GetContextInfo");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetContextInfo);
@@ -200,7 +200,7 @@ void MonitorDevice::configUpdateLanes(void)
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logInfo() << "Request ProcEvent data to " << getDeviceData().name();
+    logDebug() << "Request ProcEvent data to " << getDeviceData().name();
 
     requestMessage.set_id("GetProcEvent");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetProcEventStats);
@@ -215,7 +215,7 @@ void MonitorDevice::configUpdateLanes(void)
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logInfo() << "Request SysProcStat data to " << getDeviceData().name();
+    logDebug() << "Request SysProcStat data to " << getDeviceData().name();
 
     requestMessage.set_id("GetSysProcStat");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcStat);
@@ -230,7 +230,7 @@ void MonitorDevice::configUpdateLanes(void)
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logInfo() << "Request SysProcMemInfo data to " << getDeviceData().name();
+    logDebug() << "Request SysProcMemInfo data to " << getDeviceData().name();
 
     requestMessage.set_id("GetSysProcMemInfo");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcMemInfo);
@@ -245,7 +245,7 @@ void MonitorDevice::configUpdateLanes(void)
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logInfo() << "Request SysProcDiskStats data to " << getDeviceData().name();
+    logDebug() << "Request SysProcDiskStats data to " << getDeviceData().name();
 
     requestMessage.set_id("GetSysProcDiskStats");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcDiskStats);
@@ -260,7 +260,7 @@ void MonitorDevice::configUpdateLanes(void)
     tkm::msg::Envelope requestEnvelope;
     tkm::msg::collector::Request requestMessage;
 
-    logInfo() << "Request SysProcPressure data to " << getDeviceData().name();
+    logDebug() << "Request SysProcPressure data to " << getDeviceData().name();
 
     requestMessage.set_id("GetSysProcPressure");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcPressure);
@@ -517,7 +517,11 @@ static bool doSetSession(const shared_ptr<MonitorDevice> mgr, const MonitorDevic
   const auto &sessionInfo = std::any_cast<tkm::msg::monitor::SessionInfo>(rq.bulkData);
 
   // Update our session data
-  logDebug() << "Session created: " << sessionInfo.hash();
+  logDebug() << "Session created: " << sessionInfo.hash()
+             << " FastLaneInterval=" << sessionInfo.fast_lane_interval()
+             << " PaceLaneInterval=" << sessionInfo.pace_lane_interval()
+             << " SlowLameInterval=" << sessionInfo.slow_lane_interval();
+
   mgr->getSessionInfo().CopyFrom(sessionInfo);
   mgr->getSessionData().set_hash(sessionInfo.hash());
   mgr->updateState(tkm::msg::control::DeviceData_State_SessionSet);
