@@ -427,6 +427,34 @@ auto Query::createTables(Query::Type type) -> std::string
         << ") ON DELETE CASCADE);";
   }
 
+  // SysProcBuddyInfo table
+  out << "CREATE TABLE IF NOT EXISTS " << m_sysProcBuddyInfoTableName << " (";
+  if (type == Query::Type::SQLite3) {
+    out << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::Id) << " INTEGER PRIMARY KEY, "
+        << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::SystemTime) << " INTEGER NOT NULL, "
+        << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::MonotonicTime)
+        << " INTEGER NOT NULL, " << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::ReceiveTime)
+        << " INTEGER NOT NULL, " << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::Name)
+        << " TEXT NOT NULL, " << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::Zone)
+        << " TEXT NOT NULL, " << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::Data)
+        << " TEXT NOT NULL, " << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::SessionId)
+        << " INTEGER NOT NULL, ";
+  } else {
+    out << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::Id) << " SERIAL PRIMARY KEY, "
+        << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::SystemTime) << " BIGINT NOT NULL, "
+        << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::MonotonicTime)
+        << " BIGINT NOT NULL, " << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::ReceiveTime)
+        << " BIGINT NOT NULL, " << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::Name)
+        << " TEXT NOT NULL, " << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::Zone)
+        << " TEXT NOT NULL, " << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::Data)
+        << " TEXT NOT NULL, " << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::SessionId)
+        << " INTEGER NOT NULL, ";
+  }
+  out << "CONSTRAINT KFSession FOREIGN KEY("
+      << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::SessionId) << ") REFERENCES "
+      << m_sessionsTableName << "(" << m_sessionColumn.at(SessionColumn::Id)
+      << ") ON DELETE CASCADE);";
+
   return out.str();
 }
 
@@ -719,7 +747,7 @@ auto Query::addData(Query::Type type,
 
 auto Query::addData(Query::Type type,
                     const std::string &sessionHash,
-                    const tkm::msg::monitor::CPUStat &cpuStat,
+                    const tkm::msg::monitor::SysProcStat &sysProcStat,
                     uint64_t systemTime,
                     uint64_t monotonicTime,
                     uint64_t receiveTime) -> std::string
@@ -736,8 +764,9 @@ auto Query::addData(Query::Type type,
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatUsr) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatSys) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << ") VALUES ('" << systemTime
-        << "', '" << monotonicTime << "', '" << receiveTime << "', '" << cpuStat.name() << "', '"
-        << cpuStat.all() << "', '" << cpuStat.usr() << "', '" << cpuStat.sys() << "', ";
+        << "', '" << monotonicTime << "', '" << receiveTime << "', '" << sysProcStat.cpu().name()
+        << "', '" << sysProcStat.cpu().all() << "', '" << sysProcStat.cpu().usr() << "', '"
+        << sysProcStat.cpu().sys() << "', ";
 
     if (type == Query::Type::SQLite3) {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
@@ -747,6 +776,33 @@ auto Query::addData(Query::Type type,
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
           << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
           << "'" << sessionHash << "' AND EndTimestamp = 0));";
+    }
+  }
+
+  for (const auto &cpuStat : sysProcStat.core()) {
+    if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
+      out << "INSERT INTO " << m_sysProcStatTableName << " ("
+          << m_sysProcStatColumn.at(SysProcStatColumn::SystemTime) << ","
+          << m_sysProcStatColumn.at(SysProcStatColumn::MonotonicTime) << ","
+          << m_sysProcStatColumn.at(SysProcStatColumn::ReceiveTime) << ","
+          << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatName) << ","
+          << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatAll) << ","
+          << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatUsr) << ","
+          << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatSys) << ","
+          << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << ") VALUES ('" << systemTime
+          << "', '" << monotonicTime << "', '" << receiveTime << "', '" << cpuStat.name() << "', '"
+          << cpuStat.all() << "', '" << cpuStat.usr() << "', '" << cpuStat.sys() << "', ";
+
+      if (type == Query::Type::SQLite3) {
+        out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM "
+            << m_sessionsTableName << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+            << "'" << sessionHash << "' AND EndTimestamp = 0));";
+      } else {
+        out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM "
+            << m_sessionsTableName << " WHERE " << m_sessionColumn.at(SessionColumn::Hash)
+            << " LIKE "
+            << "'" << sessionHash << "' AND EndTimestamp = 0));";
+      }
     }
   }
 
@@ -1084,6 +1140,44 @@ auto Query::addData(Query::Type type,
     out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
         << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
         << "'" << sessionHash << "' AND EndTimestamp = 0));";
+  }
+
+  return out.str();
+}
+
+auto Query::addData(Query::Type type,
+                    const std::string &sessionHash,
+                    const tkm::msg::monitor::SysProcBuddyInfo &sysProcBuddyInfo,
+                    uint64_t systemTime,
+                    uint64_t monotonicTime,
+                    uint64_t receiveTime) -> std::string
+{
+  std::stringstream out;
+
+  for (const auto &buddyInfo : sysProcBuddyInfo.node()) {
+    if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
+      out << "INSERT INTO " << m_sysProcBuddyInfoTableName << " ("
+          << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::SystemTime) << ","
+          << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::MonotonicTime) << ","
+          << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::ReceiveTime) << ","
+          << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::Name) << ","
+          << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::Zone) << ","
+          << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::Data) << ","
+          << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::SessionId) << ") VALUES ('"
+          << systemTime << "', '" << monotonicTime << "', '" << receiveTime << "', '"
+          << buddyInfo.name() << "', '" << buddyInfo.zone() << "', '" << buddyInfo.data() << "', ";
+
+      if (type == Query::Type::SQLite3) {
+        out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM "
+            << m_sessionsTableName << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+            << "'" << sessionHash << "' AND EndTimestamp = 0));";
+      } else {
+        out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM "
+            << m_sessionsTableName << " WHERE " << m_sessionColumn.at(SessionColumn::Hash)
+            << " LIKE "
+            << "'" << sessionHash << "' AND EndTimestamp = 0));";
+      }
+    }
   }
 
   return out.str();

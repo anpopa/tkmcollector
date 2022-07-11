@@ -58,6 +58,7 @@ public:
     m_queue = std::make_shared<AsyncQueue<Request>>(
         "DeviceQueue", [this](const Request &request) { return requestHandler(request); });
   }
+  virtual ~IDevice() = default;
 
   virtual bool createConnection() = 0;
   virtual void enableConnection() = 0;

@@ -54,7 +54,7 @@ public:
   // Add device data
   auto addData(Query::Type type,
                const std::string &sessionHash,
-               const tkm::msg::monitor::CPUStat &cpuStat,
+               const tkm::msg::monitor::SysProcStat &sysProcStat,
                uint64_t systemTime,
                uint64_t monotonicTime,
                uint64_t receiveTime) -> std::string;
@@ -73,6 +73,12 @@ public:
   auto addData(Query::Type type,
                const std::string &sessionHash,
                const tkm::msg::monitor::SysProcPressure &sysProcPressure,
+               uint64_t systemTime,
+               uint64_t monotonicTime,
+               uint64_t receiveTime) -> std::string;
+  auto addData(Query::Type type,
+               const std::string &sessionHash,
+               const tkm::msg::monitor::SysProcBuddyInfo &sysProcPressure,
                uint64_t systemTime,
                uint64_t monotonicTime,
                uint64_t receiveTime) -> std::string;
@@ -464,12 +470,34 @@ public:
       std::make_pair(ContextInfoColumn::SessionId, "SessionId"),
   };
 
+  enum class SysProcBuddyInfoColumn {
+    Id,            // int: Primary key
+    SystemTime,    // int: SystemTime
+    MonotonicTime, // int: MonotonicTime
+    ReceiveTime,   // int: Receive timestamp
+    Name,          // str: BuddyInfo.name
+    Zone,          // str: BuddyInfo.zone
+    Data,          // str: BuddyInfo.data
+    SessionId,     // int: Session id key
+  };
+  const std::map<SysProcBuddyInfoColumn, std::string> m_sysProcBuddyInfoColumn{
+      std::make_pair(SysProcBuddyInfoColumn::Id, "Id"),
+      std::make_pair(SysProcBuddyInfoColumn::SystemTime, "SystemTime"),
+      std::make_pair(SysProcBuddyInfoColumn::MonotonicTime, "MonotonicTime"),
+      std::make_pair(SysProcBuddyInfoColumn::ReceiveTime, "ReceiveTime"),
+      std::make_pair(SysProcBuddyInfoColumn::Name, "Name"),
+      std::make_pair(SysProcBuddyInfoColumn::Zone, "Zone"),
+      std::make_pair(SysProcBuddyInfoColumn::Data, "Data"),
+      std::make_pair(SysProcBuddyInfoColumn::SessionId, "SessionId"),
+  };
+
   const std::string m_devicesTableName = "tkmDevices";
   const std::string m_sessionsTableName = "tkmSessions";
   const std::string m_sysProcStatTableName = "tkmSysProcStat";
   const std::string m_sysProcMemInfoTableName = "tkmSysProcMemInfo";
   const std::string m_sysProcDiskStatsTableName = "tkmSysProcDiskStats";
   const std::string m_sysProcPressureTableName = "tkmSysProcPressure";
+  const std::string m_sysProcBuddyInfoTableName = "tkmSysProcBuddyInfo";
   const std::string m_procAcctTableName = "tkmProcAcct";
   const std::string m_procInfoTableName = "tkmProcInfo";
   const std::string m_procEventTableName = "tkmProcEvent";
