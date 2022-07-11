@@ -675,8 +675,17 @@ static bool doAddData(const shared_ptr<SQLiteDatabase> db, const IDatabase::Requ
                               uint64_t receiveTime) {
     status = db->runQuery(
         tkmQuery.addData(
-            Query::Type::SQLite3, sessionHash, sysProcStat, systemTime, monotonicTime, receiveTime),
+            Query::Type::SQLite3, sessionHash, sysProcStat.cpu(), systemTime, monotonicTime, receiveTime),
         query);
+
+    if (status) {
+      for (const auto &coreStat : sysProcStat.core()) {
+        status = db->runQuery(
+          tkmQuery.addData(
+              Query::Type::SQLite3, sessionHash, coreStat, systemTime, monotonicTime, receiveTime),
+          query);
+      }
+    }
   };
 
   auto writeSysProcMemInfo = [&db, &rq, &status, &query](

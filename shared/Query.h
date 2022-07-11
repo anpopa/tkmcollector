@@ -54,7 +54,7 @@ public:
   // Add device data
   auto addData(Query::Type type,
                const std::string &sessionHash,
-               const tkm::msg::monitor::SysProcStat &sysProcStat,
+               const tkm::msg::monitor::CPUStat &cpuStat,
                uint64_t systemTime,
                uint64_t monotonicTime,
                uint64_t receiveTime) -> std::string;

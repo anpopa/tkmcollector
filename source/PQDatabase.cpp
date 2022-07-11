@@ -753,13 +753,29 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
     try {
       db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
                                           sessionHash,
-                                          sysProcStat,
+                                          sysProcStat.cpu(),
                                           systemTime,
                                           monotonicTime,
                                           receiveTime));
     } catch (std::exception &e) {
       logError() << "Query failed to addData. Database query fails: " << e.what();
       status = false;
+    }
+
+    if (status) {
+      for (const auto &coreStat : sysProcStat.core()) {
+        try {
+          db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
+                                          sessionHash,
+                                          coreStat,
+                                          systemTime,
+                                          monotonicTime,
+                                          receiveTime));
+        } catch (std::exception &e) {
+          logError() << "Query failed to addData. Database query fails: " << e.what();
+          status = false;
+        }
+      }
     }
   };
 

@@ -719,7 +719,7 @@ auto Query::addData(Query::Type type,
 
 auto Query::addData(Query::Type type,
                     const std::string &sessionHash,
-                    const tkm::msg::monitor::SysProcStat &sysProcStat,
+                    const tkm::msg::monitor::CPUStat &cpuStat,
                     uint64_t systemTime,
                     uint64_t monotonicTime,
                     uint64_t receiveTime) -> std::string
@@ -736,9 +736,8 @@ auto Query::addData(Query::Type type,
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatUsr) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::CPUStatSys) << ","
         << m_sysProcStatColumn.at(SysProcStatColumn::SessionId) << ") VALUES ('" << systemTime
-        << "', '" << monotonicTime << "', '" << receiveTime << "', '" << sysProcStat.cpu().name()
-        << "', '" << sysProcStat.cpu().all() << "', '" << sysProcStat.cpu().usr() << "', '"
-        << sysProcStat.cpu().sys() << "', ";
+        << "', '" << monotonicTime << "', '" << receiveTime << "', '" << cpuStat.name() << "', '"
+        << cpuStat.all() << "', '" << cpuStat.usr() << "', '" << cpuStat.sys() << "', ";
 
     if (type == Query::Type::SQLite3) {
       out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
