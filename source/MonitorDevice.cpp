@@ -232,8 +232,23 @@ void MonitorDevice::configUpdateLanes(void)
 
     logDebug() << "Request SysProcBuddyInfo data to " << getDeviceData().name();
 
-    requestMessage.set_id("GetSysProcStat");
+    requestMessage.set_id("GetSysBuddyInfo");
     requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcBuddyInfo);
+    requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
+    requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Monitor);
+    requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
+
+    return getConnection()->writeEnvelope(requestEnvelope);
+  };
+
+  const auto sysProcWirelessUpdateCallback = [this]() {
+    tkm::msg::Envelope requestEnvelope;
+    tkm::msg::collector::Request requestMessage;
+
+    logDebug() << "Request SysProcWireless data to " << getDeviceData().name();
+
+    requestMessage.set_id("GetSysProcWireless");
+    requestMessage.set_type(tkm::msg::collector::Request_Type_GetSysProcWireless);
     requestEnvelope.mutable_mesg()->PackFrom(requestMessage);
     requestEnvelope.set_target(tkm::msg::Envelope_Recipient_Monitor);
     requestEnvelope.set_origin(tkm::msg::Envelope_Recipient_Collector);
@@ -317,6 +332,10 @@ void MonitorDevice::configUpdateLanes(void)
       m_dataSources.append(std::make_shared<DataSource>(
           "SysProcBuddyInfo", DataSource::UpdateLane::Fast, sysProcBuddyInfoUpdateCallback));
       break;
+    case msg::monitor::SessionInfo_DataSource_SysProcWireless:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcWireless", DataSource::UpdateLane::Fast, sysProcWirelessUpdateCallback));
+      break;
     case msg::monitor::SessionInfo_DataSource_SysProcMemInfo:
       m_dataSources.append(std::make_shared<DataSource>(
           "SysProcMemInfo", DataSource::UpdateLane::Fast, sysProcMemInfoUpdateCallback));
@@ -360,6 +379,10 @@ void MonitorDevice::configUpdateLanes(void)
       m_dataSources.append(std::make_shared<DataSource>(
           "SysProcBuddyInfo", DataSource::UpdateLane::Pace, sysProcBuddyInfoUpdateCallback));
       break;
+    case msg::monitor::SessionInfo_DataSource_SysProcWireless:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcWireless", DataSource::UpdateLane::Pace, sysProcWirelessUpdateCallback));
+      break;
     case msg::monitor::SessionInfo_DataSource_SysProcMemInfo:
       m_dataSources.append(std::make_shared<DataSource>(
           "SysProcMemInfo", DataSource::UpdateLane::Pace, sysProcMemInfoUpdateCallback));
@@ -402,6 +425,10 @@ void MonitorDevice::configUpdateLanes(void)
     case msg::monitor::SessionInfo_DataSource_SysProcBuddyInfo:
       m_dataSources.append(std::make_shared<DataSource>(
           "SysProcBuddyInfo", DataSource::UpdateLane::Slow, sysProcBuddyInfoUpdateCallback));
+      break;
+    case msg::monitor::SessionInfo_DataSource_SysProcWireless:
+      m_dataSources.append(std::make_shared<DataSource>(
+          "SysProcWireless", DataSource::UpdateLane::Slow, sysProcWirelessUpdateCallback));
       break;
     case msg::monitor::SessionInfo_DataSource_SysProcMemInfo:
       m_dataSources.append(std::make_shared<DataSource>(

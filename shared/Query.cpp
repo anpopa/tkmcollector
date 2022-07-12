@@ -455,6 +455,50 @@ auto Query::createTables(Query::Type type) -> std::string
       << m_sessionsTableName << "(" << m_sessionColumn.at(SessionColumn::Id)
       << ") ON DELETE CASCADE);";
 
+  // SysProcWireless table
+  out << "CREATE TABLE IF NOT EXISTS " << m_sysProcWirelessTableName << " (";
+  if (type == Query::Type::SQLite3) {
+    out << m_sysProcWirelessColumn.at(SysProcWirelessColumn::Id) << " INTEGER PRIMARY KEY, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::SystemTime) << " INTEGER NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::MonotonicTime) << " INTEGER NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::ReceiveTime) << " INTEGER NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::Name) << " TEXT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::Status) << " TEXT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::QualityLink) << " INTEGER NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::QualityLevel) << " INTEGER NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::QualityNoise) << " INTEGER NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedNWId) << " INTEGER NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedCrypt)
+        << " INTEGER NOT NULL, " << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedFrag)
+        << " INTEGER NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedRetry)
+        << " INTEGER NOT NULL, " << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedMisc)
+        << " INTEGER NOT NULL, " << m_sysProcWirelessColumn.at(SysProcWirelessColumn::MissedBeacon)
+        << " INTEGER NOT NULL, " << m_sysProcWirelessColumn.at(SysProcWirelessColumn::SessionId)
+        << " INTEGER NOT NULL, ";
+  } else {
+    out << m_sysProcWirelessColumn.at(SysProcWirelessColumn::Id) << " SERIAL PRIMARY KEY, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::SystemTime) << " BIGINT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::MonotonicTime) << " BIGINT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::ReceiveTime) << " BIGINT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::Name) << " TEXT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::Status) << " TEXT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::QualityLink) << " BIGINT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::QualityLevel) << " BIGINT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::QualityNoise) << " BIGINT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedNWId) << " BIGINT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedCrypt) << " BIGINT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedFrag) << " BIGINT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedRetry) << " BIGINT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedMisc) << " BIGINT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::MissedBeacon) << " BIGINT NOT NULL, "
+        << m_sysProcWirelessColumn.at(SysProcWirelessColumn::SessionId) << " INTEGER NOT NULL, ";
+  }
+  out << "CONSTRAINT KFSession FOREIGN KEY("
+      << m_sysProcWirelessColumn.at(SysProcWirelessColumn::SessionId) << ") REFERENCES "
+      << m_sessionsTableName << "(" << m_sessionColumn.at(SessionColumn::Id)
+      << ") ON DELETE CASCADE);";
+
   return out.str();
 }
 
@@ -469,6 +513,8 @@ auto Query::dropTables(Query::Type type) -> std::string
     out << "DROP TABLE IF EXISTS " << m_sysProcMemInfoTableName << ";";
     out << "DROP TABLE IF EXISTS " << m_sysProcDiskStatsTableName << ";";
     out << "DROP TABLE IF EXISTS " << m_sysProcPressureTableName << ";";
+    out << "DROP TABLE IF EXISTS " << m_sysProcBuddyInfoTableName << ";";
+    out << "DROP TABLE IF EXISTS " << m_sysProcWirelessTableName << ";";
     out << "DROP TABLE IF EXISTS " << m_procAcctTableName << ";";
     out << "DROP TABLE IF EXISTS " << m_procInfoTableName << ";";
     out << "DROP TABLE IF EXISTS " << m_procEventTableName << ";";
@@ -480,6 +526,8 @@ auto Query::dropTables(Query::Type type) -> std::string
     out << "DROP TABLE IF EXISTS " << m_sysProcMemInfoTableName << " CASCADE;";
     out << "DROP TABLE IF EXISTS " << m_sysProcDiskStatsTableName << " CASCADE;";
     out << "DROP TABLE IF EXISTS " << m_sysProcPressureTableName << " CASCADE;";
+    out << "DROP TABLE IF EXISTS " << m_sysProcBuddyInfoTableName << " CASCADE;";
+    out << "DROP TABLE IF EXISTS " << m_sysProcWirelessTableName << " CASCADE;";
     out << "DROP TABLE IF EXISTS " << m_procAcctTableName << " CASCADE;";
     out << "DROP TABLE IF EXISTS " << m_procInfoTableName << " CASCADE;";
     out << "DROP TABLE IF EXISTS " << m_procEventTableName << " CASCADE;";
@@ -1166,6 +1214,56 @@ auto Query::addData(Query::Type type,
           << m_sysProcBuddyInfoColumn.at(SysProcBuddyInfoColumn::SessionId) << ") VALUES ('"
           << systemTime << "', '" << monotonicTime << "', '" << receiveTime << "', '"
           << buddyInfo.name() << "', '" << buddyInfo.zone() << "', '" << buddyInfo.data() << "', ";
+
+      if (type == Query::Type::SQLite3) {
+        out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM "
+            << m_sessionsTableName << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+            << "'" << sessionHash << "' AND EndTimestamp = 0));";
+      } else {
+        out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM "
+            << m_sessionsTableName << " WHERE " << m_sessionColumn.at(SessionColumn::Hash)
+            << " LIKE "
+            << "'" << sessionHash << "' AND EndTimestamp = 0));";
+      }
+    }
+  }
+
+  return out.str();
+}
+
+auto Query::addData(Query::Type type,
+                    const std::string &sessionHash,
+                    const tkm::msg::monitor::SysProcWireless &sysProcWireless,
+                    uint64_t systemTime,
+                    uint64_t monotonicTime,
+                    uint64_t receiveTime) -> std::string
+{
+  std::stringstream out;
+
+  for (const auto &ifw : sysProcWireless.ifw()) {
+    if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
+      out << "INSERT INTO " << m_sysProcWirelessTableName << " ("
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::SystemTime) << ","
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::MonotonicTime) << ","
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::ReceiveTime) << ","
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::Name) << ","
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::Status) << ","
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::QualityLink) << ","
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::QualityLevel) << ","
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::QualityNoise) << ","
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedNWId) << ","
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedCrypt) << ","
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedFrag) << ","
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedRetry) << ","
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::DiscardedMisc) << ","
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::MissedBeacon) << ","
+          << m_sysProcWirelessColumn.at(SysProcWirelessColumn::SessionId) << ") VALUES ('"
+          << systemTime << "', '" << monotonicTime << "', '" << receiveTime << "', '" << ifw.name()
+          << "', '" << ifw.status() << "', '" << ifw.quality_link() << "', '" << ifw.quality_level()
+          << "', '" << ifw.quality_noise() << "', '" << ifw.discarded_nwid() << "', '"
+          << ifw.discarded_crypt() << "', '" << ifw.discarded_frag() << "', '"
+          << ifw.discarded_retry() << "', '" << ifw.discarded_misc() << "', '"
+          << ifw.missed_beacon() << "', ";
 
       if (type == Query::Type::SQLite3) {
         out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM "

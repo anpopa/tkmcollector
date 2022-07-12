@@ -78,7 +78,13 @@ public:
                uint64_t receiveTime) -> std::string;
   auto addData(Query::Type type,
                const std::string &sessionHash,
-               const tkm::msg::monitor::SysProcBuddyInfo &sysProcPressure,
+               const tkm::msg::monitor::SysProcBuddyInfo &sysProcBuddyInfo,
+               uint64_t systemTime,
+               uint64_t monotonicTime,
+               uint64_t receiveTime) -> std::string;
+  auto addData(Query::Type type,
+               const std::string &sessionHash,
+               const tkm::msg::monitor::SysProcWireless &sysProcWireless,
                uint64_t systemTime,
                uint64_t monotonicTime,
                uint64_t receiveTime) -> std::string;
@@ -491,6 +497,43 @@ public:
       std::make_pair(SysProcBuddyInfoColumn::SessionId, "SessionId"),
   };
 
+  enum class SysProcWirelessColumn {
+    Id,             // int: Primary key
+    SystemTime,     // int: SystemTime
+    MonotonicTime,  // int: MonotonicTime
+    ReceiveTime,    // int: Receive timestamp
+    Name,           // str: WlanInterface.name
+    Status,         // str: WlanInterface.status
+    QualityLink,    // int: WlanInterface.quality_link
+    QualityLevel,   // int: WlanInterface.quality_level
+    QualityNoise,   // int: WlanInterface.quality_noise
+    DiscardedNWId,  // int: WlanInterface.discarded_nwid
+    DiscardedCrypt, // int: WlanInterface.discarded_crypt
+    DiscardedFrag,  // int: WlanInterface.discarded_frag
+    DiscardedRetry, // int: WlanInterface.discarded_retry
+    DiscardedMisc,  // int: WlanInterface.discarded_misc
+    MissedBeacon,   // int: WlanInterface.missed_beacon
+    SessionId,      // int: Session id key
+  };
+  const std::map<SysProcWirelessColumn, std::string> m_sysProcWirelessColumn{
+      std::make_pair(SysProcWirelessColumn::Id, "Id"),
+      std::make_pair(SysProcWirelessColumn::SystemTime, "SystemTime"),
+      std::make_pair(SysProcWirelessColumn::MonotonicTime, "MonotonicTime"),
+      std::make_pair(SysProcWirelessColumn::ReceiveTime, "ReceiveTime"),
+      std::make_pair(SysProcWirelessColumn::Name, "Name"),
+      std::make_pair(SysProcWirelessColumn::Status, "Status"),
+      std::make_pair(SysProcWirelessColumn::QualityLink, "QualityLink"),
+      std::make_pair(SysProcWirelessColumn::QualityLevel, "QualityLevel"),
+      std::make_pair(SysProcWirelessColumn::QualityNoise, "QualityNoise"),
+      std::make_pair(SysProcWirelessColumn::DiscardedNWId, "DiscardedNWId"),
+      std::make_pair(SysProcWirelessColumn::DiscardedCrypt, "DiscardedCrypt"),
+      std::make_pair(SysProcWirelessColumn::DiscardedFrag, "DiscardedFrag"),
+      std::make_pair(SysProcWirelessColumn::DiscardedRetry, "DiscardedRetry"),
+      std::make_pair(SysProcWirelessColumn::DiscardedMisc, "DiscardedMisc"),
+      std::make_pair(SysProcWirelessColumn::MissedBeacon, "MissedBeacon"),
+      std::make_pair(SysProcWirelessColumn::SessionId, "SessionId"),
+  };
+
   const std::string m_devicesTableName = "tkmDevices";
   const std::string m_sessionsTableName = "tkmSessions";
   const std::string m_sysProcStatTableName = "tkmSysProcStat";
@@ -498,6 +541,7 @@ public:
   const std::string m_sysProcDiskStatsTableName = "tkmSysProcDiskStats";
   const std::string m_sysProcPressureTableName = "tkmSysProcPressure";
   const std::string m_sysProcBuddyInfoTableName = "tkmSysProcBuddyInfo";
+  const std::string m_sysProcWirelessTableName = "tkmSysProcWireless";
   const std::string m_procAcctTableName = "tkmProcAcct";
   const std::string m_procInfoTableName = "tkmProcInfo";
   const std::string m_procEventTableName = "tkmProcEvent";

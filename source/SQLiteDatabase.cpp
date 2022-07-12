@@ -694,6 +694,21 @@ static bool doAddData(const shared_ptr<SQLiteDatabase> db, const IDatabase::Requ
                               query);
       };
 
+  auto writeSysProcWireless =
+      [&db, &rq, &status, &query](const std::string &sessionHash,
+                                  const tkm::msg::monitor::SysProcWireless &sysProcWireless,
+                                  uint64_t systemTime,
+                                  uint64_t monotonicTime,
+                                  uint64_t receiveTime) {
+        status = db->runQuery(tkmQuery.addData(Query::Type::SQLite3,
+                                               sessionHash,
+                                               sysProcWireless,
+                                               systemTime,
+                                               monotonicTime,
+                                               receiveTime),
+                              query);
+      };
+
   auto writeSysProcMemInfo = [&db, &rq, &status, &query](
                                  const std::string &sessionHash,
                                  const tkm::msg::monitor::SysProcMemInfo &sysProcMem,
@@ -806,6 +821,16 @@ static bool doAddData(const shared_ptr<SQLiteDatabase> db, const IDatabase::Requ
                           data.system_time_sec(),
                           data.monotonic_time_sec(),
                           data.receive_time_sec());
+    break;
+  }
+  case tkm::msg::monitor::Data_What_SysProcWireless: {
+    tkm::msg::monitor::SysProcWireless sysProcWireless;
+    data.payload().UnpackTo(&sysProcWireless);
+    writeSysProcWireless(rq.args.at(Defaults::Arg::SessionHash),
+                         sysProcWireless,
+                         data.system_time_sec(),
+                         data.monotonic_time_sec(),
+                         data.receive_time_sec());
     break;
   }
   case tkm::msg::monitor::Data_What_SysProcMemInfo: {

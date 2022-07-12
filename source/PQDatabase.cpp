@@ -782,6 +782,44 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
         }
       };
 
+  auto writeSysProcBuddyInfo =
+      [&db, &rq, &status](const std::string &sessionHash,
+                          const tkm::msg::monitor::SysProcBuddyInfo &sysProcBuddyInfo,
+                          uint64_t systemTime,
+                          uint64_t monotonicTime,
+                          uint64_t receiveTime) {
+        try {
+          db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
+                                              sessionHash,
+                                              sysProcBuddyInfo,
+                                              systemTime,
+                                              monotonicTime,
+                                              receiveTime));
+        } catch (std::exception &e) {
+          logError() << "Query failed to addData. Database query fails: " << e.what();
+          status = false;
+        }
+      };
+
+  auto writeSysProcWireless =
+      [&db, &rq, &status](const std::string &sessionHash,
+                          const tkm::msg::monitor::SysProcWireless &sysProcWireless,
+                          uint64_t systemTime,
+                          uint64_t monotonicTime,
+                          uint64_t receiveTime) {
+        try {
+          db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
+                                              sessionHash,
+                                              sysProcWireless,
+                                              systemTime,
+                                              monotonicTime,
+                                              receiveTime));
+        } catch (std::exception &e) {
+          logError() << "Query failed to addData. Database query fails: " << e.what();
+          status = false;
+        }
+      };
+
   auto writeSysProcPressure =
       [&db, &rq, &status](const std::string &sessionHash,
                           const tkm::msg::monitor::SysProcPressure &sysProcPressure,
@@ -913,6 +951,26 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
                           data.system_time_sec(),
                           data.monotonic_time_sec(),
                           data.receive_time_sec());
+    break;
+  }
+  case tkm::msg::monitor::Data_What_SysProcBuddyInfo: {
+    tkm::msg::monitor::SysProcBuddyInfo sysProcBuddyInfo;
+    data.payload().UnpackTo(&sysProcBuddyInfo);
+    writeSysProcBuddyInfo(rq.args.at(Defaults::Arg::SessionHash),
+                          sysProcBuddyInfo,
+                          data.system_time_sec(),
+                          data.monotonic_time_sec(),
+                          data.receive_time_sec());
+    break;
+  }
+  case tkm::msg::monitor::Data_What_SysProcWireless: {
+    tkm::msg::monitor::SysProcWireless sysProcWireless;
+    data.payload().UnpackTo(&sysProcWireless);
+    writeSysProcWireless(rq.args.at(Defaults::Arg::SessionHash),
+                         sysProcWireless,
+                         data.system_time_sec(),
+                         data.monotonic_time_sec(),
+                         data.receive_time_sec());
     break;
   }
   default:
