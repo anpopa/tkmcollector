@@ -39,6 +39,7 @@ auto Query::createTables(Query::Type type) -> std::string
       out << m_sessionColumn.at(SessionColumn::Id) << " INTEGER PRIMARY KEY, "
           << m_sessionColumn.at(SessionColumn::Name) << " TEXT NOT NULL, "
           << m_sessionColumn.at(SessionColumn::Hash) << " TEXT NOT NULL, "
+          << m_sessionColumn.at(SessionColumn::CoreCount) << " INTEGER NOT NULL, "
           << m_sessionColumn.at(SessionColumn::StartTimestamp) << " INTEGER NOT NULL, "
           << m_sessionColumn.at(SessionColumn::EndTimestamp) << " INTEGER NOT NULL, "
           << m_sessionColumn.at(SessionColumn::Device) << " INTEGER NOT NULL, ";
@@ -46,6 +47,7 @@ auto Query::createTables(Query::Type type) -> std::string
       out << m_sessionColumn.at(SessionColumn::Id) << " SERIAL PRIMARY KEY, "
           << m_sessionColumn.at(SessionColumn::Name) << " TEXT NOT NULL, "
           << m_sessionColumn.at(SessionColumn::Hash) << " TEXT NOT NULL, "
+          << m_sessionColumn.at(SessionColumn::CoreCount) << " BIGINT NOT NULL, "
           << m_sessionColumn.at(SessionColumn::StartTimestamp) << " BIGINT NOT NULL, "
           << m_sessionColumn.at(SessionColumn::EndTimestamp) << " BIGINT NOT NULL, "
           << m_sessionColumn.at(SessionColumn::Device) << " INTEGER NOT NULL, ";
@@ -662,10 +664,12 @@ auto Query::addSession(Query::Type type,
   if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
     out << "INSERT INTO " << m_sessionsTableName << " (" << m_sessionColumn.at(SessionColumn::Hash)
         << "," << m_sessionColumn.at(SessionColumn::Name) << ","
+        << m_sessionColumn.at(SessionColumn::CoreCount) << ","
         << m_sessionColumn.at(SessionColumn::StartTimestamp) << ","
         << m_sessionColumn.at(SessionColumn::EndTimestamp) << ","
         << m_sessionColumn.at(SessionColumn::Device) << ") VALUES ('" << sessionInfo.hash()
-        << "', '" << sessionInfo.name() << "', '" << startTimestamp << "', '"
+        << "', '" << sessionInfo.name() << "', '" << sessionInfo.core_count() << "', '"
+        << startTimestamp << "', '"
         << "0"
         << "', ";
   }

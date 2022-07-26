@@ -133,6 +133,7 @@ public:
     Id,             // int: Primary key
     Name,           // str: Device name
     Hash,           // str: Unique device hash
+    CoreCount,      // int: Number of target CPU cores online
     StartTimestamp, // int: Start timestamp
     EndTimestamp,   // int: End timestamp
     Device,         // int: Device id key
@@ -141,6 +142,7 @@ public:
       std::make_pair(SessionColumn::Id, "Id"),
       std::make_pair(SessionColumn::Hash, "Hash"),
       std::make_pair(SessionColumn::Name, "Name"),
+      std::make_pair(SessionColumn::CoreCount, "CoreCount"),
       std::make_pair(SessionColumn::StartTimestamp, "StartTimestamp"),
       std::make_pair(SessionColumn::EndTimestamp, "EndTimestamp"),
       std::make_pair(SessionColumn::Device, "Device"),
