@@ -11,17 +11,17 @@
 
 #pragma once
 
-#include <cstring>
 #include <fcntl.h>
 #include <memory>
 #include <mutex>
+#include <string.h>
 #include <string>
 #include <unistd.h>
 
 namespace tkm
 {
 
-constexpr size_t GAsyncBufferSize = 8192;
+constexpr size_t GAsyncBufferSize = 1048576;
 
 class IAsyncEnvelope
 {
@@ -56,7 +56,7 @@ public:
 protected:
   void bufferReset()
   {
-    memset(&m_buffer, 0, sizeof(m_buffer));
+    ::memset(&m_buffer, 0, sizeof(m_buffer));
     m_bufferOffset = 0;
   }
 

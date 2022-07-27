@@ -1124,35 +1124,37 @@ auto Query::addData(Query::Type type,
 {
   std::stringstream out;
 
-  if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
-    out << "INSERT INTO " << m_procInfoTableName << " ("
-        << m_procInfoColumn.at(ProcInfoColumn::SystemTime) << ","
-        << m_procInfoColumn.at(ProcInfoColumn::MonotonicTime) << ","
-        << m_procInfoColumn.at(ProcInfoColumn::ReceiveTime) << ","
-        << m_procInfoColumn.at(ProcInfoColumn::Comm) << ","
-        << m_procInfoColumn.at(ProcInfoColumn::Pid) << ","
-        << m_procInfoColumn.at(ProcInfoColumn::PPid) << ","
-        << m_procInfoColumn.at(ProcInfoColumn::CtxId) << ","
-        << m_procInfoColumn.at(ProcInfoColumn::CtxName) << ","
-        << m_procInfoColumn.at(ProcInfoColumn::CpuTime) << ","
-        << m_procInfoColumn.at(ProcInfoColumn::CpuPercent) << ","
-        << m_procInfoColumn.at(ProcInfoColumn::MemVmRSS) << ","
-        << m_procInfoColumn.at(ProcInfoColumn::SessionId) << ") VALUES ('" << systemTime << "', '"
-        << monotonicTime << "', '" << receiveTime << "', '" << procInfo.comm() << "', '"
-        << procInfo.pid() << "', '" << procInfo.ppid() << "', '"
-        << std::to_string(procInfo.ctx_id()) << "', '" << procInfo.ctx_name() << "', '"
-        << procInfo.cpu_time() << "', '" << procInfo.cpu_percent() << "', '" << procInfo.mem_vmrss()
-        << "', ";
-  }
+  for (const auto &procEntry : procInfo.entry()) {
+    if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
+      out << "INSERT INTO " << m_procInfoTableName << " ("
+          << m_procInfoColumn.at(ProcInfoColumn::SystemTime) << ","
+          << m_procInfoColumn.at(ProcInfoColumn::MonotonicTime) << ","
+          << m_procInfoColumn.at(ProcInfoColumn::ReceiveTime) << ","
+          << m_procInfoColumn.at(ProcInfoColumn::Comm) << ","
+          << m_procInfoColumn.at(ProcInfoColumn::Pid) << ","
+          << m_procInfoColumn.at(ProcInfoColumn::PPid) << ","
+          << m_procInfoColumn.at(ProcInfoColumn::CtxId) << ","
+          << m_procInfoColumn.at(ProcInfoColumn::CtxName) << ","
+          << m_procInfoColumn.at(ProcInfoColumn::CpuTime) << ","
+          << m_procInfoColumn.at(ProcInfoColumn::CpuPercent) << ","
+          << m_procInfoColumn.at(ProcInfoColumn::MemVmRSS) << ","
+          << m_procInfoColumn.at(ProcInfoColumn::SessionId) << ") VALUES ('" << systemTime << "', '"
+          << monotonicTime << "', '" << receiveTime << "', '" << procEntry.comm() << "', '"
+          << procEntry.pid() << "', '" << procEntry.ppid() << "', '"
+          << std::to_string(procEntry.ctx_id()) << "', '" << procEntry.ctx_name() << "', '"
+          << procEntry.cpu_time() << "', '" << procEntry.cpu_percent() << "', '"
+          << procEntry.mem_vmrss() << "', ";
+    }
 
-  if (type == Query::Type::SQLite3) {
-    out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
-        << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
-        << "'" << sessionHash << "' AND EndTimestamp = 0));";
-  } else {
-    out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
-        << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
-        << "'" << sessionHash << "' AND EndTimestamp = 0));";
+    if (type == Query::Type::SQLite3) {
+      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+          << "'" << sessionHash << "' AND EndTimestamp = 0));";
+    } else {
+      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
+          << "'" << sessionHash << "' AND EndTimestamp = 0));";
+    }
   }
 
   return out.str();
