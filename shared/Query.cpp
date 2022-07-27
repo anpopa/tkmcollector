@@ -917,40 +917,43 @@ auto Query::addData(Query::Type type,
 {
   std::stringstream out;
 
-  if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
-    out << "INSERT INTO " << m_sysProcDiskStatsTableName << " ("
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::SystemTime) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::MonotonicTime) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::ReceiveTime) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::Major) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::Minor) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::Name) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::ReadsCompleted) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::ReadsMerged) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::ReadsSpentMs) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::WritesCompleted) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::WritesMerged) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::WritesSpentMs) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::IOInProgress) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::IOSpentMs) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::IOWeightedMs) << ","
-        << m_sysProcDiskColumn.at(SysProcDiskColumn::SessionId) << ") VALUES ('" << systemTime
-        << "', '" << monotonicTime << "', '" << receiveTime << "', '" << sysDiskStats.major()
-        << "', '" << sysDiskStats.minor() << "', '" << sysDiskStats.name() << "', '"
-        << sysDiskStats.reads_completed() << "', '" << sysDiskStats.reads_merged() << "', '"
-        << sysDiskStats.reads_spent_ms() << "', '" << sysDiskStats.writes_completed() << "', '"
-        << sysDiskStats.writes_merged() << "', '" << sysDiskStats.writes_spent_ms() << "', '"
-        << sysDiskStats.io_in_progress() << "', '" << sysDiskStats.io_spent_ms() << "', '"
-        << sysDiskStats.io_weighted_ms() << "', ";
+  for (const auto &diskEntry : sysDiskStats.disk()) {
+    if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
+      out << "INSERT INTO " << m_sysProcDiskStatsTableName << " ("
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::SystemTime) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::MonotonicTime) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::ReceiveTime) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::Major) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::Minor) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::Name) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::ReadsCompleted) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::ReadsMerged) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::ReadsSpentMs) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::WritesCompleted) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::WritesMerged) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::WritesSpentMs) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::IOInProgress) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::IOSpentMs) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::IOWeightedMs) << ","
+          << m_sysProcDiskColumn.at(SysProcDiskColumn::SessionId) << ") VALUES ('" << systemTime
+          << "', '" << monotonicTime << "', '" << receiveTime << "', '" << diskEntry.major()
+          << "', '" << diskEntry.minor() << "', '" << diskEntry.name() << "', '"
+          << diskEntry.reads_completed() << "', '" << diskEntry.reads_merged() << "', '"
+          << diskEntry.reads_spent_ms() << "', '" << diskEntry.writes_completed() << "', '"
+          << diskEntry.writes_merged() << "', '" << diskEntry.writes_spent_ms() << "', '"
+          << diskEntry.io_in_progress() << "', '" << diskEntry.io_spent_ms() << "', '"
+          << diskEntry.io_weighted_ms() << "', ";
 
-    if (type == Query::Type::SQLite3) {
-      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
-          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
-          << "'" << sessionHash << "' AND EndTimestamp = 0));";
-    } else {
-      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
-          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
-          << "'" << sessionHash << "' AND EndTimestamp = 0));";
+      if (type == Query::Type::SQLite3) {
+        out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM "
+            << m_sessionsTableName << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+            << "'" << sessionHash << "' AND EndTimestamp = 0));";
+      } else {
+        out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM "
+            << m_sessionsTableName << " WHERE " << m_sessionColumn.at(SessionColumn::Hash)
+            << " LIKE "
+            << "'" << sessionHash << "' AND EndTimestamp = 0));";
+      }
     }
   }
 
@@ -1169,31 +1172,33 @@ auto Query::addData(Query::Type type,
 {
   std::stringstream out;
 
-  if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
-    out << "INSERT INTO " << m_contextInfoTableName << " ("
-        << m_contextInfoColumn.at(ContextInfoColumn::SystemTime) << ","
-        << m_contextInfoColumn.at(ContextInfoColumn::MonotonicTime) << ","
-        << m_contextInfoColumn.at(ContextInfoColumn::ReceiveTime) << ","
-        << m_contextInfoColumn.at(ContextInfoColumn::CtxId) << ","
-        << m_contextInfoColumn.at(ContextInfoColumn::CtxName) << ","
-        << m_contextInfoColumn.at(ContextInfoColumn::TotalCpuTime) << ","
-        << m_contextInfoColumn.at(ContextInfoColumn::TotalCpuPercent) << ","
-        << m_contextInfoColumn.at(ContextInfoColumn::TotalMemVmRSS) << ","
-        << m_contextInfoColumn.at(ContextInfoColumn::SessionId) << ") VALUES ('" << systemTime
-        << "', '" << monotonicTime << "', '" << receiveTime << "', '"
-        << std::to_string(ctxInfo.ctx_id()) << "', '" << ctxInfo.ctx_name() << "', '"
-        << ctxInfo.total_cpu_time() << "', '" << ctxInfo.total_cpu_percent() << "', '"
-        << ctxInfo.total_mem_vmrss() << "', ";
-  }
+  for (const auto &ctxEntry : ctxInfo.entry()) {
+    if ((type == Query::Type::SQLite3) || (type == Query::Type::PostgreSQL)) {
+      out << "INSERT INTO " << m_contextInfoTableName << " ("
+          << m_contextInfoColumn.at(ContextInfoColumn::SystemTime) << ","
+          << m_contextInfoColumn.at(ContextInfoColumn::MonotonicTime) << ","
+          << m_contextInfoColumn.at(ContextInfoColumn::ReceiveTime) << ","
+          << m_contextInfoColumn.at(ContextInfoColumn::CtxId) << ","
+          << m_contextInfoColumn.at(ContextInfoColumn::CtxName) << ","
+          << m_contextInfoColumn.at(ContextInfoColumn::TotalCpuTime) << ","
+          << m_contextInfoColumn.at(ContextInfoColumn::TotalCpuPercent) << ","
+          << m_contextInfoColumn.at(ContextInfoColumn::TotalMemVmRSS) << ","
+          << m_contextInfoColumn.at(ContextInfoColumn::SessionId) << ") VALUES ('" << systemTime
+          << "', '" << monotonicTime << "', '" << receiveTime << "', '"
+          << std::to_string(ctxEntry.ctx_id()) << "', '" << ctxEntry.ctx_name() << "', '"
+          << ctxEntry.total_cpu_time() << "', '" << ctxEntry.total_cpu_percent() << "', '"
+          << ctxEntry.total_mem_vmrss() << "', ";
+    }
 
-  if (type == Query::Type::SQLite3) {
-    out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
-        << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
-        << "'" << sessionHash << "' AND EndTimestamp = 0));";
-  } else {
-    out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
-        << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
-        << "'" << sessionHash << "' AND EndTimestamp = 0));";
+    if (type == Query::Type::SQLite3) {
+      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " IS "
+          << "'" << sessionHash << "' AND EndTimestamp = 0));";
+    } else {
+      out << "(SELECT " << m_sessionColumn.at(SessionColumn::Id) << " FROM " << m_sessionsTableName
+          << " WHERE " << m_sessionColumn.at(SessionColumn::Hash) << " LIKE "
+          << "'" << sessionHash << "' AND EndTimestamp = 0));";
+    }
   }
 
   return out.str();
