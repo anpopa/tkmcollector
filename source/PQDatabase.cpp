@@ -14,39 +14,35 @@
 #include "Defaults.h"
 #include "Query.h"
 
-#include "Control.pb.h"
-#include "Monitor.pb.h"
-
-#include <Envelope.pb.h>
 #include <Helpers.h>
 #include <any>
 #include <filesystem>
 #include <string>
+#include <taskmonitor/taskmonitor.h>
 #include <vector>
-
-using std::shared_ptr;
-using std::string;
 
 namespace tkm::collector
 {
 
-static bool doCheckDatabase(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doInitDatabase(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doLoadDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doGetDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doGetSessions(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doAddDevice(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doRemoveDevice(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doConnect(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doDisconnect(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doStartDeviceSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doStopDeviceSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doGetEntries(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doAddSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doRemSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doEndSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doCleanSessions(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doCheckDatabase(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doInitDatabase(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doLoadDevices(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doGetDevices(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doGetSessions(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doAddDevice(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doRemoveDevice(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doConnect(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doDisconnect(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doStartDeviceSession(const std::shared_ptr<PQDatabase> &db,
+                                 const IDatabase::Request &rq);
+static bool doStopDeviceSession(const std::shared_ptr<PQDatabase> &db,
+                                const IDatabase::Request &rq);
+static bool doGetEntries(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doAddSession(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doRemSession(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doEndSession(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doCleanSessions(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doAddData(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
 
 PQDatabase::PQDatabase(std::shared_ptr<Options> options)
 : IDatabase(options)
@@ -150,13 +146,13 @@ bool PQDatabase::requestHandler(const Request &rq)
   return false;
 }
 
-static bool doCheckDatabase(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doCheckDatabase(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   logDebug() << "Handling DB check request";
   return true;
 }
 
-static bool doInitDatabase(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doInitDatabase(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
   bool status = true;
@@ -201,7 +197,7 @@ static bool doInitDatabase(const shared_ptr<PQDatabase> &db, const IDatabase::Re
   return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
-static bool doLoadDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doLoadDevices(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   auto deviceList = std::vector<tkm::msg::control::DeviceData>();
   bool status = true;
@@ -217,11 +213,11 @@ static bool doLoadDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Req
       deviceData.set_id(
           c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Id)].as<long>());
       deviceData.set_hash(
-          c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Hash)].as<string>());
+          c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Hash)].as<std::string>());
       deviceData.set_name(
-          c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Name)].as<string>());
+          c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Name)].as<std::string>());
       deviceData.set_address(
-          c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Address)].as<string>());
+          c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Address)].as<std::string>());
       deviceData.set_port(
           c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Port)].as<int>());
 
@@ -249,7 +245,7 @@ static bool doLoadDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Req
   return true;
 }
 
-static bool doCleanSessions(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doCleanSessions(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   auto sessionList = std::vector<tkm::msg::control::SessionData>();
   bool status = true;
@@ -265,9 +261,9 @@ static bool doCleanSessions(const shared_ptr<PQDatabase> &db, const IDatabase::R
       sessionData.set_id(
           c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Id)].as<long>());
       sessionData.set_hash(
-          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Hash)].as<string>());
+          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Hash)].as<std::string>());
       sessionData.set_name(
-          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Name)].as<string>());
+          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Name)].as<std::string>());
       sessionData.set_started(
           c[static_cast<pqxx::result::size_type>(Query::SessionColumn::StartTimestamp)].as<long>());
       sessionData.set_ended(
@@ -295,7 +291,7 @@ static bool doCleanSessions(const shared_ptr<PQDatabase> &db, const IDatabase::R
   return true;
 }
 
-static bool doGetDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doGetDevices(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
   auto deviceList = std::vector<tkm::msg::control::DeviceData>();
@@ -316,11 +312,11 @@ static bool doGetDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
       deviceData.set_id(
           c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Id)].as<long>());
       deviceData.set_hash(
-          c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Hash)].as<string>());
+          c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Hash)].as<std::string>());
       deviceData.set_name(
-          c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Name)].as<string>());
+          c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Name)].as<std::string>());
       deviceData.set_address(
-          c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Address)].as<string>());
+          c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Address)].as<std::string>());
       deviceData.set_port(
           c[static_cast<pqxx::result::size_type>(Query::DeviceColumn::Port)].as<int>());
 
@@ -371,7 +367,7 @@ static bool doGetDevices(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
   return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
-static bool doGetSessions(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doGetSessions(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
   auto sessionList = std::vector<tkm::msg::control::SessionData>();
@@ -399,9 +395,9 @@ static bool doGetSessions(const shared_ptr<PQDatabase> &db, const IDatabase::Req
       sessionData.set_id(
           c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Id)].as<long>());
       sessionData.set_hash(
-          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Hash)].as<string>());
+          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Hash)].as<std::string>());
       sessionData.set_name(
-          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Name)].as<string>());
+          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Name)].as<std::string>());
       sessionData.set_started(
           c[static_cast<pqxx::result::size_type>(Query::SessionColumn::StartTimestamp)].as<long>());
       sessionData.set_ended(
@@ -453,7 +449,7 @@ static bool doGetSessions(const shared_ptr<PQDatabase> &db, const IDatabase::Req
   return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
-static bool doAddDevice(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doAddDevice(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
   bool status = true;
@@ -522,7 +518,7 @@ static bool doAddDevice(const shared_ptr<PQDatabase> &db, const IDatabase::Reque
   return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
-static bool doRemoveDevice(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doRemoveDevice(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
   bool status = true;
@@ -574,7 +570,7 @@ static bool doRemoveDevice(const shared_ptr<PQDatabase> &db, const IDatabase::Re
   return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
-static bool doAddSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doAddSession(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   const auto &sessionInfo = std::any_cast<tkm::msg::monitor::SessionInfo>(rq.bulkData);
 
@@ -622,7 +618,7 @@ static bool doAddSession(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
   return true;
 }
 
-static bool doRemSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doRemSession(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
   bool status = true;
@@ -674,7 +670,7 @@ static bool doRemSession(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
   return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
-static bool doEndSession(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doEndSession(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   logDebug() << "Handling DB EndSession request";
   if ((rq.args.count(Defaults::Arg::SessionHash) == 0)) {
@@ -693,7 +689,7 @@ static bool doEndSession(const shared_ptr<PQDatabase> &db, const IDatabase::Requ
   return true;
 }
 
-static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doAddData(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   const auto &data = std::any_cast<tkm::msg::monitor::Data>(rq.bulkData);
   bool status = true;
@@ -980,7 +976,7 @@ static bool doAddData(const shared_ptr<PQDatabase> &db, const IDatabase::Request
   return true;
 }
 
-static bool doConnect(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doConnect(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   logDebug() << "Handling DB Connect request";
 
@@ -993,7 +989,7 @@ static bool doConnect(const shared_ptr<PQDatabase> &db, const IDatabase::Request
   return true;
 }
 
-static bool doDisconnect(const shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doDisconnect(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   logDebug() << "Handling DB Disconnect request";
   return true;

@@ -16,11 +16,10 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include "Logger.h"
 #include "Options.h"
 
 #include "../bswinfra/source/Pollable.h"
-
-#include "Control.pb.h"
 
 using namespace bswi::log;
 using namespace bswi::event;

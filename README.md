@@ -15,6 +15,7 @@ TKM-Collector depends on the following libraries
 
 | Library | Reference | Info |
 | ------ | ------ | ------ |
+| libtaskmonitor | https://gitlab.com/taskmonitor/libtaskmonitor | TaskMonitor interfaces |
 | protobuf | https://developers.google.com/protocol-buffers | Data serialization |
 | libsystemd | https://github.com/systemd/systemd/tree/main/src/libsystemd | Optional if WITH_SYSTEMD is ON 
 
@@ -24,6 +25,8 @@ TKM-Collector depends on the following libraries
 | Option | Default | Info |
 | ------ | ------ | ------ |
 | WITH_SYSTEMD | ON | Enable systemd service and watchdog support |
+| WITH_SQLITE | ON | Build with SQLite3 backend support |
+| WITH_POSTGRESQL | ON | Build with PostgreSQL backend support |
 
 ### Local Build
 `mkdir build && cd build && cmake .. && make `

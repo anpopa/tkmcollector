@@ -13,15 +13,13 @@
 
 #include <map>
 #include <string>
+#include <taskmonitor/taskmonitor.h>
 
 #include "Defaults.h"
 #include "IClient.h"
 
 #include "../bswinfra/source/AsyncQueue.h"
 #include "../bswinfra/source/Timer.h"
-
-#include "Control.pb.h"
-#include "Monitor.pb.h"
 
 using namespace bswi::event;
 

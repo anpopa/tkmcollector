@@ -18,7 +18,6 @@
 #include "MonitorDevice.h"
 #include "Options.h"
 
-#include "../bswinfra/source/IApplication.h"
 #include "../bswinfra/source/Pollable.h"
 #include "../bswinfra/source/SafeList.h"
 

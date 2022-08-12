@@ -10,7 +10,7 @@
  */
 
 #include "Options.h"
-#include "Defaults.h"
+#include "Logger.h"
 
 using namespace std;
 

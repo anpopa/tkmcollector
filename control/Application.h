@@ -14,10 +14,10 @@
 #include <atomic>
 #include <cstdlib>
 #include <string>
+#include <taskmonitor/taskmonitor.h>
 
 #include "Command.h"
 #include "Connection.h"
-#include "Defaults.h"
 #include "Dispatcher.h"
 #include "Options.h"
 
@@ -31,8 +31,6 @@
 #include "../bswinfra/source/Pollable.h"
 #include "../bswinfra/source/Timer.h"
 #include "../bswinfra/source/UserEvent.h"
-
-#include "Collector.pb.h"
 
 using namespace bswi::kf;
 using namespace bswi::log;

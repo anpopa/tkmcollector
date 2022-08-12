@@ -12,6 +12,7 @@
 #pragma once
 
 #include "IDatabase.h"
+#include "Logger.h"
 #include "Options.h"
 
 #include <any>

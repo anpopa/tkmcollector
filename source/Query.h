@@ -14,8 +14,7 @@
 #include <map>
 #include <sstream>
 #include <string>
-
-#include "Monitor.pb.h"
+#include <taskmonitor/taskmonitor.h>
 
 namespace tkm
 {

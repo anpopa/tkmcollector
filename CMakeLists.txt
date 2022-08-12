@@ -9,15 +9,40 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # BaseSoftwareInfrastructure
 set(BSWINFRA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bswinfra)
-set(INTERFACES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces)
-set(CMAKE_MODULE_PATH "${BSWINFRA_DIR}/cmake" "${INTERFACES_DIR}/cmake")
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${BSWINFRA_DIR}/cmake")
 
 message (STATUS "Module paths: ${CMAKE_MODULE_PATH}")
+
+option(WITH_TESTS "Build test suite" N)
+option(WITH_SYSLOG "Build Logger with syslog" Y)
+option(WITH_TIDY "Build with clang-tidy" N)
+option(WITH_SQLITE3 "Build with SQLite3 database" Y)
+option(WITH_POSTGRESQL "Build with PostgreSQL database" Y)
+option(WITH_SYSTEMD "Build with systemd watchdog support" Y)
+
+# Build time configuration setup
+if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+    execute_process(
+        COMMAND git --git-dir "${CMAKE_CURRENT_SOURCE_DIR}/.git" rev-parse --short HEAD
+        OUTPUT_VARIABLE GIT_SHA1
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+else(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+    set(GIT_SHA1 "")
+endif(EXISTS "${CMAKE_SOURCE_DIR}/.git")
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
         "Choose the type of build: Debug, Release, RelWithDebInfo, MinSizeRel." FORCE)
 endif()
+
+set(PROJECT_VERSION_MAJOR "1")
+set(PROJECT_VERSION_MINOR "5")
+set(PROJECT_VERSION_PATCH ${GIT_SHA1})
+
+include(GNUInstallDirs)
+include(Packing)
+include(BSWInfra)
 
 # Add support for coverage analysis
 if(CMAKE_BUILD_TYPE STREQUAL Coverage)
@@ -33,17 +58,6 @@ if(CMAKE_BUILD_TYPE STREQUAL Coverage)
 
     include(CoverageTarget)
 endif()
-
-# Build time configuration setup
-if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
-    execute_process(
-        COMMAND git --git-dir "${CMAKE_CURRENT_SOURCE_DIR}/.git" rev-parse --short HEAD
-        OUTPUT_VARIABLE GIT_SHA1
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-else(EXISTS "${CMAKE_SOURCE_DIR}/.git")
-    set(GIT_SHA1 "")
-endif(EXISTS "${CMAKE_SOURCE_DIR}/.git")
 
 set(TKM_COLLECTOR_CONFIG_FILE "/etc/tkm-collector.conf" CACHE PATH "Default config file path")
 
@@ -62,15 +76,6 @@ configure_file(
 configure_file(
     ${CMAKE_SOURCE_DIR}/config/tkmcollector.in
     ${CMAKE_BINARY_DIR}/config/tkmcollector)
-
-
-
-option(WITH_TESTS "Build test suite" N)
-option(WITH_SYSLOG "Build Logger with syslog" Y)
-option(WITH_TIDY "Build with clang-tidy" N)
-option(WITH_SQLITE3 "Build with SQLite3 database" Y)
-option(WITH_POSTGRESQL "Build with PostgreSQL database" Y)
-option(WITH_SYSTEMD "Build with systemd watchdog support" Y)
 
 if(WITH_TIDY)
     set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=*")
@@ -99,20 +104,29 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
     link_directories(/usr/local/lib)
 endif()
 
-include(BSWInfra)
-include(TaskMonitorInterfaces)
-
 # Header files
 include_directories(${CMAKE_SOURCE_DIR}/shared)
 include_directories(${CMAKE_BINARY_DIR}/shared)
 
 # Dependencies
-find_package    (PkgConfig REQUIRED)
-find_package    (Threads REQUIRED)
+find_package          (PkgConfig REQUIRED)
+find_package          (Threads REQUIRED)
+set                   (LIBS ${LIBS} pthread)
+
+# Use protobuf library (dependency for libtaskmonitor)
+include               (FindProtobuf)
+find_package          (Protobuf REQUIRED)
+set                   (LIBS ${LIBS} ${PROTOBUF_LIBRARY})
+
+# Use libtaskmonitor
+pkg_check_modules     (LIBTKM libtaskmonitor REQUIRED)
+include_directories   (${LIBTKM_INCLUDE_DIRS})
+set                   (LIBS ${LIBS} ${LIBTKM_LIBRARIES})
 
 if(WITH_SQLITE3)
-    find_package      (SQLite3 REQUIRED)
-    include_directories(${SQLITE3_INCLUDE_DIR})
+    find_package          (SQLite3 REQUIRED)
+    include_directories   (${SQLITE3_INCLUDE_DIR})
+    set                   (LIBS ${LIBS} ${SQLite3_LIBRARIES})
 endif()
 
 if(WITH_POSTGRESQL)

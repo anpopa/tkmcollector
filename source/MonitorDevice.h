@@ -13,6 +13,7 @@
 
 #include <map>
 #include <string>
+#include <taskmonitor/taskmonitor.h>
 
 #include "Connection.h"
 #include "DataSource.h"
@@ -22,8 +23,6 @@
 #include "../bswinfra/source/AsyncQueue.h"
 #include "../bswinfra/source/SafeList.h"
 #include "../bswinfra/source/Timer.h"
-
-#include "Control.pb.h"
 
 using namespace bswi::event;
 

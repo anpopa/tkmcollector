@@ -24,9 +24,6 @@
 #include "../bswinfra/source/EventLoop.h"
 #include "../bswinfra/source/IApplication.h"
 
-#include "Collector.pb.h"
-#include "Control.pb.h"
-
 using namespace bswi::log;
 using namespace bswi::event;
 

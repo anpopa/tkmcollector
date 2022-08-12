@@ -21,8 +21,6 @@
 #include "Defaults.h"
 #include "Helpers.h"
 
-#include "Monitor.pb.h"
-
 namespace tkm::collector
 {
 

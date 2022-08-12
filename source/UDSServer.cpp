@@ -17,10 +17,6 @@
 #include "Helpers.h"
 #include "UDSServer.h"
 
-namespace fs = std::filesystem;
-using std::shared_ptr;
-using std::string;
-
 namespace tkm::collector
 {
 
@@ -81,15 +77,16 @@ UDSServer::~UDSServer()
 
 void UDSServer::start()
 {
-  fs::path sockPath(CollectorApp()->getOptions()->getFor(Options::Key::RuntimeDirectory));
+  std::filesystem::path sockPath(
+      CollectorApp()->getOptions()->getFor(Options::Key::RuntimeDirectory));
   sockPath /= tkmDefaults.getFor(Defaults::Default::ControlSocket);
 
   m_addr.sun_family = AF_UNIX;
   strncpy(m_addr.sun_path, sockPath.c_str(), sizeof(m_addr.sun_path));
 
-  if (fs::exists(sockPath)) {
+  if (std::filesystem::exists(sockPath)) {
     logWarn() << "Runtime directory not clean, removing " << sockPath.string();
-    if (!fs::remove(sockPath)) {
+    if (!std::filesystem::remove(sockPath)) {
       throw std::runtime_error("Fail to remove existing UDSServer socket");
     }
   }

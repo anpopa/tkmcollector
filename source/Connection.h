@@ -16,14 +16,13 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include "EnvelopeReader.h"
-#include "EnvelopeWriter.h"
 #include "Helpers.h"
 #include "IDevice.h"
 #include "Options.h"
+#include <taskmonitor/taskmonitor.h>
 
 #include "../bswinfra/source/Exceptions.h"
-#include "../bswinfra/source/IApplication.h"
+#include "../bswinfra/source/Logger.h"
 #include "../bswinfra/source/Pollable.h"
 
 using namespace bswi::log;
