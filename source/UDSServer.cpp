@@ -10,6 +10,7 @@
  */
 
 #include <filesystem>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "Application.h"
@@ -92,6 +93,10 @@ void UDSServer::start()
   }
 
   if (bind(m_sockFd, (struct sockaddr *) &m_addr, sizeof(struct sockaddr_un)) != -1) {
+
+    // Allow non root processes to connect
+    ::chmod(sockPath.c_str(), 0666);
+
     // We are ready for events only after start
     setPrepare([]() { return true; });
     if (listen(m_sockFd, 10) == -1) {
