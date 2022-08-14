@@ -39,6 +39,6 @@ set(CPACK_DEBIAN_PACKAGE_DEPENDS
 set(CPACK_FREEBSD_DEBUGINFO_PACKAGE OFF)
 set(CPACK_FREEBSD_PACKAGE_MAINTAINER "Alin Popa")
 set(CPACK_FREEBSD_PACKAGE_ORIGIN "devel/tkmcollector")
-set(CPACK_FREEBSD_PACKAGE_DEPS "devel/protobuf, devel/libtaskmonitor")
+set(CPACK_FREEBSD_PACKAGE_DEPS "libtaskmonitor")
 
 include(CPack)
