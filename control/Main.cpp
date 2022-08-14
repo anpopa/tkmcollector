@@ -74,7 +74,7 @@ auto main(int argc, char **argv) -> int
                               {"stopCollecting", required_argument, nullptr, 'x'},
                               {nullptr, 0, nullptr, 0}};
 
-  while ((c = getopt_long(argc, argv, "hfiqljarocdsxgI:N:A:P:", longopts, &long_index)) != -1) {
+  while ((c = getopt_long(argc, argv, "hfiqljarcdsxgo:I:N:A:P:", longopts, &long_index)) != -1) {
     switch (c) {
     case 'o':
       config_path = optarg;
@@ -292,11 +292,11 @@ auto main(int argc, char **argv) -> int
       cout << "Provided configuration file cannot be accessed: " << config_path << endl;
       return EXIT_FAILURE;
     }
-    configPath = string(config_path);
+    configPath = fs::path(config_path);
   }
 
   try {
-    tkm::control::Application app{"TKM-Control", "TKM Control", configPath};
+    tkm::control::Application app{"TKM-Control", "TKM Control", configPath.string()};
 
     if (init_database) {
       Command::Request rq{.action = Command::Action::InitDatabase};
