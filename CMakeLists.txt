@@ -148,7 +148,6 @@ target_link_libraries(tkmcollector
     PRIVATE
         BSWInfra
         pthread
-        stdc++fs
         tkm::tkm
         sqlite3
         ${PROTOBUF_LIBRARY}
@@ -164,7 +163,6 @@ target_link_libraries(tkmcontrol
     PRIVATE
         BSWInfra
         pthread
-        stdc++fs
         tkm::tkm
         ${PROTOBUF_LIBRARY}
 )
@@ -228,7 +226,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
         ${CMAKE_INSTALL_PREFIX}/etc)
     install(FILES
         ${CMAKE_BINARY_DIR}/config/tkmcollector
-        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE
         DESTINATION ${CMAKE_INSTALL_PREFIX}/etc/rc.d)
 else()
     install(FILES
