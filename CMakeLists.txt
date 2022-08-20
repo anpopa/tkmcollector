@@ -1,18 +1,16 @@
-# CMake general setup
 cmake_minimum_required(VERSION 3.7.2)
-project(TaskMonitorCollector)
+project(TaskMonitorCollector
+        LANGUAGES CXX
+        VERSION 1.5.0
+)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-# BaseSoftwareInfrastructure
-set(BSWINFRA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bswinfra)
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${BSWINFRA_DIR}/cmake")
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/bswinfra/cmake")
 
-message (STATUS "Module paths: ${CMAKE_MODULE_PATH}")
-
+# options
 option(WITH_TESTS "Build test suite" N)
 option(WITH_SYSLOG "Build Logger with syslog" Y)
 option(WITH_TIDY "Build with clang-tidy" N)
@@ -21,25 +19,21 @@ option(WITH_POSTGRESQL "Build with PostgreSQL database" Y)
 option(WITH_SYSTEMD "Build with systemd watchdog support" Y)
 
 # Build time configuration setup
-if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+if(EXISTS .git)
     execute_process(
-        COMMAND git --git-dir "${CMAKE_CURRENT_SOURCE_DIR}/.git" rev-parse --short HEAD
+        COMMAND git rev-parse --short HEAD
         OUTPUT_VARIABLE GIT_SHA1
         OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-else(EXISTS "${CMAKE_SOURCE_DIR}/.git")
-    set(GIT_SHA1 "")
-endif(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+    )
+    set(PROJECT_VERSION_TWEAK ${GIT_SHA1})
+endif()
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
         "Choose the type of build: Debug, Release, RelWithDebInfo, MinSizeRel." FORCE)
 endif()
 
-set(PROJECT_VERSION_MAJOR "1")
-set(PROJECT_VERSION_MINOR "5")
-set(PROJECT_VERSION_PATCH ${GIT_SHA1})
-
+# cmake modules
 include(GNUInstallDirs)
 include(Packing)
 include(BSWInfra)
@@ -59,23 +53,53 @@ if(CMAKE_BUILD_TYPE STREQUAL Coverage)
     include(CoverageTarget)
 endif()
 
-set(TKM_COLLECTOR_CONFIG_FILE "/etc/tkm-collector.conf" CACHE PATH "Default config file path")
+set(TKM_COLLECTOR_CONFIG_FILE "/etc/tkmcollector.conf" CACHE PATH "Default config file path")
 
 configure_file(
     ${CMAKE_SOURCE_DIR}/shared/Defaults.h.in
     ${CMAKE_BINARY_DIR}/shared/Defaults.h)
 
 configure_file(
-    ${CMAKE_SOURCE_DIR}/config/tkm-collector.conf.in
-    ${CMAKE_BINARY_DIR}/config/tkm-collector.conf)
+    ${CMAKE_SOURCE_DIR}/config/tkmcollector.conf.in
+    ${CMAKE_BINARY_DIR}/config/tkmcollector.conf)
 
 configure_file(
-    ${CMAKE_SOURCE_DIR}/config/tkm-collector.service.in
-    ${CMAKE_BINARY_DIR}/config/tkm-collector.service)
+    ${CMAKE_SOURCE_DIR}/config/tkmcollector.service.in
+    ${CMAKE_BINARY_DIR}/config/tkmcollector.service)
 
 configure_file(
     ${CMAKE_SOURCE_DIR}/config/tkmcollector.in
     ${CMAKE_BINARY_DIR}/config/tkmcollector)
+
+# Dependencies
+find_package(PkgConfig REQUIRED)
+find_package(Threads REQUIRED)
+find_package(Protobuf REQUIRED)
+find_package(tkm REQUIRED)
+
+set(TKMCOLLECTOR_SRC
+    shared/Options.cpp
+    shared/Helpers.cpp
+    source/Query.cpp
+    source/Dispatcher.cpp
+    source/UDSServer.cpp
+    source/ControlClient.cpp
+    source/Application.cpp
+    source/DeviceManager.cpp
+    source/Connection.cpp
+    source/MonitorDevice.cpp
+    source/Main.cpp
+)
+
+set(TKMCONTROL_SRC
+    shared/Options.cpp
+    shared/Helpers.cpp
+    control/Dispatcher.cpp
+    control/Application.cpp
+    control/Connection.cpp
+    control/Command.cpp
+    control/Main.cpp
+)
 
 if(WITH_TIDY)
     set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=*")
@@ -86,19 +110,23 @@ if(WITH_SYSLOG)
 endif()
 
 if(WITH_SYSTEMD)
+    pkg_check_modules(LIBSYSTEMD libsystemd REQUIRED)
+    include_directories(${LIBSYSTEMD_INCLUDE_DIRS})
     add_compile_options("-DWITH_SYSTEMD")
 endif()
 
 if(WITH_SQLITE3)
+    find_package(SQLite3 REQUIRED)
     add_compile_options("-DWITH_SQLITE3")
+    set(TKMCOLLECTOR_SRC ${TKMCOLLECTOR_SRC} source/SQLiteDatabase.cpp)
 endif()
 
 if(WITH_POSTGRESQL)
+    pkg_check_modules(LIBPQXX libpqxx REQUIRED)
+    include_directories(${LIBPQXX_INCLUDE_DIRS})
     add_compile_options("-DWITH_POSTGRESQL")
+    set(TKMCOLLECTOR_SRC ${TKMCOLLECTOR_SRC} source/PQDatabase.cpp)
 endif()
-
-# Enable collector interfaces
-set(WITH_COLLECTOR_CONTROL ON)
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
     link_directories(/usr/local/lib)
@@ -108,43 +136,45 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR}/shared)
 include_directories(${CMAKE_BINARY_DIR}/shared)
 
-# Dependencies
-find_package          (PkgConfig REQUIRED)
-find_package          (Threads REQUIRED)
-set                   (LIBS ${LIBS} pthread)
+# Build control project
+#add_subdirectory(control)
 
-# Use protobuf library (dependency for libtaskmonitor)
-include               (FindProtobuf)
-find_package          (Protobuf REQUIRED)
-set                   (LIBS ${LIBS} ${PROTOBUF_LIBRARY})
+# binary
+add_executable(tkmcollector
+    ${TKMCOLLECTOR_SRC}
+)
 
-# Use libtaskmonitor
-pkg_check_modules     (LIBTKM libtaskmonitor REQUIRED)
-include_directories   (${LIBTKM_INCLUDE_DIRS})
-set                   (LIBS ${LIBS} ${LIBTKM_LIBRARIES})
+target_link_libraries(tkmcollector
+    PRIVATE
+        BSWInfra
+        pthread
+        stdc++fs
+        tkm::tkm
+        sqlite3
+        ${PROTOBUF_LIBRARY}
+        ${LIBSYSTEMD_LIBRARIES}
+        ${LIBPQXX_LIBRARIES}
+)
 
-if(WITH_SQLITE3)
-    find_package          (SQLite3 REQUIRED)
-    include_directories   (${SQLITE3_INCLUDE_DIR})
-    set                   (LIBS ${LIBS} ${SQLite3_LIBRARIES})
-endif()
+add_executable(tkmcontrol
+    ${TKMCONTROL_SRC}
+)
 
-if(WITH_POSTGRESQL)
-    pkg_check_modules     (LIBPQXX libpqxx REQUIRED)
-    include_directories   (${LIBPQXX_INCLUDE_DIRS})
-    set                   (LIBS ${LIBS} ${LIBPQXX_LIBRARIES})
-endif()
+target_link_libraries(tkmcontrol
+    PRIVATE
+        BSWInfra
+        pthread
+        stdc++fs
+        tkm::tkm
+        ${PROTOBUF_LIBRARY}
+)
 
-if(WITH_SYSTEMD)
-    pkg_check_modules     (LIBSYSTEMD libsystemd REQUIRED)
-    include_directories   (${LIBSYSTEMD_INCLUDE_DIRS})
-    set                   (LIBS ${LIBS} ${LIBSYSTEMD_LIBRARIES})
-endif()
+include_directories(
+    ${Protobuf_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/source
+    ${CMAKE_BINARY_DIR}/source
+)
 
-# Build
-add_subdirectory(config)
-add_subdirectory(source)
-add_subdirectory(control)
 if(WITH_TESTS)
     enable_testing()
     add_subdirectory(tests)
@@ -181,6 +211,38 @@ add_compile_options (
     -Wcast-align
     -Wredundant-decls
     )
+
+# install
+install(TARGETS tkmcollector RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS tkmcontrol RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+install(FILES
+        ${CMAKE_BINARY_DIR}/config/tkmcollector.conf
+        DESTINATION
+        ${CMAKE_INSTALL_FULL_SYSCONFDIR})
+
+if (${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
+    install(FILES
+        ${CMAKE_BINARY_DIR}/config/tkmcollector.conf
+        DESTINATION
+        ${CMAKE_INSTALL_PREFIX}/etc)
+    install(FILES
+        ${CMAKE_BINARY_DIR}/config/tkmcollector
+        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/etc/rc.d)
+else()
+    install(FILES
+        ${CMAKE_BINARY_DIR}/config/tkmcollector.conf
+        DESTINATION
+        ${CMAKE_INSTALL_FULL_SYSCONFDIR})
+endif()
+
+if(WITH_SYSTEMD)
+    install(FILES
+        ${CMAKE_BINARY_DIR}/config/tkmcollector.service
+        DESTINATION
+        ${CMAKE_INSTALL_FULL_SYSCONFDIR}/systemd/system)
+endif()
 
 # Status reporting
 message (STATUS "SYSTEM_TYPE: "          ${CMAKE_SYSTEM_NAME})

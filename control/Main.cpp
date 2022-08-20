@@ -19,11 +19,8 @@
 #include <iostream>
 
 #include <pwd.h>
+#include <taskmonitor/Helpers.h>
 #include <unistd.h>
-
-using namespace std;
-using namespace tkm::control;
-namespace fs = std::filesystem;
 
 static void terminate(int signum)
 {
@@ -128,9 +125,8 @@ auto main(int argc, char **argv) -> int
       device_port = optarg;
       break;
     case 'h':
-      help = true;
-      break;
     default:
+      help = true;
       break;
     }
   }
@@ -139,142 +135,144 @@ auto main(int argc, char **argv) -> int
   if (!add_device && !remove_device && !connect_device && !disconnect_device && !start_collecting &&
       !stop_collecting && !init_database && !quit && !list_devices && !list_sessions &&
       !remove_session && !help) {
-    cout << "Please select one top level option" << endl;
+    std::cout << "Please select one top level option" << std::endl;
     exit(EXIT_FAILURE);
   }
 
   if (add_device && (remove_device || connect_device || disconnect_device || start_collecting ||
                      stop_collecting || init_database || quit || list_devices || list_sessions)) {
-    cout << "Add device option cannot be used with other top level options" << endl;
+    std::cout << "Add device option cannot be used with other top level options" << std::endl;
     exit(EXIT_FAILURE);
   }
   if (remove_device &&
       (add_device || connect_device || disconnect_device || start_collecting || stop_collecting ||
        init_database || quit || list_devices || list_sessions || remove_session)) {
-    cout << "Remove device option cannot be used with other top level options" << endl;
+    std::cout << "Remove device option cannot be used with other top level options" << std::endl;
     exit(EXIT_FAILURE);
   }
   if (connect_device &&
       (add_device || remove_device || disconnect_device || start_collecting || stop_collecting ||
        init_database || quit || list_devices || list_sessions || remove_session)) {
-    cout << "Connect device option cannot be used with other top level options" << endl;
+    std::cout << "Connect device option cannot be used with other top level options" << std::endl;
     exit(EXIT_FAILURE);
   }
   if (disconnect_device &&
       (add_device || remove_device || connect_device || start_collecting || stop_collecting ||
        init_database || quit || list_devices || list_sessions || remove_session)) {
-    cout << "Disconnect device option cannot be used with other top level options" << endl;
+    std::cout << "Disconnect device option cannot be used with other top level options"
+              << std::endl;
     exit(EXIT_FAILURE);
   }
   if (start_collecting &&
       (add_device || remove_device || connect_device || disconnect_device || stop_collecting ||
        init_database || quit || list_devices || list_sessions || remove_session)) {
-    cout << "Start connecting option cannot be used with other top level options" << endl;
+    std::cout << "Start connecting option cannot be used with other top level options" << std::endl;
     exit(EXIT_FAILURE);
   }
   if (stop_collecting &&
       (add_device || remove_device || connect_device || disconnect_device || start_collecting ||
        init_database || quit || list_devices || list_sessions || remove_session)) {
-    cout << "Start connecting option cannot be used with other top level options" << endl;
+    std::cout << "Start connecting option cannot be used with other top level options" << std::endl;
     exit(EXIT_FAILURE);
   }
   if (init_database &&
       (add_device || remove_device || connect_device || disconnect_device || start_collecting ||
        stop_collecting || quit || list_devices || list_sessions || remove_session)) {
-    cout << "Stop connecting option cannot be used with other top level options" << endl;
+    std::cout << "Stop connecting option cannot be used with other top level options" << std::endl;
     exit(EXIT_FAILURE);
   }
   if (quit &&
       (add_device || remove_device || connect_device || disconnect_device || start_collecting ||
        stop_collecting || init_database || list_devices || list_sessions || remove_session)) {
-    cout << "Quit collector option cannot be used with other top level options" << endl;
+    std::cout << "Quit collector option cannot be used with other top level options" << std::endl;
     exit(EXIT_FAILURE);
   }
   if (list_devices &&
       (add_device || remove_device || connect_device || disconnect_device || start_collecting ||
        stop_collecting || init_database || quit || list_sessions || remove_session)) {
-    cout << "List devices option cannot be used with other top level options" << endl;
+    std::cout << "List devices option cannot be used with other top level options" << std::endl;
     exit(EXIT_FAILURE);
   }
   if (list_sessions &&
       (add_device || remove_device || connect_device || disconnect_device || start_collecting ||
        stop_collecting || init_database || quit || list_devices || remove_session)) {
-    cout << "List sessions option cannot be used with other top level options" << endl;
+    std::cout << "List sessions option cannot be used with other top level options" << std::endl;
     exit(EXIT_FAILURE);
   }
   if (remove_session &&
       (add_device || remove_device || connect_device || disconnect_device || start_collecting ||
        stop_collecting || init_database || quit || list_devices || list_sessions)) {
-    cout << "List sessions option cannot be used with other top level options" << endl;
+    std::cout << "List sessions option cannot be used with other top level options" << std::endl;
     exit(EXIT_FAILURE);
   }
 
   if (quit) {
     if (!force) {
-      cout << "Quit collector can only be used with force option" << endl;
+      std::cout << "Quit collector can only be used with force option" << std::endl;
       exit(EXIT_FAILURE);
     }
   }
 
   if (add_device) {
     if (!device_name || !device_address || !device_port) {
-      cout << "Please provide the complete device data" << endl;
+      std::cout << "Please provide the complete device data" << std::endl;
       exit(EXIT_FAILURE);
     }
   }
 
   if (remove_device || connect_device || disconnect_device || start_collecting || stop_collecting) {
     if (!unique_id) {
-      cout << "Please provide the device hash id" << endl;
+      std::cout << "Please provide the device hash id" << std::endl;
       exit(EXIT_FAILURE);
     }
   }
 
   if (remove_session && !unique_id) {
-    cout << "Please provide the device hash id" << endl;
+    std::cout << "Please provide the device hash id" << std::endl;
     exit(EXIT_FAILURE);
   }
 
   if (help) {
-    cout << "TKM-Control: TaskMonitor collector control version: "
-         << tkm::tkmDefaults.getFor(tkm::Defaults::Default::Version) << "\n\n";
-    cout << "Usage: tkm-control [OPTIONS] \n\n";
-    cout << "  General:\n";
-    cout << "     --config, -o              <string>  Configuration file path\n";
-    cout << "     --force, -f               <noarg>   Force actions\n";
-    cout << "     --quit, -q                <noarg>   Ask tkm-collector to terminate\n";
-    cout << "  Database:\n";
-    cout << "     --initDatabase, -i        <noarg>   Initialize database\n";
-    cout << "  Devices:\n";
-    cout << "     --listDevices, -l         <noarg>   Get list of devices from database\n";
-    cout << "     --listSessions, -j        <noarg>   Get list of sessions for device\n";
-    cout << "        Optional:\n";
-    cout << "         --Id, -I              <string>  Device ID\n";
-    cout << "     --addDevice,  -a          <noarg>   Add a new device to the database\n";
-    cout << "        Require:\n";
-    cout << "         --Name, -N            <string>  Device name\n";
-    cout << "         --Address, -A         <string>  Device IP address\n";
-    cout << "         --Port, -P            <int>     Device port number\n";
-    cout << "     --remDevice,  -r          <noarg>   Remove user from database\n";
-    cout << "        Require:\n";
-    cout << "         --Id, -I              <string>  Device ID\n";
-    cout << "     --remSession, -g          <noarg>   Remove session from database\n";
-    cout << "        Require:\n";
-    cout << "         --Id, -I              <string>  Session ID\n";
-    cout << "     --connect, -c             <noarg>   Connect device to taskmonitor\n";
-    cout << "       Require:\n";
-    cout << "         --Id, -I              <string>  Device ID\n";
-    cout << "     --disconnect, -d          <noarg>   Disconnect device from taskmonitor\n";
-    cout << "       Require:\n";
-    cout << "         --Id, -I              <string>  Device ID\n";
-    cout << "     --startCollecting, -s     <noarg>   Start collecting data from device\n";
-    cout << "       Require:\n";
-    cout << "         --Id, -I              <string>  Device ID\n";
-    cout << "     --stopCollecting, -x      <noarg>   Stop collecting data from device\n";
-    cout << "       Require:\n";
-    cout << "         --Id, -I              <string>  Device ID\n";
-    cout << "  Help:\n";
-    cout << "     --help, -h                          Print this help\n\n";
+    std::cout << "TaskMonitorCollector-Control: TaskMonitor collector control utility\n"
+              << "Version: " << tkm::tkmDefaults.getFor(tkm::Defaults::Default::Version)
+              << " libtkm: " << TKMLIB_VERSION << "\n\n";
+    std::cout << "Usage: tkmcontrol [OPTIONS] \n\n";
+    std::cout << "  General:\n";
+    std::cout << "     --config, -o              <string>  Configuration file path\n";
+    std::cout << "     --force, -f               <noarg>   Force actions\n";
+    std::cout << "     --quit, -q                <noarg>   Ask tkm-collector to terminate\n";
+    std::cout << "  Database:\n";
+    std::cout << "     --initDatabase, -i        <noarg>   Initialize database\n";
+    std::cout << "  Devices:\n";
+    std::cout << "     --listDevices, -l         <noarg>   Get list of devices from database\n";
+    std::cout << "     --listSessions, -j        <noarg>   Get list of sessions for device\n";
+    std::cout << "        Optional:\n";
+    std::cout << "         --Id, -I              <string>  Device ID\n";
+    std::cout << "     --addDevice,  -a          <noarg>   Add a new device to the database\n";
+    std::cout << "        Require:\n";
+    std::cout << "         --Name, -N            <string>  Device name\n";
+    std::cout << "         --Address, -A         <string>  Device IP address\n";
+    std::cout << "         --Port, -P            <int>     Device port number\n";
+    std::cout << "     --remDevice,  -r          <noarg>   Remove user from database\n";
+    std::cout << "        Require:\n";
+    std::cout << "         --Id, -I              <string>  Device ID\n";
+    std::cout << "     --remSession, -g          <noarg>   Remove session from database\n";
+    std::cout << "        Require:\n";
+    std::cout << "         --Id, -I              <string>  Session ID\n";
+    std::cout << "     --connect, -c             <noarg>   Connect device to taskmonitor\n";
+    std::cout << "       Require:\n";
+    std::cout << "         --Id, -I              <string>  Device ID\n";
+    std::cout << "     --disconnect, -d          <noarg>   Disconnect device from taskmonitor\n";
+    std::cout << "       Require:\n";
+    std::cout << "         --Id, -I              <string>  Device ID\n";
+    std::cout << "     --startCollecting, -s     <noarg>   Start collecting data from device\n";
+    std::cout << "       Require:\n";
+    std::cout << "         --Id, -I              <string>  Device ID\n";
+    std::cout << "     --stopCollecting, -x      <noarg>   Stop collecting data from device\n";
+    std::cout << "       Require:\n";
+    std::cout << "         --Id, -I              <string>  Device ID\n";
+    std::cout << "  Help:\n";
+    std::cout << "     --help, -h                          Print this help\n\n";
 
     exit(EXIT_SUCCESS);
   }
@@ -286,20 +284,20 @@ auto main(int argc, char **argv) -> int
   signal(SIGINT, terminate);
   signal(SIGTERM, terminate);
 
-  fs::path configPath(tkm::tkmDefaults.getFor(tkm::Defaults::Default::ConfPath));
+  std::filesystem::path configPath(tkm::tkmDefaults.getFor(tkm::Defaults::Default::ConfPath));
   if (config_path != nullptr) {
-    if (!fs::exists(config_path)) {
-      cout << "Provided configuration file cannot be accessed: " << config_path << endl;
+    if (!std::filesystem::exists(config_path)) {
+      std::cout << "Provided configuration file cannot be accessed: " << config_path << std::endl;
       return EXIT_FAILURE;
     }
-    configPath = fs::path(config_path);
+    configPath = std::filesystem::path(config_path);
   }
 
   try {
     tkm::control::Application app{"TKM-Control", "TKM Control", configPath.string()};
 
     if (init_database) {
-      Command::Request rq{.action = Command::Action::InitDatabase};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::InitDatabase};
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
                         tkm::tkmDefaults.valFor(tkm::Defaults::Val::True));
@@ -307,11 +305,11 @@ auto main(int argc, char **argv) -> int
       app.getCommand()->addRequest(rq);
     }
     if (list_devices) {
-      Command::Request rq{.action = Command::Action::GetDevices};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::GetDevices};
       app.getCommand()->addRequest(rq);
     }
     if (add_device) {
-      Command::Request rq{.action = Command::Action::AddDevice};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::AddDevice};
       rq.args.emplace(tkm::Defaults::Arg::DeviceName, device_name);
       rq.args.emplace(tkm::Defaults::Arg::DeviceAddress, device_address);
       rq.args.emplace(tkm::Defaults::Arg::DevicePort, device_port);
@@ -323,7 +321,7 @@ auto main(int argc, char **argv) -> int
     }
 
     if (list_sessions) {
-      Command::Request rq{.action = Command::Action::GetSessions};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::GetSessions};
       if (unique_id != nullptr) {
         rq.args.emplace(tkm::Defaults::Arg::DeviceHash, unique_id);
       }
@@ -335,7 +333,7 @@ auto main(int argc, char **argv) -> int
     }
 
     if (remove_device) {
-      Command::Request rq{.action = Command::Action::RemoveDevice};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::RemoveDevice};
       rq.args.emplace(tkm::Defaults::Arg::DeviceHash, unique_id);
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
@@ -345,7 +343,7 @@ auto main(int argc, char **argv) -> int
     }
 
     if (remove_session) {
-      Command::Request rq{.action = Command::Action::RemoveSession};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::RemoveSession};
       rq.args.emplace(tkm::Defaults::Arg::SessionHash, unique_id);
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
@@ -355,7 +353,7 @@ auto main(int argc, char **argv) -> int
     }
 
     if (connect_device) {
-      Command::Request rq{.action = Command::Action::ConnectDevice};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::ConnectDevice};
       rq.args.emplace(tkm::Defaults::Arg::DeviceHash, unique_id);
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
@@ -365,7 +363,7 @@ auto main(int argc, char **argv) -> int
     }
 
     if (disconnect_device) {
-      Command::Request rq{.action = Command::Action::DisconnectDevice};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::DisconnectDevice};
       rq.args.emplace(tkm::Defaults::Arg::DeviceHash, unique_id);
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
@@ -375,7 +373,7 @@ auto main(int argc, char **argv) -> int
     }
 
     if (start_collecting) {
-      Command::Request rq{.action = Command::Action::StartCollecting};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::StartCollecting};
       rq.args.emplace(tkm::Defaults::Arg::DeviceHash, unique_id);
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
@@ -385,7 +383,7 @@ auto main(int argc, char **argv) -> int
     }
 
     if (stop_collecting) {
-      Command::Request rq{.action = Command::Action::StopCollecting};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::StopCollecting};
       rq.args.emplace(tkm::Defaults::Arg::DeviceHash, unique_id);
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
@@ -395,7 +393,7 @@ auto main(int argc, char **argv) -> int
     }
 
     if (quit) {
-      Command::Request rq{.action = Command::Action::QuitCollector};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::QuitCollector};
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
                         tkm::tkmDefaults.valFor(tkm::Defaults::Val::True));
@@ -404,14 +402,14 @@ auto main(int argc, char **argv) -> int
     }
 
     // Request initial connection
-    Dispatcher::Request connectRequest{
-        .action = Dispatcher::Action::Connect,
+    tkm::control::Dispatcher::Request connectRequest{
+        .action = tkm::control::Dispatcher::Action::Connect,
     };
     app.getDispatcher()->pushRequest(connectRequest);
 
     app.run();
   } catch (std::exception &e) {
-    cout << "Application start failed. " << e.what() << endl;
+    std::cout << "Application start failed. " << e.what() << std::endl;
     return EXIT_FAILURE;
   }
 

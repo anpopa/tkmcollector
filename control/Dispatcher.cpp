@@ -15,33 +15,29 @@
 #include "Dispatcher.h"
 #include "Helpers.h"
 
-#include "Control.pb.h"
-
-using std::shared_ptr;
-using std::string;
-
 namespace tkm::control
 {
 
-static bool doConnect(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doSendDescriptor(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doRequestSession(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doSetSession(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doQuit(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doInitDatabase(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doGetDevices(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doGetSessions(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doRemoveSession(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doAddDevice(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doRemoveDevice(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doConnectDevice(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doDisconnectDevice(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doStartCollecting(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doStopCollecting(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doQuitCollector(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doCollectorStatus(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doDeviceList(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doSessionList(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doConnect(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doSendDescriptor(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doRequestSession(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doSetSession(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doQuit(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doInitDatabase(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doGetDevices(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doGetSessions(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doRemoveSession(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doAddDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doRemoveDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doConnectDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doDisconnectDevice(const std::shared_ptr<Dispatcher> mgr,
+                               const Dispatcher::Request &rq);
+static bool doStartCollecting(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doStopCollecting(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doQuitCollector(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doCollectorStatus(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doDeviceList(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doSessionList(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
 
 void Dispatcher::enableEvents()
 {
@@ -101,7 +97,7 @@ bool Dispatcher::requestHandler(const Request &request)
   return true;
 }
 
-static bool doConnect(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &)
+static bool doConnect(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &)
 {
   Dispatcher::Request rq;
 
@@ -115,7 +111,7 @@ static bool doConnect(const shared_ptr<Dispatcher> mgr, const Dispatcher::Reques
   return mgr->pushRequest(rq);
 }
 
-static bool doSendDescriptor(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &)
+static bool doSendDescriptor(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &)
 {
   tkm::msg::control::Descriptor descriptor;
   descriptor.set_pid(getpid());
@@ -131,7 +127,7 @@ static bool doSendDescriptor(const shared_ptr<Dispatcher> mgr, const Dispatcher:
   return mgr->pushRequest(nrq);
 }
 
-static bool doRequestSession(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doRequestSession(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
   tkm::msg::control::Request requestMessage;
@@ -151,7 +147,7 @@ static bool doRequestSession(const shared_ptr<Dispatcher> mgr, const Dispatcher:
   return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
-static bool doSetSession(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doSetSession(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   const auto &sessionInfo = std::any_cast<tkm::msg::control::SessionInfo>(rq.bulkData);
 
@@ -161,13 +157,13 @@ static bool doSetSession(const shared_ptr<Dispatcher> mgr, const Dispatcher::Req
   return ControlApp()->getCommand()->trigger();
 }
 
-static bool doQuit(const shared_ptr<Dispatcher>, const Dispatcher::Request &)
+static bool doQuit(const std::shared_ptr<Dispatcher>, const Dispatcher::Request &)
 {
   std::cout << std::flush;
   exit(EXIT_SUCCESS);
 }
 
-static bool doInitDatabase(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doInitDatabase(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
   tkm::msg::control::Request requestMessage;
@@ -187,7 +183,7 @@ static bool doInitDatabase(const shared_ptr<Dispatcher> mgr, const Dispatcher::R
   return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
-static bool doGetDevices(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &)
+static bool doGetDevices(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &)
 {
   tkm::msg::Envelope requestEnvelope;
   tkm::msg::control::Request requestMessage;
@@ -202,7 +198,7 @@ static bool doGetDevices(const shared_ptr<Dispatcher> mgr, const Dispatcher::Req
   return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
-static bool doAddDevice(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doAddDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
   tkm::msg::control::Request requestMessage;
@@ -233,7 +229,7 @@ static bool doAddDevice(const shared_ptr<Dispatcher> mgr, const Dispatcher::Requ
   return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
-static bool doRemoveDevice(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doRemoveDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
   tkm::msg::control::Request requestMessage;
@@ -258,7 +254,7 @@ static bool doRemoveDevice(const shared_ptr<Dispatcher> mgr, const Dispatcher::R
   return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
-static bool doRemoveSession(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doRemoveSession(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
   tkm::msg::control::Request requestMessage;
@@ -283,7 +279,7 @@ static bool doRemoveSession(const shared_ptr<Dispatcher> mgr, const Dispatcher::
   return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
-static bool doConnectDevice(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doConnectDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
   tkm::msg::control::Request requestMessage;
@@ -308,7 +304,7 @@ static bool doConnectDevice(const shared_ptr<Dispatcher> mgr, const Dispatcher::
   return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
-static bool doDisconnectDevice(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doDisconnectDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
   tkm::msg::control::Request requestMessage;
@@ -333,7 +329,7 @@ static bool doDisconnectDevice(const shared_ptr<Dispatcher> mgr, const Dispatche
   return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
-static bool doStartCollecting(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doStartCollecting(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
   tkm::msg::control::Request requestMessage;
@@ -358,7 +354,7 @@ static bool doStartCollecting(const shared_ptr<Dispatcher> mgr, const Dispatcher
   return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
-static bool doStopCollecting(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doStopCollecting(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
   tkm::msg::control::Request requestMessage;
@@ -383,7 +379,7 @@ static bool doStopCollecting(const shared_ptr<Dispatcher> mgr, const Dispatcher:
   return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
-static bool doGetSessions(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doGetSessions(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
   tkm::msg::control::Request requestMessage;
@@ -410,7 +406,7 @@ static bool doGetSessions(const shared_ptr<Dispatcher> mgr, const Dispatcher::Re
   return ControlApp()->getConnection()->writeEnvelope(requestEnvelope);
 }
 
-static bool doQuitCollector(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doQuitCollector(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   tkm::msg::Envelope requestEnvelope;
   tkm::msg::control::Request requestMessage;
@@ -438,7 +434,7 @@ static bool doQuitCollector(const shared_ptr<Dispatcher> mgr, const Dispatcher::
   return mgr->pushRequest(nrq);
 }
 
-static bool doCollectorStatus(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doCollectorStatus(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   const auto &requestStatus = std::any_cast<tkm::msg::control::Status>(rq.bulkData);
   const auto &statusText = (requestStatus.what() == tkm::msg::control::Status_What_OK)
@@ -461,7 +457,7 @@ static bool doCollectorStatus(const shared_ptr<Dispatcher> mgr, const Dispatcher
   return mgr->pushRequest(nrq);
 }
 
-static bool doDeviceList(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doDeviceList(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   std::cout << "--------------------------------------------------" << std::endl;
 
@@ -505,7 +501,7 @@ static bool doDeviceList(const shared_ptr<Dispatcher> mgr, const Dispatcher::Req
   return true;
 }
 
-static bool doSessionList(const shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doSessionList(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
 {
   std::cout << "--------------------------------------------------" << std::endl;
 

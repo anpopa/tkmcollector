@@ -12,18 +12,13 @@
 #include <csignal>
 #include <fcntl.h>
 #include <filesystem>
+#include <taskmonitor/taskmonitor.h>
 #include <unistd.h>
 
 #include "Application.h"
 #include "Connection.h"
 #include "Defaults.h"
 #include "Helpers.h"
-
-#include "Control.pb.h"
-
-namespace fs = std::filesystem;
-using std::shared_ptr;
-using std::string;
 
 namespace tkm::control
 {
@@ -143,13 +138,14 @@ Connection::~Connection()
 
 auto Connection::connect() -> int
 {
-  fs::path sockPath(ControlApp()->getOptions()->getFor(Options::Key::RuntimeDirectory));
+  std::filesystem::path sockPath(
+      ControlApp()->getOptions()->getFor(Options::Key::RuntimeDirectory));
   sockPath /= tkmDefaults.getFor(Defaults::Default::ControlSocket);
 
   m_addr.sun_family = AF_UNIX;
   strncpy(m_addr.sun_path, sockPath.c_str(), sizeof(m_addr.sun_path));
 
-  if (!fs::exists(sockPath)) {
+  if (!std::filesystem::exists(sockPath)) {
     throw std::runtime_error("Collector IPC socket not available");
   }
 

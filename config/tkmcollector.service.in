@@ -1,14 +1,14 @@
 ###############################################################################
-#  Task Monitor Collector
+#  Task Monitor Collector version @PROJECT_VERSION@
 ###############################################################################
 [Unit]
-Description=Task Monitor Collector Service
+Description=TaskMonitor Collector Service
 
 [Service]
 Type=simple
 User=root
 Group=root
-ExecStart=@CMAKE_INSTALL_PREFIX@/bin/tkm-collector -c /etc/tkm-collector.conf
+ExecStart=@CMAKE_INSTALL_PREFIX@/bin/tkmcollector -c /etc/tkmcollector.conf
 WatchdogSec=30
 
 [Install]

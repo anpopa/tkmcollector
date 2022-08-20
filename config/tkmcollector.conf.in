@@ -1,5 +1,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; TKM-Collector @version@ default configuration file
+; TKM-Collector @PROJECT_VERSION@ default configuration file
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -7,7 +7,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 [general]
 DatabaseType=pqsql
-RuntimeDirectory=/var/run/tkm-collector
+RuntimeDirectory=/var/run/tkmcollector
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Database configuration option
@@ -16,6 +16,6 @@ RuntimeDirectory=/var/run/tkm-collector
 ServerAddress=127.0.0.1
 ServerPort=5432
 DatabaseName=taskmonitor
-DatabasePath=/var/cache/tkm-collector/data.db
+DatabasePath=/var/cache/tkmcollector/data.db
 UserName=tkmcollector
 UserPassword=tkmcollector123

@@ -15,9 +15,8 @@
 #include <string>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <taskmonitor/taskmonitor.h>
 
-#include "EnvelopeReader.h"
-#include "EnvelopeWriter.h"
 #include "Helpers.h"
 #include "Options.h"
 

@@ -18,10 +18,7 @@
 #include <iostream>
 #include <map>
 #include <sys/stat.h>
-
-using namespace std;
-using namespace tkm::collector;
-namespace fs = std::filesystem;
+#include <taskmonitor/taskmonitor.h>
 
 static void terminate(int signum)
 {
@@ -39,23 +36,23 @@ static void daemonize()
 
   pid = fork();
   if (pid < 0) {
-    cout << "ERROR: Cannot fork on daemonize: " << strerror(errno) << endl;
-    exit(EXIT_FAILURE);
+    std::cout << "ERROR: Cannot fork on daemonize: " << strerror(errno) << std::endl;
+    ::exit(EXIT_FAILURE);
   }
 
   if (pid > 0) {
-    exit(EXIT_SUCCESS);
+    ::exit(EXIT_SUCCESS);
   }
 
   sid = setsid();
   if (sid < 0) {
-    cout << "ERROR: Cannot setsid on daemonize: " << strerror(errno) << endl;
-    exit(EXIT_FAILURE);
+    std::cout << "ERROR: Cannot setsid on daemonize: " << strerror(errno) << std::endl;
+    ::exit(EXIT_FAILURE);
   }
 
   if ((chdir("/")) < 0) {
-    cout << "ERROR: Cannot chdir on daemonize: " << strerror(errno) << endl;
-    exit(EXIT_FAILURE);
+    std::cout << "ERROR: Cannot chdir on daemonize: " << strerror(errno) << std::endl;
+    ::exit(EXIT_FAILURE);
   }
 
   fd = open("/dev/null", O_RDWR, 0);
@@ -138,36 +135,36 @@ auto main(int argc, char **argv) -> int
   }
 
   if (help) {
-    cout << "TKM-Collector: TaskMonior collector version: "
-         << tkm::tkmDefaults.getFor(tkm::Defaults::Default::Version) << "\n\n";
-    cout << "Usage: tkm-collector [OPTIONS] \n\n";
-    cout << "  General:\n";
-    cout << "     --config, -c             <string> Configuration file path\n";
-    cout << "     --daemon, -d             <noarg>  Daemonize\n";
-    cout << "     --eraseDatabase, -e      <noarg>  Reinitialize database "
-            "(admin login "
-            "issues)\n";
-    cout << "  Help:\n";
-    cout << "     --help, -h                 Print this help\n\n";
+    std::cout << "TaskMonitorCollector: TaskMonior collector\n"
+              << "Version: " << tkm::tkmDefaults.getFor(tkm::Defaults::Default::Version)
+              << " libtkm: " << TKMLIB_VERSION << "\n\n";
+    std::cout << "Usage: tkmcollector [OPTIONS] \n\n";
+    std::cout << "  General:\n";
+    std::cout << "     --config, -c             <string> Configuration file path\n";
+    std::cout << "     --daemon, -d             <noarg>  Daemonize\n";
+    std::cout << "     --eraseDatabase, -e      <noarg>  Reinitialize database\n";
+    std::cout << "  Help:\n";
+    std::cout << "     --help, -h                 Print this help\n\n";
 
-    exit(EXIT_SUCCESS);
+    ::exit(EXIT_SUCCESS);
   }
 
-  fs::path configPath(tkm::tkmDefaults.getFor(tkm::Defaults::Default::ConfPath));
+  std::filesystem::path configPath(tkm::tkmDefaults.getFor(tkm::Defaults::Default::ConfPath));
   if (config_path != nullptr) {
-    if (!fs::exists(config_path)) {
-      cout << "Provided configuration file cannot be accessed: " << config_path << endl;
+    if (!std::filesystem::exists(config_path)) {
+      std::cout << "Provided configuration file cannot be accessed: " << config_path << std::endl;
       return EXIT_FAILURE;
     }
-    configPath = string(config_path);
+    configPath = std::string(config_path);
   }
 
   if (daemon) {
     auto options = tkm::Options{config_path};
 
-    if (!fs::exists(options.getFor(tkm::Options::Key::RuntimeDirectory))) {
-      if (!fs::create_directories(options.getFor(tkm::Options::Key::RuntimeDirectory))) {
-        cout << "ERROR: Cannot create runtime directory" << endl;
+    if (!std::filesystem::exists(options.getFor(tkm::Options::Key::RuntimeDirectory))) {
+      if (!std::filesystem::create_directories(
+              options.getFor(tkm::Options::Key::RuntimeDirectory))) {
+        std::cout << "ERROR: Cannot create runtime directory" << std::endl;
         return EXIT_FAILURE;
       }
     }
@@ -177,8 +174,8 @@ auto main(int argc, char **argv) -> int
 
     // create pid file
     std::string pidFile = options.getFor(tkm::Options::Key::RuntimeDirectory);
-    pidFile += "/tkm-collector.pid";
-    cout << "PID file: " << pidFile << endl;
+    pidFile += "/tkmcollector.pid";
+    std::cout << "PID file: " << pidFile << std::endl;
     create_pidfile(pidFile.c_str());
   }
 
@@ -186,7 +183,7 @@ auto main(int argc, char **argv) -> int
   signal(SIGTERM, terminate);
   signal(SIGPIPE, SIG_IGN);
 
-  tkm::collector::Application app{"TKM-Collector", "TaskMonitor Collector", configPath};
+  tkm::collector::Application app{"TKMCollector", "TaskMonitor Collector", configPath};
 
   if (eraseDatabase) {
     const std::map<tkm::Defaults::Arg, std::string> forcedArgument{
@@ -194,7 +191,8 @@ auto main(int argc, char **argv) -> int
             tkm::Defaults::Arg::Forced,
             std::string(tkm::tkmDefaults.valFor(tkm::Defaults::Val::True)))};
 
-    IDatabase::Request dbrq{.action = IDatabase::Action::InitDatabase, .args = forcedArgument};
+    tkm::collector::IDatabase::Request dbrq{
+        .action = tkm::collector::IDatabase::Action::InitDatabase, .args = forcedArgument};
     app.getDatabase()->pushRequest(dbrq);
   }
 

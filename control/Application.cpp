@@ -14,14 +14,14 @@
 
 #include "Application.h"
 
-using std::string;
-
 namespace tkm::control
 {
 
 Application *Application::appInstance = nullptr;
 
-Application::Application(const string &name, const string &description, const string &configFile)
+Application::Application(const std::string &name,
+                         const std::string &description,
+                         const std::string &configFile)
 : bswi::app::IApplication(name, description)
 {
   if (Application::appInstance != nullptr) {

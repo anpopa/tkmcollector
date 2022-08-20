@@ -10,10 +10,10 @@
 name=tkmcollector
 rcvar=tkmcollector_enable
 
-command="@CMAKE_INSTALL_PREFIX@/bin/tkm-collector"
-command_args="-d -c @CMAKE_INSTALL_PREFIX@/etc/tkm-collector.conf"
+command="@CMAKE_INSTALL_PREFIX@/bin/tkmcollector"
+command_args="-d -c @CMAKE_INSTALL_PREFIX@/etc/tkmcollector.conf"
  
-pidfile="/var/run/tkm-collector/tkm-collector.pid"
+pidfile="/var/run/tkmcollector/tkmcollector.pid"
 
 stop_postcmd="tkmcollector_poststop"
 

@@ -21,8 +21,6 @@
 #include "../bswinfra/source/Pollable.h"
 #include "../bswinfra/source/SafeList.h"
 
-#include "Collector.pb.h"
-
 using namespace bswi::log;
 using namespace bswi::event;
 

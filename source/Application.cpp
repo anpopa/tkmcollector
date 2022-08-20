@@ -23,9 +23,6 @@
 #include "PQDatabase.h"
 #endif
 
-namespace fs = std::filesystem;
-using std::string;
-
 #define USEC2SEC(x) (x / 1000000)
 
 namespace tkm::collector
@@ -33,7 +30,9 @@ namespace tkm::collector
 
 Application *Application::appInstance = nullptr;
 
-Application::Application(const string &name, const string &description, const string &configFile)
+Application::Application(const std::string &name,
+                         const std::string &description,
+                         const std::string &configFile)
 : bswi::app::IApplication(name, description)
 {
   if (Application::appInstance != nullptr) {
@@ -48,9 +47,9 @@ Application::Application(const string &name, const string &description, const st
   m_deviceManager = std::make_shared<DeviceManager>();
 
   // Create runtime directory
-  fs::path runDir(m_options->getFor(Options::Key::RuntimeDirectory));
-  if (!fs::exists(runDir)) {
-    if (!fs::create_directories(runDir)) {
+  std::filesystem::path runDir(m_options->getFor(Options::Key::RuntimeDirectory));
+  if (!std::filesystem::exists(runDir)) {
+    if (!std::filesystem::create_directories(runDir)) {
       throw std::runtime_error("Fail to create runtime directory");
     }
   }

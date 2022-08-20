@@ -936,8 +936,8 @@ auto Query::addData(Query::Type type,
           << m_sysProcDiskColumn.at(SysProcDiskColumn::IOSpentMs) << ","
           << m_sysProcDiskColumn.at(SysProcDiskColumn::IOWeightedMs) << ","
           << m_sysProcDiskColumn.at(SysProcDiskColumn::SessionId) << ") VALUES ('" << systemTime
-          << "', '" << monotonicTime << "', '" << receiveTime << "', '" << diskEntry.major()
-          << "', '" << diskEntry.minor() << "', '" << diskEntry.name() << "', '"
+          << "', '" << monotonicTime << "', '" << receiveTime << "', '" << diskEntry.node_major()
+          << "', '" << diskEntry.node_minor() << "', '" << diskEntry.name() << "', '"
           << diskEntry.reads_completed() << "', '" << diskEntry.reads_merged() << "', '"
           << diskEntry.reads_spent_ms() << "', '" << diskEntry.writes_completed() << "', '"
           << diskEntry.writes_merged() << "', '" << diskEntry.writes_spent_ms() << "', '"
