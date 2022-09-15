@@ -14,6 +14,7 @@
 #include <map>
 #include <sstream>
 #include <string>
+
 #include <taskmonitor/taskmonitor.h>
 
 namespace tkm
@@ -181,6 +182,7 @@ public:
     CPUStatAll,    // int: CPUStat.all
     CPUStatUsr,    // int: CPUStat.usr
     CPUStatSys,    // int: CPUStat.sys
+    CPUStatIow,    // int: CPUStat.iow
     SessionId,     // int: Session id key
   };
   const std::map<SysProcStatColumn, std::string> m_sysProcStatColumn{
@@ -192,6 +194,7 @@ public:
       std::make_pair(SysProcStatColumn::CPUStatAll, "CPUStatAll"),
       std::make_pair(SysProcStatColumn::CPUStatUsr, "CPUStatUsr"),
       std::make_pair(SysProcStatColumn::CPUStatSys, "CPUStatSys"),
+      std::make_pair(SysProcStatColumn::CPUStatIow, "CPUStatIow"),
       std::make_pair(SysProcStatColumn::SessionId, "SessionId"),
   };
 
