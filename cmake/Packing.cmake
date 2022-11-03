@@ -25,7 +25,7 @@ set(CPACK_RPM_CHANGELOG_FILE "${CMAKE_SOURCE_DIR}/CHANGELOG")
 set(CPACK_RPM_PACKAGE_DESCRIPTION ${CPACK_PACKAGE_DESCRIPTION_SUMMARY})
 set(CPACK_RPM_PACKAGE_GROUP "Development/Tools")
 set(CPACK_RPM_PACKAGE_REQUIRES
-  "libtaskmonitor-bin >= 1.0.2, sqlite >= 3.36, protobuf >= 3.14.0")
+  "libtaskmonitor-bin >= 1.0.3, sqlite >= 3.36, protobuf >= 3.14.0")
 
 # DEB
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
@@ -33,7 +33,7 @@ set(CPACK_DEBIAN_DEBUGINFO_PACKAGE OFF)
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Alin Popa")
 set(CPACK_DEBIAN_PACKAGE_SECTION "Utilities")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS
-  "libtaskmonitor-bin (>=1.0.2), libsqlite3-0 (>= 3.31), libprotobuf17 (>=3.6)")
+  "libtaskmonitor-bin (>=1.0.3), libsqlite3-0 (>= 3.31), libprotobuf17 (>=3.6)")
 
 # FreeBSD
 set(CPACK_FREEBSD_DEBUGINFO_PACKAGE OFF)
