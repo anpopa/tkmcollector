@@ -83,7 +83,7 @@ void UDSServer::start()
   sockPath /= tkmDefaults.getFor(Defaults::Default::ControlSocket);
 
   m_addr.sun_family = AF_UNIX;
-  strncpy(m_addr.sun_path, sockPath.c_str(), sizeof(m_addr.sun_path));
+  strncpy(m_addr.sun_path, sockPath.c_str(), sizeof(m_addr.sun_path) - 1);
 
   if (std::filesystem::exists(sockPath)) {
     logWarn() << "Runtime directory not clean, removing " << sockPath.string();

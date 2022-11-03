@@ -62,7 +62,9 @@ Connection::Connection()
 
           switch (msg.type()) {
           case tkm::msg::control::Message_Type_SetSession: {
-            Dispatcher::Request rq{.action = Dispatcher::Action::SetSession};
+            Dispatcher::Request rq{.action = Dispatcher::Action::SetSession,
+                                   .bulkData = std::make_any<int>(0),
+                                   .args = std::map<Defaults::Arg, std::string>()};
             tkm::msg::control::SessionInfo sessionInfo;
 
             msg.data().UnpackTo(&sessionInfo);
@@ -72,7 +74,9 @@ Connection::Connection()
             break;
           }
           case tkm::msg::control::Message_Type_Status: {
-            Dispatcher::Request rq{.action = Dispatcher::Action::CollectorStatus};
+            Dispatcher::Request rq{.action = Dispatcher::Action::CollectorStatus,
+                                   .bulkData = std::make_any<int>(0),
+                                   .args = std::map<Defaults::Arg, std::string>()};
             tkm::msg::control::Status data;
 
             msg.data().UnpackTo(&data);
@@ -82,7 +86,9 @@ Connection::Connection()
             break;
           }
           case tkm::msg::control::Message_Type_DeviceList: {
-            Dispatcher::Request rq{.action = Dispatcher::Action::DeviceList};
+            Dispatcher::Request rq{.action = Dispatcher::Action::DeviceList,
+                                   .bulkData = std::make_any<int>(0),
+                                   .args = std::map<Defaults::Arg, std::string>()};
             tkm::msg::control::DeviceList deviceList;
 
             msg.data().UnpackTo(&deviceList);
@@ -92,7 +98,9 @@ Connection::Connection()
             break;
           }
           case tkm::msg::control::Message_Type_SessionList: {
-            Dispatcher::Request rq{.action = Dispatcher::Action::SessionList};
+            Dispatcher::Request rq{.action = Dispatcher::Action::SessionList,
+                                   .bulkData = std::make_any<int>(0),
+                                   .args = std::map<Defaults::Arg, std::string>()};
             tkm::msg::control::SessionList sessionList;
 
             msg.data().UnpackTo(&sessionList);
@@ -119,7 +127,9 @@ Connection::Connection()
   // If the event is removed we stop the main application
   setFinalize([]() {
     logInfo() << "Server closed connection. Terminate";
-    Dispatcher::Request nrq{.action = Dispatcher::Action::Quit};
+    Dispatcher::Request nrq{.action = Dispatcher::Action::Quit,
+                            .bulkData = std::make_any<int>(0),
+                            .args = std::map<Defaults::Arg, std::string>()};
     ControlApp()->getDispatcher()->pushRequest(nrq);
   });
 }
@@ -143,7 +153,7 @@ auto Connection::connect() -> int
   sockPath /= tkmDefaults.getFor(Defaults::Default::ControlSocket);
 
   m_addr.sun_family = AF_UNIX;
-  strncpy(m_addr.sun_path, sockPath.c_str(), sizeof(m_addr.sun_path));
+  strncpy(m_addr.sun_path, sockPath.c_str(), sizeof(m_addr.sun_path) - 1);
 
   if (!std::filesystem::exists(sockPath)) {
     throw std::runtime_error("Collector IPC socket not available");

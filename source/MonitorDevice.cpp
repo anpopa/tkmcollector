@@ -31,8 +31,7 @@ static bool doDisconnect(const std::shared_ptr<MonitorDevice> mgr,
                          const MonitorDevice::Request &rq);
 static bool doSendDescriptor(const std::shared_ptr<MonitorDevice> mgr,
                              const MonitorDevice::Request &rq);
-static bool doRequestSession(const std::shared_ptr<MonitorDevice> mgr,
-                             const MonitorDevice::Request &rq);
+static bool doRequestSession(const std::shared_ptr<MonitorDevice> mgr);
 static bool doSetSession(const std::shared_ptr<MonitorDevice> mgr,
                          const MonitorDevice::Request &rq);
 static bool doStartCollecting(const std::shared_ptr<MonitorDevice> mgr,
@@ -45,7 +44,7 @@ static bool doStopStream(const std::shared_ptr<MonitorDevice> mgr,
                          const MonitorDevice::Request &rq);
 static bool doProcessData(const std::shared_ptr<MonitorDevice> mgr,
                           const MonitorDevice::Request &rq);
-static bool doStatus(const std::shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq);
+static bool doStatus(const MonitorDevice::Request &rq);
 
 void MonitorDevice::enableEvents()
 {
@@ -83,7 +82,10 @@ void MonitorDevice::updateState(tkm::msg::control::DeviceData_State state)
 
   if (state == tkm::msg::control::DeviceData_State_Disconnected) {
     if (m_sessionData.hash().length() > 0) {
-      IDatabase::Request dbrq{.action = IDatabase::Action::EndSession};
+      IDatabase::Request dbrq{.client = nullptr,
+                              .action = IDatabase::Action::EndSession,
+                              .args = std::map<Defaults::Arg, std::string>(),
+                              .bulkData = std::make_any<int>(0)};
       dbrq.args.emplace(Defaults::Arg::SessionHash, m_sessionData.hash());
       CollectorApp()->getDatabase()->pushRequest(dbrq);
     }
@@ -462,7 +464,7 @@ bool MonitorDevice::requestHandler(const Request &request)
   case MonitorDevice::Action::SendDescriptor:
     return doSendDescriptor(getShared(), request);
   case MonitorDevice::Action::RequestSession:
-    return doRequestSession(getShared(), request);
+    return doRequestSession(getShared());
   case MonitorDevice::Action::SetSession:
     return doSetSession(getShared(), request);
   case MonitorDevice::Action::StartCollecting:
@@ -476,7 +478,7 @@ bool MonitorDevice::requestHandler(const Request &request)
   case MonitorDevice::Action::ProcessData:
     return doProcessData(getShared(), request);
   case MonitorDevice::Action::Status:
-    return doStatus(getShared(), request);
+    return doStatus(request);
   default:
     break;
   }
@@ -487,7 +489,10 @@ bool MonitorDevice::requestHandler(const Request &request)
 
 static bool doConnect(const std::shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
@@ -525,7 +530,10 @@ static bool doConnect(const std::shared_ptr<MonitorDevice> mgr, const MonitorDev
 static bool doSendDescriptor(const std::shared_ptr<MonitorDevice> mgr,
                              const MonitorDevice::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   tkm::msg::collector::Descriptor descriptor;
   descriptor.set_id("Collector");
 
@@ -553,8 +561,7 @@ static bool doSendDescriptor(const std::shared_ptr<MonitorDevice> mgr,
   return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
-static bool doRequestSession(const std::shared_ptr<MonitorDevice> mgr,
-                             const MonitorDevice::Request &rq)
+static bool doRequestSession(const std::shared_ptr<MonitorDevice> mgr)
 {
   tkm::msg::Envelope envelope;
   tkm::msg::collector::Request request;
@@ -585,18 +592,29 @@ static bool doSetSession(const std::shared_ptr<MonitorDevice> mgr, const Monitor
   mgr->updateState(tkm::msg::control::DeviceData_State_SessionSet);
 
   // Create session
-  IDatabase::Request dbrq{.action = IDatabase::Action::AddSession, .bulkData = sessionInfo};
+  IDatabase::Request dbrq{
+      .client = nullptr,
+      .action = IDatabase::Action::AddSession,
+      .args = std::map<Defaults::Arg, std::string>(),
+      .bulkData = sessionInfo,
+  };
   dbrq.args.emplace(Defaults::Arg::DeviceHash, mgr->getDeviceData().hash());
   CollectorApp()->getDatabase()->pushRequest(dbrq);
 
   // Start data stream
-  MonitorDevice::Request nrq = {.action = MonitorDevice::Action::StartStream};
+  MonitorDevice::Request nrq = {.client = nullptr,
+                                .action = MonitorDevice::Action::StartStream,
+                                .args = std::map<Defaults::Arg, std::string>(),
+                                .bulkData = std::make_any<int>(0)};
   return mgr->pushRequest(nrq);
 }
 
 static bool doDisconnect(const std::shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
@@ -635,7 +653,10 @@ static bool doStopStream(const std::shared_ptr<MonitorDevice> mgr, const Monitor
 static bool doStartCollecting(const std::shared_ptr<MonitorDevice> mgr,
                               const MonitorDevice::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
@@ -646,13 +667,19 @@ static bool doStartCollecting(const std::shared_ptr<MonitorDevice> mgr,
     mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
     mrq.args.emplace(Defaults::Arg::Reason, "Collecting requested");
 
-    MonitorDevice::Request nrq = {.action = MonitorDevice::Action::RequestSession};
+    MonitorDevice::Request nrq = {.client = nullptr,
+                                  .action = MonitorDevice::Action::RequestSession,
+                                  .args = std::map<Defaults::Arg, std::string>(),
+                                  .bulkData = std::make_any<int>(0)};
     mgr->pushRequest(nrq);
   } else if (mgr->getDeviceData().state() == tkm::msg::control::DeviceData_State_SessionSet) {
     mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
     mrq.args.emplace(Defaults::Arg::Reason, "Collecting start requested");
 
-    MonitorDevice::Request nrq = {.action = MonitorDevice::Action::StartStream};
+    MonitorDevice::Request nrq = {.client = nullptr,
+                                  .action = MonitorDevice::Action::StartStream,
+                                  .args = std::map<Defaults::Arg, std::string>(),
+                                  .bulkData = std::make_any<int>(0)};
     mgr->pushRequest(nrq);
   } else {
     mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
@@ -665,7 +692,10 @@ static bool doStartCollecting(const std::shared_ptr<MonitorDevice> mgr,
 static bool doStopCollecting(const std::shared_ptr<MonitorDevice> mgr,
                              const MonitorDevice::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
@@ -675,7 +705,10 @@ static bool doStopCollecting(const std::shared_ptr<MonitorDevice> mgr,
     mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusOkay));
     mrq.args.emplace(Defaults::Arg::Reason, "Collecting stop requested");
 
-    MonitorDevice::Request nrq = {.action = MonitorDevice::Action::StopStream};
+    MonitorDevice::Request nrq = {.client = nullptr,
+                                  .action = MonitorDevice::Action::StopStream,
+                                  .args = std::map<Defaults::Arg, std::string>(),
+                                  .bulkData = std::make_any<int>(0)};
     mgr->pushRequest(nrq);
   } else {
     mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
@@ -689,12 +722,15 @@ static bool doProcessData(const std::shared_ptr<MonitorDevice> mgr,
                           const MonitorDevice::Request &rq)
 {
   // Add entry to database
-  IDatabase::Request dbrq{.action = IDatabase::Action::AddData, .bulkData = rq.bulkData};
+  IDatabase::Request dbrq{.client = nullptr,
+                          .action = IDatabase::Action::AddData,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = rq.bulkData};
   dbrq.args.emplace(Defaults::Arg::SessionHash, mgr->getSessionData().hash());
   return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
-static bool doStatus(const std::shared_ptr<MonitorDevice> mgr, const MonitorDevice::Request &rq)
+static bool doStatus(const MonitorDevice::Request &rq)
 {
   const auto &serverStatus = std::any_cast<tkm::msg::monitor::Status>(rq.bulkData);
   std::string what;

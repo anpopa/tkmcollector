@@ -55,7 +55,7 @@ auto DeviceManager::getDevice(const std::string &hash) -> std::shared_ptr<Monito
 {
   std::shared_ptr<MonitorDevice> retEntry = nullptr;
 
-  m_devices.foreach ([this, &hash, &retEntry](const std::shared_ptr<MonitorDevice> entry) {
+  m_devices.foreach ([&hash, &retEntry](const std::shared_ptr<MonitorDevice> entry) {
     if (entry->getDeviceData().hash() == hash) {
       retEntry = entry;
     }
@@ -66,13 +66,19 @@ auto DeviceManager::getDevice(const std::string &hash) -> std::shared_ptr<Monito
 
 bool DeviceManager::loadDevices(void)
 {
-  IDatabase::Request dbrq{.action = IDatabase::Action::LoadDevices};
+  IDatabase::Request dbrq{.client = nullptr,
+                          .action = IDatabase::Action::LoadDevices,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
 bool DeviceManager::cleanSessions(void)
 {
-  IDatabase::Request dbrq{.action = IDatabase::Action::CleanSessions};
+  IDatabase::Request dbrq{.client = nullptr,
+                          .action = IDatabase::Action::CleanSessions,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 

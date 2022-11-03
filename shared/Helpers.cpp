@@ -45,8 +45,11 @@ bool sendControlDescriptor(int fd, tkm::msg::control::Descriptor &descriptor)
   pbio::ArrayOutputStream outputArray(buffer, sizeof(buffer));
   pbio::CodedOutputStream codedOutput(&outputArray);
 
-  auto envelopeSize = envelope.ByteSizeLong();
-  codedOutput.WriteVarint32(envelopeSize);
+  size_t envelopeSize = envelope.ByteSizeLong();
+  if ((envelopeSize > UINT32_MAX) || (envelopeSize > sizeof(buffer))) {
+    return false;
+  }
+  codedOutput.WriteVarint32(static_cast<uint32_t>(envelopeSize));
 
   if (!envelope.SerializeToCodedStream(&codedOutput)) {
     return false;
@@ -82,11 +85,15 @@ bool readControlDescriptor(int fd, tkm::msg::control::Descriptor &descriptor)
 
   uint32_t messageSize;
   codedInput.ReadVarint32(&messageSize);
+  if (messageSize > (sizeof(buffer) - sizeof(uint64_t))) {
+    return false;
+  }
+
   if (recv(fd, buffer + sizeof(uint64_t), messageSize, MSG_WAITALL) != messageSize) {
     return false;
   }
 
-  codedInput.PushLimit(messageSize);
+  codedInput.PushLimit(static_cast<int>(messageSize));
   if (!envelope.ParseFromCodedStream(&codedInput)) {
     return false;
   }

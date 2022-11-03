@@ -64,7 +64,10 @@ Connection::Connection(std::shared_ptr<IDevice> device)
 
           switch (msg.type()) {
           case tkm::msg::monitor::Message_Type_SetSession: {
-            IDevice::Request rq{.action = IDevice::Action::SetSession};
+            IDevice::Request rq{.client = nullptr,
+                                .action = IDevice::Action::SetSession,
+                                .args = std::map<Defaults::Arg, std::string>(),
+                                .bulkData = std::make_any<int>(0)};
             tkm::msg::monitor::SessionInfo sessionInfo;
 
             msg.payload().UnpackTo(&sessionInfo);
@@ -79,20 +82,26 @@ Connection::Connection(std::shared_ptr<IDevice> device)
             break;
           }
           case tkm::msg::monitor::Message_Type_Data: {
-            IDevice::Request rq{.action = IDevice::Action::ProcessData};
+            IDevice::Request rq{.client = nullptr,
+                                .action = IDevice::Action::ProcessData,
+                                .args = std::map<Defaults::Arg, std::string>(),
+                                .bulkData = std::make_any<int>(0)};
             tkm::msg::monitor::Data data;
 
             msg.payload().UnpackTo(&data);
 
             // Set the receive timestamp
-            data.set_receive_time_sec(time(NULL));
+            data.set_receive_time_sec(static_cast<uint64_t>(time(NULL)));
             rq.bulkData = std::make_any<tkm::msg::monitor::Data>(data);
 
             m_device->pushRequest(rq);
             break;
           }
           case tkm::msg::monitor::Message_Type_Status: {
-            IDevice::Request rq{.action = IDevice::Action::Status};
+            IDevice::Request rq{.client = nullptr,
+                                .action = IDevice::Action::Status,
+                                .args = std::map<Defaults::Arg, std::string>(),
+                                .bulkData = std::make_any<int>(0)};
             tkm::msg::monitor::Status s;
 
             msg.payload().UnpackTo(&s);
@@ -149,7 +158,7 @@ auto Connection::connect() -> int
 
   m_addr.sin_family = AF_INET;
   memcpy(&m_addr.sin_addr.s_addr, server->h_addr, (size_t) server->h_length);
-  m_addr.sin_port = htons(m_device->getDeviceData().port());
+  m_addr.sin_port = htons(static_cast<uint16_t>(m_device->getDeviceData().port()));
 
   if (::connect(m_sockFd, (struct sockaddr *) &m_addr, sizeof(struct sockaddr_in)) == -1) {
     if (errno == EINPROGRESS) {

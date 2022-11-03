@@ -17,6 +17,8 @@ option(WITH_TIDY "Build with clang-tidy" N)
 option(WITH_SQLITE3 "Build with SQLite3 database" Y)
 option(WITH_POSTGRESQL "Build with PostgreSQL database" Y)
 option(WITH_SYSTEMD "Build with systemd watchdog support" Y)
+option(WITH_ASAN "Build with address sanitize" N)
+option(WITH_GCC_HARDEN_FLAGS "Build with GCC harden compile flags" N)
 
 # Build time configuration setup
 if(EXISTS .git)
@@ -31,6 +33,48 @@ endif()
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
         "Choose the type of build: Debug, Release, RelWithDebInfo, MinSizeRel." FORCE)
+endif()
+
+if(WITH_TIDY)
+    set(CMAKE_CXX_CLANG_TIDY "clang-tidy")
+endif()
+
+if(WITH_ASAN)
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
+endif()
+
+if(WITH_GCC_HARDEN_FLAGS)
+    # Build flags
+    add_compile_options (
+        -Wall
+        -Wextra
+        -Wno-unused-function
+        -Wformat
+        -Wno-variadic-macros
+        -Wno-strict-aliasing
+        -fstack-protector-strong
+        -fwrapv
+        -Wformat-signedness
+        -Wmissing-include-dirs
+        -Wimplicit-fallthrough=5
+        -Wunused-parameter
+        -Wuninitialized
+        -Walloca
+        -Wduplicated-branches
+        -Wduplicated-cond
+        -Wfloat-equal
+        -Wshadow
+        -Wcast-qual
+        -Wconversion
+        -Wsign-conversion
+        -Wlogical-op
+        -Werror
+        -Wformat-security
+        -Walloc-zero
+        -Wcast-align
+        -Wredundant-decls
+    )
 endif()
 
 # cmake modules
@@ -71,11 +115,9 @@ configure_file(
     ${CMAKE_SOURCE_DIR}/config/tkmcollector.in
     ${CMAKE_BINARY_DIR}/config/tkmcollector)
 
-# Dependencies
-find_package(PkgConfig REQUIRED)
-find_package(Threads REQUIRED)
-find_package(Protobuf REQUIRED)
-find_package(tkm REQUIRED)
+# Header files
+include_directories(${CMAKE_SOURCE_DIR}/shared)
+include_directories(${CMAKE_BINARY_DIR}/shared)
 
 set(TKMCOLLECTOR_SRC
     shared/Options.cpp
@@ -101,9 +143,11 @@ set(TKMCONTROL_SRC
     control/Main.cpp
 )
 
-if(WITH_TIDY)
-    set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=*")
-endif()
+# Dependencies
+find_package(PkgConfig REQUIRED)
+find_package(Threads REQUIRED)
+find_package(Protobuf REQUIRED)
+find_package(tkm REQUIRED)
 
 if(WITH_SYSLOG)
     add_compile_options("-DWITH_SYSLOG")
@@ -131,13 +175,6 @@ endif()
 if (${CMAKE_SYSTEM_NAME} STREQUAL FreeBSD)
     link_directories(/usr/local/lib)
 endif()
-
-# Header files
-include_directories(${CMAKE_SOURCE_DIR}/shared)
-include_directories(${CMAKE_BINARY_DIR}/shared)
-
-# Build control project
-#add_subdirectory(control)
 
 # binary
 add_executable(tkmcollector
@@ -169,46 +206,14 @@ target_link_libraries(tkmcontrol
 
 include_directories(
     ${Protobuf_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/source
-    ${CMAKE_BINARY_DIR}/source
+    ${CMAKE_SOURCE_DIR}/shared
+    ${CMAKE_BINARY_DIR}/shared
 )
 
 if(WITH_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
-
-# Build flags
-add_compile_options (
-    -Wall
-    -Wextra
-    -Wno-unused-function
-    -Wformat
-    -Wno-variadic-macros
-    -Wno-strict-aliasing
-    -D_FORTIFY_SOURCE=2
-    -fstack-protector-strong
-    -fwrapv
-    -Wformat-signedness
-    -Wmissing-include-dirs
-    -Wimplicit-fallthrough=5
-    -Wunused-parameter
-    -Wuninitialized
-    -Walloca
-    -Wduplicated-branches
-    -Wduplicated-cond
-    -Wfloat-equal
-    -Wshadow
-    -Wcast-qual
-    -Wconversion
-    -Wsign-conversion
-    -Wlogical-op
-    -Werror
-    -Wformat-security
-    -Walloc-zero
-    -Wcast-align
-    -Wredundant-decls
-    )
 
 # install
 install(TARGETS tkmcollector RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -243,12 +248,13 @@ if(WITH_SYSTEMD)
 endif()
 
 # Status reporting
-message (STATUS "SYSTEM_TYPE: "          ${CMAKE_SYSTEM_NAME})
-message (STATUS "CMAKE_BUILD_TYPE: "     ${CMAKE_BUILD_TYPE})
-message (STATUS "WITH_SYSTEMD: "         ${WITH_SYSTEMD})
-message (STATUS "WITH_TESTS: "           ${WITH_TESTS})
-message (STATUS "WITH_SYSLOG: "          ${WITH_SYSLOG})
-message (STATUS "WITH_TIDY: "            ${WITH_TIDY})
-message (STATUS "WITH_SQLITE3: "         ${WITH_SQLITE3})
-message (STATUS "WITH_POSTGRESQL: "      ${WITH_POSTGRESQL})
-
+message (STATUS "SYSTEM_TYPE: "             ${CMAKE_SYSTEM_NAME})
+message (STATUS "CMAKE_BUILD_TYPE: "        ${CMAKE_BUILD_TYPE})
+message (STATUS "WITH_SYSTEMD: "            ${WITH_SYSTEMD})
+message (STATUS "WITH_TESTS: "              ${WITH_TESTS})
+message (STATUS "WITH_SYSLOG: "             ${WITH_SYSLOG})
+message (STATUS "WITH_TIDY: "               ${WITH_TIDY})
+message (STATUS "WITH_SQLITE3: "            ${WITH_SQLITE3})
+message (STATUS "WITH_POSTGRESQL: "         ${WITH_POSTGRESQL})
+message (STATUS "WITH_ASAN: "               ${WITH_ASAN})
+message (STATUS "WITH_GCC_HARDEN_FLAGS: "   ${WITH_GCC_HARDEN_FLAGS})

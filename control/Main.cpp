@@ -24,6 +24,7 @@
 
 static void terminate(int signum)
 {
+  static_cast<void>(signum); // UNUSED
   exit(EXIT_SUCCESS);
 }
 
@@ -297,7 +298,8 @@ auto main(int argc, char **argv) -> int
     tkm::control::Application app{"TKM-Control", "TKM Control", configPath.string()};
 
     if (init_database) {
-      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::InitDatabase};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::InitDatabase,
+                                        .args = std::map<tkm::Defaults::Arg, std::string>()};
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
                         tkm::tkmDefaults.valFor(tkm::Defaults::Val::True));
@@ -305,11 +307,13 @@ auto main(int argc, char **argv) -> int
       app.getCommand()->addRequest(rq);
     }
     if (list_devices) {
-      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::GetDevices};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::GetDevices,
+                                        .args = std::map<tkm::Defaults::Arg, std::string>()};
       app.getCommand()->addRequest(rq);
     }
     if (add_device) {
-      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::AddDevice};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::AddDevice,
+                                        .args = std::map<tkm::Defaults::Arg, std::string>()};
       rq.args.emplace(tkm::Defaults::Arg::DeviceName, device_name);
       rq.args.emplace(tkm::Defaults::Arg::DeviceAddress, device_address);
       rq.args.emplace(tkm::Defaults::Arg::DevicePort, device_port);
@@ -321,7 +325,8 @@ auto main(int argc, char **argv) -> int
     }
 
     if (list_sessions) {
-      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::GetSessions};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::GetSessions,
+                                        .args = std::map<tkm::Defaults::Arg, std::string>()};
       if (unique_id != nullptr) {
         rq.args.emplace(tkm::Defaults::Arg::DeviceHash, unique_id);
       }
@@ -333,7 +338,8 @@ auto main(int argc, char **argv) -> int
     }
 
     if (remove_device) {
-      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::RemoveDevice};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::RemoveDevice,
+                                        .args = std::map<tkm::Defaults::Arg, std::string>()};
       rq.args.emplace(tkm::Defaults::Arg::DeviceHash, unique_id);
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
@@ -343,7 +349,8 @@ auto main(int argc, char **argv) -> int
     }
 
     if (remove_session) {
-      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::RemoveSession};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::RemoveSession,
+                                        .args = std::map<tkm::Defaults::Arg, std::string>()};
       rq.args.emplace(tkm::Defaults::Arg::SessionHash, unique_id);
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
@@ -353,7 +360,8 @@ auto main(int argc, char **argv) -> int
     }
 
     if (connect_device) {
-      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::ConnectDevice};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::ConnectDevice,
+                                        .args = std::map<tkm::Defaults::Arg, std::string>()};
       rq.args.emplace(tkm::Defaults::Arg::DeviceHash, unique_id);
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
@@ -363,7 +371,8 @@ auto main(int argc, char **argv) -> int
     }
 
     if (disconnect_device) {
-      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::DisconnectDevice};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::DisconnectDevice,
+                                        .args = std::map<tkm::Defaults::Arg, std::string>()};
       rq.args.emplace(tkm::Defaults::Arg::DeviceHash, unique_id);
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
@@ -373,7 +382,8 @@ auto main(int argc, char **argv) -> int
     }
 
     if (start_collecting) {
-      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::StartCollecting};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::StartCollecting,
+                                        .args = std::map<tkm::Defaults::Arg, std::string>()};
       rq.args.emplace(tkm::Defaults::Arg::DeviceHash, unique_id);
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
@@ -383,7 +393,8 @@ auto main(int argc, char **argv) -> int
     }
 
     if (stop_collecting) {
-      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::StopCollecting};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::StopCollecting,
+                                        .args = std::map<tkm::Defaults::Arg, std::string>()};
       rq.args.emplace(tkm::Defaults::Arg::DeviceHash, unique_id);
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
@@ -393,7 +404,8 @@ auto main(int argc, char **argv) -> int
     }
 
     if (quit) {
-      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::QuitCollector};
+      tkm::control::Command::Request rq{.action = tkm::control::Command::Action::QuitCollector,
+                                        .args = std::map<tkm::Defaults::Arg, std::string>()};
       if (force) {
         rq.args.emplace(tkm::Defaults::Arg::Forced,
                         tkm::tkmDefaults.valFor(tkm::Defaults::Val::True));
@@ -404,7 +416,8 @@ auto main(int argc, char **argv) -> int
     // Request initial connection
     tkm::control::Dispatcher::Request connectRequest{
         .action = tkm::control::Dispatcher::Action::Connect,
-    };
+        .bulkData = std::make_any<int>(0),
+        .args = std::map<tkm::Defaults::Arg, std::string>()};
     app.getDispatcher()->pushRequest(connectRequest);
 
     app.run();

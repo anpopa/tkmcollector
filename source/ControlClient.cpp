@@ -138,7 +138,10 @@ static bool doRequestSession(const std::shared_ptr<ControlClient> client,
 
   auto status = client->writeEnvelope(requestEnvelope);
 
-  Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request nrq{.client = client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
   if (!status) {
     nrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
@@ -154,7 +157,10 @@ static bool doRequestSession(const std::shared_ptr<ControlClient> client,
 static bool doInitDatabase(const std::shared_ptr<ControlClient> client,
                            tkm::msg::control::Request &rq)
 {
-  Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::InitDatabase};
+  Dispatcher::Request nrq{.client = client,
+                          .action = Dispatcher::Action::InitDatabase,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
 
   if (rq.forced() == tkm::msg::control::Request_Forced_Enforced) {
@@ -167,7 +173,10 @@ static bool doInitDatabase(const std::shared_ptr<ControlClient> client,
 static bool doQuitCollector(const std::shared_ptr<ControlClient> client,
                             tkm::msg::control::Request &rq)
 {
-  Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::QuitCollector};
+  Dispatcher::Request nrq{.client = client,
+                          .action = Dispatcher::Action::QuitCollector,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
 
   if (rq.forced() == tkm::msg::control::Request_Forced_Enforced) {
@@ -180,7 +189,10 @@ static bool doQuitCollector(const std::shared_ptr<ControlClient> client,
 static bool doGetDevices(const std::shared_ptr<ControlClient> client,
                          tkm::msg::control::Request &rq)
 {
-  Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::GetDevices};
+  Dispatcher::Request nrq{.client = client,
+                          .action = Dispatcher::Action::GetDevices,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
   return CollectorApp()->getDispatcher()->pushRequest(nrq);
 }
@@ -188,7 +200,10 @@ static bool doGetDevices(const std::shared_ptr<ControlClient> client,
 static bool doRemoveSession(const std::shared_ptr<ControlClient> client,
                             tkm::msg::control::Request &rq)
 {
-  Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::RemoveSession};
+  Dispatcher::Request nrq{.client = client,
+                          .action = Dispatcher::Action::RemoveSession,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
 
   if (rq.forced() == tkm::msg::control::Request_Forced_Enforced) {
@@ -204,7 +219,10 @@ static bool doRemoveSession(const std::shared_ptr<ControlClient> client,
 
 static bool doAddDevice(const std::shared_ptr<ControlClient> client, tkm::msg::control::Request &rq)
 {
-  Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::AddDevice};
+  Dispatcher::Request nrq{.client = client,
+                          .action = Dispatcher::Action::AddDevice,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
 
   if (rq.forced() == tkm::msg::control::Request_Forced_Enforced) {
@@ -221,7 +239,10 @@ static bool doAddDevice(const std::shared_ptr<ControlClient> client, tkm::msg::c
 static bool doRemoveDevice(const std::shared_ptr<ControlClient> client,
                            tkm::msg::control::Request &rq)
 {
-  Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::RemoveDevice};
+  Dispatcher::Request nrq{.client = client,
+                          .action = Dispatcher::Action::RemoveDevice,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
 
   if (rq.forced() == tkm::msg::control::Request_Forced_Enforced) {
@@ -238,7 +259,10 @@ static bool doRemoveDevice(const std::shared_ptr<ControlClient> client,
 static bool doConnectDevice(const std::shared_ptr<ControlClient> client,
                             tkm::msg::control::Request &rq)
 {
-  Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::ConnectDevice};
+  Dispatcher::Request nrq{.client = client,
+                          .action = Dispatcher::Action::ConnectDevice,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
 
   if (rq.forced() == tkm::msg::control::Request_Forced_Enforced) {
@@ -255,7 +279,10 @@ static bool doConnectDevice(const std::shared_ptr<ControlClient> client,
 static bool doDisconnectDevice(const std::shared_ptr<ControlClient> client,
                                tkm::msg::control::Request &rq)
 {
-  Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::DisconnectDevice};
+  Dispatcher::Request nrq{.client = client,
+                          .action = Dispatcher::Action::DisconnectDevice,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
 
   if (rq.forced() == tkm::msg::control::Request_Forced_Enforced) {
@@ -272,7 +299,10 @@ static bool doDisconnectDevice(const std::shared_ptr<ControlClient> client,
 static bool doStartCollecting(const std::shared_ptr<ControlClient> client,
                               tkm::msg::control::Request &rq)
 {
-  Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::StartCollecting};
+  Dispatcher::Request nrq{.client = client,
+                          .action = Dispatcher::Action::StartCollecting,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
 
   if (rq.forced() == tkm::msg::control::Request_Forced_Enforced) {
@@ -289,7 +319,10 @@ static bool doStartCollecting(const std::shared_ptr<ControlClient> client,
 static bool doStopCollecting(const std::shared_ptr<ControlClient> client,
                              tkm::msg::control::Request &rq)
 {
-  Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::StopCollecting};
+  Dispatcher::Request nrq{.client = client,
+                          .action = Dispatcher::Action::StopCollecting,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
 
   if (rq.forced() == tkm::msg::control::Request_Forced_Enforced) {
@@ -306,7 +339,10 @@ static bool doStopCollecting(const std::shared_ptr<ControlClient> client,
 static bool doGetSessions(const std::shared_ptr<ControlClient> client,
                           tkm::msg::control::Request &rq)
 {
-  Dispatcher::Request nrq{.client = client, .action = Dispatcher::Action::GetSessions};
+  Dispatcher::Request nrq{.client = client,
+                          .action = Dispatcher::Action::GetSessions,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   nrq.args.emplace(Defaults::Arg::RequestId, rq.id());
 
   if (rq.forced() == tkm::msg::control::Request_Forced_Enforced) {

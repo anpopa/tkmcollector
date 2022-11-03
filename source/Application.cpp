@@ -67,7 +67,10 @@ Application::Application(const std::string &name,
     } catch (std::exception &e) {
       logError() << "Fail to open database. Reason: " << e.what();
       std::cout << "Fail to open database. Reason: " << e.what() << std::endl;
-      Dispatcher::Request rq{.action = Dispatcher::Action::Quit};
+      Dispatcher::Request rq{.client = nullptr,
+                             .action = Dispatcher::Action::Quit,
+                             .args = std::map<Defaults::Arg, std::string>(),
+                             .bulkData = std::make_any<int>(0)};
       m_dispatcher->pushRequest(rq);
     }
 #else
@@ -81,7 +84,10 @@ Application::Application(const std::string &name,
     } catch (std::exception &e) {
       logError() << "Fail to open database. Reason: " << e.what();
       std::cout << "Fail to open database. Reason: " << e.what() << std::endl;
-      Dispatcher::Request rq{.action = Dispatcher::Action::Quit};
+      Dispatcher::Request rq{.client = nullptr,
+                             .action = Dispatcher::Action::Quit,
+                             .args = std::map<Defaults::Arg, std::string>(),
+                             .bulkData = std::make_any<int>(0)};
       m_dispatcher->pushRequest(rq);
     }
 #else
@@ -99,7 +105,10 @@ Application::Application(const std::string &name,
   } catch (std::exception &e) {
     logError() << "Fail to start server. Exception: " << e.what();
     std::cout << "Failed to start server. Reason: " << e.what() << std::endl;
-    Dispatcher::Request rq{.action = Dispatcher::Action::Quit};
+    Dispatcher::Request rq{.client = nullptr,
+                           .action = Dispatcher::Action::Quit,
+                           .args = std::map<Defaults::Arg, std::string>(),
+                           .bulkData = std::make_any<int>(0)};
     m_dispatcher->pushRequest(rq);
   }
 

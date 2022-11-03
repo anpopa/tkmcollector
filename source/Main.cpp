@@ -22,6 +22,7 @@
 
 static void terminate(int signum)
 {
+  static_cast<void>(signum); // UNUSED
   exit(EXIT_SUCCESS);
 }
 
@@ -191,8 +192,11 @@ auto main(int argc, char **argv) -> int
             tkm::Defaults::Arg::Forced,
             std::string(tkm::tkmDefaults.valFor(tkm::Defaults::Val::True)))};
 
-    tkm::collector::IDatabase::Request dbrq{
-        .action = tkm::collector::IDatabase::Action::InitDatabase, .args = forcedArgument};
+    tkm::collector::IDatabase::Request dbrq{.client = nullptr,
+                                            .action =
+                                                tkm::collector::IDatabase::Action::InitDatabase,
+                                            .args = forcedArgument,
+                                            .bulkData = std::make_any<int>(0)};
     app.getDatabase()->pushRequest(dbrq);
   }
 

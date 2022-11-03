@@ -22,20 +22,19 @@
 namespace tkm::collector
 {
 
-static bool doInitDatabase(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doQuitCollector(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doGetDevices(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doGetSessions(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doRemoveSession(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doAddDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doRemoveDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doConnectDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doDisconnectDevice(const std::shared_ptr<Dispatcher> mgr,
-                               const Dispatcher::Request &rq);
-static bool doStartCollecting(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doStopCollecting(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doQuit(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
-static bool doSendStatus(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq);
+static bool doInitDatabase(const Dispatcher::Request &rq);
+static bool doQuitCollector(const std::shared_ptr<Dispatcher> mgr);
+static bool doGetDevices(const Dispatcher::Request &rq);
+static bool doGetSessions(const Dispatcher::Request &rq);
+static bool doRemoveSession(const Dispatcher::Request &rq);
+static bool doAddDevice(const Dispatcher::Request &rq);
+static bool doRemoveDevice(const Dispatcher::Request &rq);
+static bool doConnectDevice(const Dispatcher::Request &rq);
+static bool doDisconnectDevice(const Dispatcher::Request &rq);
+static bool doStartCollecting(const Dispatcher::Request &rq);
+static bool doStopCollecting(const Dispatcher::Request &rq);
+static bool doQuit();
+static bool doSendStatus(const Dispatcher::Request &rq);
 
 void Dispatcher::enableEvents()
 {
@@ -51,31 +50,31 @@ bool Dispatcher::requestHandler(const Request &rq)
 {
   switch (rq.action) {
   case Dispatcher::Action::InitDatabase:
-    return doInitDatabase(getShared(), rq);
+    return doInitDatabase(rq);
   case Dispatcher::Action::QuitCollector:
-    return doQuitCollector(getShared(), rq);
+    return doQuitCollector(getShared());
   case Dispatcher::Action::GetDevices:
-    return doGetDevices(getShared(), rq);
+    return doGetDevices(rq);
   case Dispatcher::Action::GetSessions:
-    return doGetSessions(getShared(), rq);
+    return doGetSessions(rq);
   case Dispatcher::Action::RemoveSession:
-    return doRemoveSession(getShared(), rq);
+    return doRemoveSession(rq);
   case Dispatcher::Action::AddDevice:
-    return doAddDevice(getShared(), rq);
+    return doAddDevice(rq);
   case Dispatcher::Action::RemoveDevice:
-    return doRemoveDevice(getShared(), rq);
+    return doRemoveDevice(rq);
   case Dispatcher::Action::ConnectDevice:
-    return doConnectDevice(getShared(), rq);
+    return doConnectDevice(rq);
   case Dispatcher::Action::DisconnectDevice:
-    return doDisconnectDevice(getShared(), rq);
+    return doDisconnectDevice(rq);
   case Dispatcher::Action::StartCollecting:
-    return doStartCollecting(getShared(), rq);
+    return doStartCollecting(rq);
   case Dispatcher::Action::StopCollecting:
-    return doStopCollecting(getShared(), rq);
+    return doStopCollecting(rq);
   case Dispatcher::Action::SendStatus:
-    return doSendStatus(getShared(), rq);
+    return doSendStatus(rq);
   case Dispatcher::Action::Quit:
-    return doQuit(getShared(), rq);
+    return doQuit();
   default:
     break;
   }
@@ -84,28 +83,35 @@ bool Dispatcher::requestHandler(const Request &rq)
   return false;
 }
 
-static bool doInitDatabase(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doInitDatabase(const Dispatcher::Request &rq)
 {
-  IDatabase::Request dbrq{
-      .client = rq.client, .action = IDatabase::Action::InitDatabase, .args = rq.args};
+  IDatabase::Request dbrq{.client = rq.client,
+                          .action = IDatabase::Action::InitDatabase,
+                          .args = rq.args,
+                          .bulkData = std::make_any<int>(0)};
   return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
-static bool doQuitCollector(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doQuitCollector(const std::shared_ptr<Dispatcher> mgr)
 {
   // TODO: Do some cleanup like closing all client connections
-  Dispatcher::Request quitRq{.action = Dispatcher::Action::Quit};
+  Dispatcher::Request quitRq{.client = nullptr,
+                             .action = Dispatcher::Action::Quit,
+                             .args = std::map<Defaults::Arg, std::string>(),
+                             .bulkData = std::make_any<int>(0)};
   return mgr->pushRequest(quitRq);
 }
 
-static bool doGetDevices(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doGetDevices(const Dispatcher::Request &rq)
 {
-  IDatabase::Request dbrq{
-      .client = rq.client, .action = IDatabase::Action::GetDevices, .args = rq.args};
+  IDatabase::Request dbrq{.client = rq.client,
+                          .action = IDatabase::Action::GetDevices,
+                          .args = rq.args,
+                          .bulkData = std::make_any<int>(0)};
   return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
-static bool doRemoveSession(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doRemoveSession(const Dispatcher::Request &rq)
 {
   IDatabase::Request dbrq{.client = rq.client,
                           .action = IDatabase::Action::RemSession,
@@ -114,7 +120,7 @@ static bool doRemoveSession(const std::shared_ptr<Dispatcher> mgr, const Dispatc
   return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
-static bool doAddDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doAddDevice(const Dispatcher::Request &rq)
 {
   IDatabase::Request dbrq{.client = rq.client,
                           .action = IDatabase::Action::AddDevice,
@@ -123,7 +129,7 @@ static bool doAddDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher:
   return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
-static bool doRemoveDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doRemoveDevice(const Dispatcher::Request &rq)
 {
   IDatabase::Request dbrq{.client = rq.client,
                           .action = IDatabase::Action::RemoveDevice,
@@ -132,14 +138,17 @@ static bool doRemoveDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatch
   return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
-static bool doConnectDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doConnectDevice(const Dispatcher::Request &rq)
 {
   const auto &deviceData = std::any_cast<tkm::msg::control::DeviceData>(rq.bulkData);
   std::shared_ptr<MonitorDevice> device =
       CollectorApp()->getDeviceManager()->getDevice(deviceData.hash());
 
   if (device == nullptr) {
-    Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+    Dispatcher::Request mrq{.client = rq.client,
+                            .action = Dispatcher::Action::SendStatus,
+                            .args = std::map<Defaults::Arg, std::string>(),
+                            .bulkData = std::make_any<int>(0)};
 
     logDebug() << "No device entry in manager for " << deviceData.hash();
     mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
@@ -156,14 +165,17 @@ static bool doConnectDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatc
   return device->pushRequest(drq);
 }
 
-static bool doDisconnectDevice(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doDisconnectDevice(const Dispatcher::Request &rq)
 {
   const auto &deviceData = std::any_cast<tkm::msg::control::DeviceData>(rq.bulkData);
   std::shared_ptr<MonitorDevice> device =
       CollectorApp()->getDeviceManager()->getDevice(deviceData.hash());
 
   if (device == nullptr) {
-    Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+    Dispatcher::Request mrq{.client = rq.client,
+                            .action = Dispatcher::Action::SendStatus,
+                            .args = std::map<Defaults::Arg, std::string>(),
+                            .bulkData = std::make_any<int>(0)};
 
     logDebug() << "No device entry in manager for " << deviceData.hash();
     mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
@@ -180,14 +192,17 @@ static bool doDisconnectDevice(const std::shared_ptr<Dispatcher> mgr, const Disp
   return device->pushRequest(drq);
 }
 
-static bool doStartCollecting(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doStartCollecting(const Dispatcher::Request &rq)
 {
   const auto &deviceData = std::any_cast<tkm::msg::control::DeviceData>(rq.bulkData);
   std::shared_ptr<MonitorDevice> device =
       CollectorApp()->getDeviceManager()->getDevice(deviceData.hash());
 
   if (device == nullptr) {
-    Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+    Dispatcher::Request mrq{.client = rq.client,
+                            .action = Dispatcher::Action::SendStatus,
+                            .args = std::map<Defaults::Arg, std::string>(),
+                            .bulkData = std::make_any<int>(0)};
 
     logDebug() << "No device entry in manager for " << deviceData.hash();
     mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
@@ -204,14 +219,17 @@ static bool doStartCollecting(const std::shared_ptr<Dispatcher> mgr, const Dispa
   return device->pushRequest(drq);
 }
 
-static bool doStopCollecting(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doStopCollecting(const Dispatcher::Request &rq)
 {
   const auto &deviceData = std::any_cast<tkm::msg::control::DeviceData>(rq.bulkData);
   std::shared_ptr<MonitorDevice> device =
       CollectorApp()->getDeviceManager()->getDevice(deviceData.hash());
 
   if (device == nullptr) {
-    Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+    Dispatcher::Request mrq{.client = rq.client,
+                            .action = Dispatcher::Action::SendStatus,
+                            .args = std::map<Defaults::Arg, std::string>(),
+                            .bulkData = std::make_any<int>(0)};
 
     logDebug() << "No device entry in manager for " << deviceData.hash();
     mrq.args.emplace(Defaults::Arg::Status, tkmDefaults.valFor(Defaults::Val::StatusError));
@@ -228,7 +246,7 @@ static bool doStopCollecting(const std::shared_ptr<Dispatcher> mgr, const Dispat
   return device->pushRequest(drq);
 }
 
-static bool doGetSessions(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doGetSessions(const Dispatcher::Request &rq)
 {
   IDatabase::Request dbrq{.client = rq.client,
                           .action = IDatabase::Action::GetSessions,
@@ -237,12 +255,12 @@ static bool doGetSessions(const std::shared_ptr<Dispatcher> mgr, const Dispatche
   return CollectorApp()->getDatabase()->pushRequest(dbrq);
 }
 
-static bool doQuit(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doQuit()
 {
   exit(EXIT_SUCCESS);
 }
 
-static bool doSendStatus(const std::shared_ptr<Dispatcher> mgr, const Dispatcher::Request &rq)
+static bool doSendStatus(const Dispatcher::Request &rq)
 {
   if (rq.client == nullptr) {
     logDebug() << "No client set for send status";

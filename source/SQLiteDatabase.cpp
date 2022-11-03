@@ -27,7 +27,7 @@ namespace tkm::collector
 static auto sqlite_callback(void *data, int argc, char **argv, char **colname) -> int;
 static bool doCheckDatabase(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq);
 static bool doInitDatabase(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq);
-static bool doLoadDevices(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq);
+static bool doLoadDevices(const std::shared_ptr<SQLiteDatabase> db);
 static bool doGetDevices(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq);
 static bool doGetSessions(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq);
 static bool doAddDevice(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq);
@@ -42,7 +42,7 @@ static bool doGetEntries(const std::shared_ptr<SQLiteDatabase> db, const IDataba
 static bool doAddSession(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq);
 static bool doRemSession(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq);
 static bool doEndSession(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq);
-static bool doCleanSessions(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq);
+static bool doCleanSessions(const std::shared_ptr<SQLiteDatabase> db);
 static bool doAddData(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq);
 
 SQLiteDatabase::SQLiteDatabase(std::shared_ptr<Options> options)
@@ -65,7 +65,10 @@ void SQLiteDatabase::enableEvents()
 {
   CollectorApp()->addEventSource(m_queue);
 
-  IDatabase::Request dbrq{.action = IDatabase::Action::CheckDatabase};
+  IDatabase::Request dbrq{.client = nullptr,
+                          .action = IDatabase::Action::CheckDatabase,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   pushRequest(dbrq);
 }
 
@@ -132,7 +135,7 @@ static auto sqlite_callback(void *data, int argc, char **argv, char **colname) -
     for (int i = 0; i < argc; i++) {
       if (strncmp(colname[i], tkmQuery.m_deviceColumn.at(Query::DeviceColumn::Id).c_str(), 60) ==
           0) {
-        *pld = std::stol(argv[i]);
+        *pld = static_cast<int>(std::stol(argv[i]));
       }
     }
     break;
@@ -142,7 +145,7 @@ static auto sqlite_callback(void *data, int argc, char **argv, char **colname) -
     for (int i = 0; i < argc; i++) {
       if (strncmp(colname[i], tkmQuery.m_sessionColumn.at(Query::SessionColumn::Id).c_str(), 60) ==
           0) {
-        *pld = std::stol(argv[i]);
+        *pld = static_cast<int>(std::stol(argv[i]));
       }
     }
     break;
@@ -166,11 +169,11 @@ static auto sqlite_callback(void *data, int argc, char **argv, char **colname) -
       } else if (strncmp(colname[i],
                          tkmQuery.m_sessionColumn.at(Query::SessionColumn::StartTimestamp).c_str(),
                          60) == 0) {
-        session.set_started(std::stol(argv[i]));
+        session.set_started(std::stoul(argv[i]));
       } else if (strncmp(colname[i],
                          tkmQuery.m_sessionColumn.at(Query::SessionColumn::EndTimestamp).c_str(),
                          60) == 0) {
-        session.set_ended(std::stol(argv[i]));
+        session.set_ended(std::stoul(argv[i]));
       }
     }
     pld->emplace_back(session);
@@ -196,7 +199,7 @@ bool SQLiteDatabase::requestHandler(const Request &rq)
   case IDatabase::Action::Disconnect:
     return doDisconnect(getShared(), rq);
   case IDatabase::Action::LoadDevices:
-    return doLoadDevices(getShared(), rq);
+    return doLoadDevices(getShared());
   case IDatabase::Action::GetDevices:
     return doGetDevices(getShared(), rq);
   case IDatabase::Action::AddDevice:
@@ -212,7 +215,7 @@ bool SQLiteDatabase::requestHandler(const Request &rq)
   case IDatabase::Action::EndSession:
     return doEndSession(getShared(), rq);
   case IDatabase::Action::CleanSessions:
-    return doCleanSessions(getShared(), rq);
+    return doCleanSessions(getShared());
   case IDatabase::Action::AddData:
     return doAddData(getShared(), rq);
   default:
@@ -226,24 +229,29 @@ static bool doCheckDatabase(const std::shared_ptr<SQLiteDatabase> db,
                             const SQLiteDatabase::Request &rq)
 {
   // TODO: Handle database check
+  static_cast<void>(db); // UNUSED
+  static_cast<void>(rq); // UNUSED
   return true;
 }
 
 static bool doInitDatabase(const std::shared_ptr<SQLiteDatabase> db,
                            const SQLiteDatabase::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
 
   logDebug() << "Handling DB init request";
 
   if (rq.args.count(Defaults::Arg::Forced)) {
     if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
-      SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::DropTables};
+      SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::DropTables, .raw = nullptr};
       db->runQuery(tkmQuery.dropTables(Query::Type::SQLite3), query);
     }
   }
 
-  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::Create};
+  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::Create, .raw = nullptr};
   auto status = db->runQuery(tkmQuery.createTables(Query::Type::SQLite3), query);
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
@@ -258,13 +266,13 @@ static bool doInitDatabase(const std::shared_ptr<SQLiteDatabase> db,
   return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
-static bool doLoadDevices(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq)
+static bool doLoadDevices(const std::shared_ptr<SQLiteDatabase> db)
 {
   logDebug() << "Handling DB LoadDevices";
 
-  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::LoadDevices};
   auto queryDeviceList = std::vector<tkm::msg::control::DeviceData>();
-  query.raw = &queryDeviceList;
+  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::LoadDevices,
+                              .raw = &queryDeviceList};
 
   auto status = db->runQuery(tkmQuery.getDevices(Query::Type::SQLite3), query);
   if (status) {
@@ -284,19 +292,22 @@ static bool doLoadDevices(const std::shared_ptr<SQLiteDatabase> db, const IDatab
   return true;
 }
 
-static bool doCleanSessions(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq)
+static bool doCleanSessions(const std::shared_ptr<SQLiteDatabase> db)
 {
   logDebug() << "Handling DB CleanSessions";
 
-  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::CleanSessions};
   auto querySessionList = std::vector<tkm::msg::control::SessionData>();
-  query.raw = &querySessionList;
+  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::CleanSessions,
+                              .raw = &querySessionList};
 
   auto status = db->runQuery(tkmQuery.getSessions(Query::Type::SQLite3), query);
   if (status) {
     for (auto &sessionData : querySessionList) {
       if (sessionData.ended() == 0) {
-        IDatabase::Request dbrq{.action = IDatabase::Action::EndSession};
+        IDatabase::Request dbrq{.client = nullptr,
+                                .action = IDatabase::Action::EndSession,
+                                .args = std::map<Defaults::Arg, std::string>(),
+                                .bulkData = std::make_any<int>(0)};
         dbrq.args.emplace(Defaults::Arg::SessionHash, sessionData.hash());
         db->pushRequest(dbrq);
       }
@@ -310,7 +321,10 @@ static bool doCleanSessions(const std::shared_ptr<SQLiteDatabase> db, const IDat
 
 static bool doGetDevices(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
@@ -318,9 +332,8 @@ static bool doGetDevices(const std::shared_ptr<SQLiteDatabase> db, const IDataba
 
   logDebug() << "Handling DB GetDevices request from client: " << rq.client->getName();
 
-  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::GetDevices};
   auto queryDevList = std::vector<tkm::msg::control::DeviceData>();
-  query.raw = &queryDevList;
+  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::GetDevices, .raw = &queryDevList};
 
   auto status = db->runQuery(tkmQuery.getDevices(Query::Type::SQLite3), query);
   if (status) {
@@ -366,7 +379,10 @@ static bool doGetDevices(const std::shared_ptr<SQLiteDatabase> db, const IDataba
 
 static bool doGetSessions(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   bool status = false;
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
@@ -376,9 +392,9 @@ static bool doGetSessions(const std::shared_ptr<SQLiteDatabase> db, const IDatab
   logDebug() << "Handling DB GetSessions request from client: " << rq.client->getName();
   const auto &deviceData = std::any_cast<tkm::msg::control::DeviceData>(rq.bulkData);
 
-  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::GetSessions};
   auto querySessionList = std::vector<tkm::msg::control::SessionData>();
-  query.raw = &querySessionList;
+  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::GetSessions,
+                              .raw = &querySessionList};
 
   if (deviceData.hash().empty()) {
     status = db->runQuery(tkmQuery.getSessions(Query::Type::SQLite3), query);
@@ -428,8 +444,10 @@ static bool doGetSessions(const std::shared_ptr<SQLiteDatabase> db, const IDatab
 
 static bool doAddDevice(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
-  auto devId = -1;
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
@@ -438,14 +456,15 @@ static bool doAddDevice(const std::shared_ptr<SQLiteDatabase> db, const IDatabas
   logDebug() << "Handling DB AddDevice request from client: " << rq.client->getName();
   const auto &deviceData = std::any_cast<tkm::msg::control::DeviceData>(rq.bulkData);
 
-  SQLiteDatabase::Query queryCheckExisting{.type = SQLiteDatabase::QueryType::HasDevice};
-  queryCheckExisting.raw = &devId;
+  auto devId = -1;
+  SQLiteDatabase::Query queryCheckExisting{.type = SQLiteDatabase::QueryType::HasDevice,
+                                           .raw = &devId};
   auto status =
       db->runQuery(tkmQuery.hasDevice(Query::Type::SQLite3, deviceData.hash()), queryCheckExisting);
   if (status) {
     if (rq.args.count(Defaults::Arg::Forced)) {
       if (rq.args.at(Defaults::Arg::Forced) == tkmDefaults.valFor(Defaults::Val::True)) {
-        SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::RemDevice};
+        SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::RemDevice, .raw = nullptr};
         db->runQuery(tkmQuery.remDevice(Query::Type::SQLite3, deviceData.hash()), query);
       }
     } else if (devId != -1) {
@@ -454,7 +473,7 @@ static bool doAddDevice(const std::shared_ptr<SQLiteDatabase> db, const IDatabas
       return CollectorApp()->getDispatcher()->pushRequest(mrq);
     }
 
-    SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::AddDevice};
+    SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::AddDevice, .raw = nullptr};
     status = db->runQuery(tkmQuery.addDevice(Query::Type::SQLite3,
                                              deviceData.hash(),
                                              deviceData.name(),
@@ -479,8 +498,10 @@ static bool doAddDevice(const std::shared_ptr<SQLiteDatabase> db, const IDatabas
 
 static bool doRemoveDevice(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
-  auto devId = -1;
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
@@ -489,8 +510,9 @@ static bool doRemoveDevice(const std::shared_ptr<SQLiteDatabase> db, const IData
   logDebug() << "Handling DB RemoveDevice request from client: " << rq.client->getName();
   const auto &deviceData = std::any_cast<tkm::msg::control::DeviceData>(rq.bulkData);
 
-  SQLiteDatabase::Query queryCheckExisting{.type = SQLiteDatabase::QueryType::HasDevice};
-  queryCheckExisting.raw = &devId;
+  auto devId = -1;
+  SQLiteDatabase::Query queryCheckExisting{.type = SQLiteDatabase::QueryType::HasDevice,
+                                           .raw = &devId};
 
   auto status =
       db->runQuery(tkmQuery.hasDevice(Query::Type::SQLite3, deviceData.hash()), queryCheckExisting);
@@ -500,7 +522,7 @@ static bool doRemoveDevice(const std::shared_ptr<SQLiteDatabase> db, const IData
       mrq.args.emplace(Defaults::Arg::Reason, "No such device");
     }
 
-    SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::RemDevice};
+    SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::RemDevice, .raw = nullptr};
     status = db->runQuery(tkmQuery.remDevice(Query::Type::SQLite3, deviceData.hash()), query);
 
     if (!status) {
@@ -531,15 +553,15 @@ static bool doAddSession(const std::shared_ptr<SQLiteDatabase> db, const IDataba
   // We don't allow sessions with the same hash, so if a device is sending an existing session hash
   // we disconnect the device. Maybe is to harsh but this should not happen often in practice
   auto sesId = -1;
-  SQLiteDatabase::Query queryCheckExisting{.type = SQLiteDatabase::QueryType::HasSession};
-  queryCheckExisting.raw = &sesId;
+  SQLiteDatabase::Query queryCheckExisting{.type = SQLiteDatabase::QueryType::HasSession,
+                                           .raw = &sesId};
 
   auto status = db->runQuery(tkmQuery.hasSession(Query::Type::SQLite3, sessionInfo.hash()),
                              queryCheckExisting);
   if (status) {
     if (sesId != -1) {
       logError() << "Session hash collision detected. Remove old session " << sessionInfo.hash();
-      SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::RemSession};
+      SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::RemSession, .raw = nullptr};
       status = db->runQuery(tkmQuery.remSession(Query::Type::SQLite3, sessionInfo.hash()), query);
       if (!status) {
         logError() << "Failed to remove existing session";
@@ -549,11 +571,12 @@ static bool doAddSession(const std::shared_ptr<SQLiteDatabase> db, const IDataba
     logError() << "Failed to check existing session";
   }
 
-  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::AddSession};
-  status = db->runQuery(
-      tkmQuery.addSession(
-          Query::Type::SQLite3, sessionInfo, rq.args.at(Defaults::Arg::DeviceHash), time(NULL)),
-      query);
+  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::AddSession, .raw = nullptr};
+  status = db->runQuery(tkmQuery.addSession(Query::Type::SQLite3,
+                                            sessionInfo,
+                                            rq.args.at(Defaults::Arg::DeviceHash),
+                                            static_cast<uint64_t>(time(NULL))),
+                        query);
   if (!status) {
     logError() << "Query failed to add session";
   }
@@ -563,8 +586,10 @@ static bool doAddSession(const std::shared_ptr<SQLiteDatabase> db, const IDataba
 
 static bool doRemSession(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
-  auto sesId = -1;
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
@@ -573,8 +598,9 @@ static bool doRemSession(const std::shared_ptr<SQLiteDatabase> db, const IDataba
   logDebug() << "Handling DB RemoveDevice request from client: " << rq.client->getName();
   const auto &sessionData = std::any_cast<tkm::msg::control::SessionData>(rq.bulkData);
 
-  SQLiteDatabase::Query queryCheckExisting{.type = SQLiteDatabase::QueryType::HasSession};
-  queryCheckExisting.raw = &sesId;
+  auto sesId = -1;
+  SQLiteDatabase::Query queryCheckExisting{.type = SQLiteDatabase::QueryType::HasSession,
+                                           .raw = &sesId};
 
   auto status = db->runQuery(tkmQuery.hasSession(Query::Type::SQLite3, sessionData.hash()),
                              queryCheckExisting);
@@ -584,7 +610,7 @@ static bool doRemSession(const std::shared_ptr<SQLiteDatabase> db, const IDataba
       mrq.args.emplace(Defaults::Arg::Reason, "No such session");
     }
 
-    SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::RemSession};
+    SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::RemSession, .raw = nullptr};
     status = db->runQuery(tkmQuery.remSession(Query::Type::SQLite3, sessionData.hash()), query);
 
     if (!status) {
@@ -610,7 +636,7 @@ static bool doEndSession(const std::shared_ptr<SQLiteDatabase> db, const IDataba
     throw std::runtime_error("Invalid arguments");
   }
 
-  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::EndSession};
+  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::EndSession, .raw = nullptr};
   auto status = db->runQuery(
       tkmQuery.endSession(Query::Type::SQLite3, rq.args.at(Defaults::Arg::SessionHash)), query);
   if (!status) {
@@ -622,7 +648,7 @@ static bool doEndSession(const std::shared_ptr<SQLiteDatabase> db, const IDataba
 
 static bool doAddData(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq)
 {
-  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::AddData};
+  SQLiteDatabase::Query query{.type = SQLiteDatabase::QueryType::AddData, .raw = nullptr};
   const auto &data = std::any_cast<tkm::msg::monitor::Data>(rq.bulkData);
   bool status = true;
 
@@ -631,45 +657,44 @@ static bool doAddData(const std::shared_ptr<SQLiteDatabase> db, const IDatabase:
     throw std::runtime_error("Invalid arguments");
   }
 
-  auto writeProcAcct = [&db, &rq, &status, &query](const std::string &sessionHash,
-                                                   const tkm::msg::monitor::ProcAcct &acct,
-                                                   uint64_t systemTime,
-                                                   uint64_t monotonicTime,
-                                                   uint64_t receiveTime) {
+  auto writeProcAcct = [&db, &status, &query](const std::string &sessionHash,
+                                              const tkm::msg::monitor::ProcAcct &acct,
+                                              uint64_t systemTime,
+                                              uint64_t monotonicTime,
+                                              uint64_t receiveTime) {
     status = db->runQuery(
         tkmQuery.addData(
             Query::Type::SQLite3, sessionHash, acct, systemTime, monotonicTime, receiveTime),
         query);
   };
 
-  auto writeProcInfo = [&db, &rq, &status, &query](const std::string &sessionHash,
-                                                   const tkm::msg::monitor::ProcInfo &info,
-                                                   uint64_t systemTime,
-                                                   uint64_t monotonicTime,
-                                                   uint64_t receiveTime) {
+  auto writeProcInfo = [&db, &status, &query](const std::string &sessionHash,
+                                              const tkm::msg::monitor::ProcInfo &info,
+                                              uint64_t systemTime,
+                                              uint64_t monotonicTime,
+                                              uint64_t receiveTime) {
     status = db->runQuery(
         tkmQuery.addData(
             Query::Type::SQLite3, sessionHash, info, systemTime, monotonicTime, receiveTime),
         query);
   };
 
-  auto writeContextInfo = [&db, &rq, &status, &query](const std::string &sessionHash,
-                                                      const tkm::msg::monitor::ContextInfo &info,
-                                                      uint64_t systemTime,
-                                                      uint64_t monotonicTime,
-                                                      uint64_t receiveTime) {
+  auto writeContextInfo = [&db, &status, &query](const std::string &sessionHash,
+                                                 const tkm::msg::monitor::ContextInfo &info,
+                                                 uint64_t systemTime,
+                                                 uint64_t monotonicTime,
+                                                 uint64_t receiveTime) {
     status = db->runQuery(
         tkmQuery.addData(
             Query::Type::SQLite3, sessionHash, info, systemTime, monotonicTime, receiveTime),
         query);
   };
 
-  auto writeSysProcStat = [&db, &rq, &status, &query](
-                              const std::string &sessionHash,
-                              const tkm::msg::monitor::SysProcStat &sysProcStat,
-                              uint64_t systemTime,
-                              uint64_t monotonicTime,
-                              uint64_t receiveTime) {
+  auto writeSysProcStat = [&db, &status, &query](const std::string &sessionHash,
+                                                 const tkm::msg::monitor::SysProcStat &sysProcStat,
+                                                 uint64_t systemTime,
+                                                 uint64_t monotonicTime,
+                                                 uint64_t receiveTime) {
     status = db->runQuery(
         tkmQuery.addData(
             Query::Type::SQLite3, sessionHash, sysProcStat, systemTime, monotonicTime, receiveTime),
@@ -677,11 +702,11 @@ static bool doAddData(const std::shared_ptr<SQLiteDatabase> db, const IDatabase:
   };
 
   auto writeSysProcBuddyInfo =
-      [&db, &rq, &status, &query](const std::string &sessionHash,
-                                  const tkm::msg::monitor::SysProcBuddyInfo &sysProcBuddyInfo,
-                                  uint64_t systemTime,
-                                  uint64_t monotonicTime,
-                                  uint64_t receiveTime) {
+      [&db, &status, &query](const std::string &sessionHash,
+                             const tkm::msg::monitor::SysProcBuddyInfo &sysProcBuddyInfo,
+                             uint64_t systemTime,
+                             uint64_t monotonicTime,
+                             uint64_t receiveTime) {
         status = db->runQuery(tkmQuery.addData(Query::Type::SQLite3,
                                                sessionHash,
                                                sysProcBuddyInfo,
@@ -692,11 +717,11 @@ static bool doAddData(const std::shared_ptr<SQLiteDatabase> db, const IDatabase:
       };
 
   auto writeSysProcWireless =
-      [&db, &rq, &status, &query](const std::string &sessionHash,
-                                  const tkm::msg::monitor::SysProcWireless &sysProcWireless,
-                                  uint64_t systemTime,
-                                  uint64_t monotonicTime,
-                                  uint64_t receiveTime) {
+      [&db, &status, &query](const std::string &sessionHash,
+                             const tkm::msg::monitor::SysProcWireless &sysProcWireless,
+                             uint64_t systemTime,
+                             uint64_t monotonicTime,
+                             uint64_t receiveTime) {
         status = db->runQuery(tkmQuery.addData(Query::Type::SQLite3,
                                                sessionHash,
                                                sysProcWireless,
@@ -706,7 +731,7 @@ static bool doAddData(const std::shared_ptr<SQLiteDatabase> db, const IDatabase:
                               query);
       };
 
-  auto writeSysProcMemInfo = [&db, &rq, &status, &query](
+  auto writeSysProcMemInfo = [&db, &status, &query](
                                  const std::string &sessionHash,
                                  const tkm::msg::monitor::SysProcMemInfo &sysProcMem,
                                  uint64_t systemTime,
@@ -719,11 +744,11 @@ static bool doAddData(const std::shared_ptr<SQLiteDatabase> db, const IDatabase:
   };
 
   auto writeSysProcPressure =
-      [&db, &rq, &status, &query](const std::string &sessionHash,
-                                  const tkm::msg::monitor::SysProcPressure &sysProcPressure,
-                                  uint64_t systemTime,
-                                  uint64_t monotonicTime,
-                                  uint64_t receiveTime) {
+      [&db, &status, &query](const std::string &sessionHash,
+                             const tkm::msg::monitor::SysProcPressure &sysProcPressure,
+                             uint64_t systemTime,
+                             uint64_t monotonicTime,
+                             uint64_t receiveTime) {
         status = db->runQuery(tkmQuery.addData(Query::Type::SQLite3,
                                                sessionHash,
                                                sysProcPressure,
@@ -734,11 +759,11 @@ static bool doAddData(const std::shared_ptr<SQLiteDatabase> db, const IDatabase:
       };
 
   auto writeSysProcDiskStats =
-      [&db, &rq, &status, &query](const std::string &sessionHash,
-                                  const tkm::msg::monitor::SysProcDiskStats &sysProcDiskStats,
-                                  uint64_t systemTime,
-                                  uint64_t monotonicTime,
-                                  uint64_t receiveTime) {
+      [&db, &status, &query](const std::string &sessionHash,
+                             const tkm::msg::monitor::SysProcDiskStats &sysProcDiskStats,
+                             uint64_t systemTime,
+                             uint64_t monotonicTime,
+                             uint64_t receiveTime) {
         status = db->runQuery(tkmQuery.addData(Query::Type::SQLite3,
                                                sessionHash,
                                                sysProcDiskStats,
@@ -748,11 +773,11 @@ static bool doAddData(const std::shared_ptr<SQLiteDatabase> db, const IDatabase:
                               query);
       };
 
-  auto writeProcEvent = [&db, &rq, &status, &query](const std::string &sessionHash,
-                                                    const tkm::msg::monitor::ProcEvent &procEvent,
-                                                    uint64_t systemTime,
-                                                    uint64_t monotonicTime,
-                                                    uint64_t receiveTime) {
+  auto writeProcEvent = [&db, &status, &query](const std::string &sessionHash,
+                                               const tkm::msg::monitor::ProcEvent &procEvent,
+                                               uint64_t systemTime,
+                                               uint64_t monotonicTime,
+                                               uint64_t receiveTime) {
     status = db->runQuery(
         tkmQuery.addData(
             Query::Type::SQLite3, sessionHash, procEvent, systemTime, monotonicTime, receiveTime),
@@ -870,12 +895,16 @@ static bool doAddData(const std::shared_ptr<SQLiteDatabase> db, const IDatabase:
 static bool doConnect(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq)
 {
   // No need for DB connect with SQLite
+  static_cast<void>(db); // UNUSED
+  static_cast<void>(rq); // UNUSED
   return true;
 }
 
 static bool doDisconnect(const std::shared_ptr<SQLiteDatabase> db, const IDatabase::Request &rq)
 {
   // No need for DB disconnect with SQLite
+  static_cast<void>(db); // UNUSED
+  static_cast<void>(rq); // UNUSED
   return true;
 }
 

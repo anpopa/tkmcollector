@@ -26,13 +26,13 @@ namespace tkm::collector
 
 static bool doCheckDatabase(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
 static bool doInitDatabase(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doLoadDevices(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doLoadDevices(const std::shared_ptr<PQDatabase> &db);
 static bool doGetDevices(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
 static bool doGetSessions(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
 static bool doAddDevice(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
 static bool doRemoveDevice(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doConnect(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doDisconnect(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doConnect(const std::shared_ptr<PQDatabase> &db);
+static bool doDisconnect(const std::shared_ptr<PQDatabase> &db);
 static bool doStartDeviceSession(const std::shared_ptr<PQDatabase> &db,
                                  const IDatabase::Request &rq);
 static bool doStopDeviceSession(const std::shared_ptr<PQDatabase> &db,
@@ -41,7 +41,7 @@ static bool doGetEntries(const std::shared_ptr<PQDatabase> &db, const IDatabase:
 static bool doAddSession(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
 static bool doRemSession(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
 static bool doEndSession(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
-static bool doCleanSessions(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
+static bool doCleanSessions(const std::shared_ptr<PQDatabase> &db);
 static bool doAddData(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq);
 
 PQDatabase::PQDatabase(std::shared_ptr<Options> options)
@@ -104,7 +104,10 @@ auto PQDatabase::runTransaction(const std::string &sql) -> pqxx::result
 void PQDatabase::enableEvents()
 {
   CollectorApp()->addEventSource(m_queue);
-  IDatabase::Request dbrq{.action = IDatabase::Action::CheckDatabase};
+  IDatabase::Request dbrq{.client = nullptr,
+                          .action = IDatabase::Action::CheckDatabase,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   pushRequest(dbrq);
 }
 
@@ -116,11 +119,11 @@ bool PQDatabase::requestHandler(const Request &rq)
   case IDatabase::Action::InitDatabase:
     return doInitDatabase(getShared(), rq);
   case IDatabase::Action::Connect:
-    return doConnect(getShared(), rq);
+    return doConnect(getShared());
   case IDatabase::Action::Disconnect:
-    return doDisconnect(getShared(), rq);
+    return doDisconnect(getShared());
   case IDatabase::Action::LoadDevices:
-    return doLoadDevices(getShared(), rq);
+    return doLoadDevices(getShared());
   case IDatabase::Action::GetDevices:
     return doGetDevices(getShared(), rq);
   case IDatabase::Action::AddDevice:
@@ -136,7 +139,7 @@ bool PQDatabase::requestHandler(const Request &rq)
   case IDatabase::Action::EndSession:
     return doEndSession(getShared(), rq);
   case IDatabase::Action::CleanSessions:
-    return doCleanSessions(getShared(), rq);
+    return doCleanSessions(getShared());
   case IDatabase::Action::AddData:
     return doAddData(getShared(), rq);
   default:
@@ -149,12 +152,17 @@ bool PQDatabase::requestHandler(const Request &rq)
 static bool doCheckDatabase(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
   logDebug() << "Handling DB check request";
+  static_cast<void>(db); // UNUSED
+  static_cast<void>(rq); // UNUSED
   return true;
 }
 
 static bool doInitDatabase(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   bool status = true;
 
   logDebug() << "Handling DB init request";
@@ -197,7 +205,7 @@ static bool doInitDatabase(const std::shared_ptr<PQDatabase> &db, const IDatabas
   return CollectorApp()->getDispatcher()->pushRequest(mrq);
 }
 
-static bool doLoadDevices(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doLoadDevices(const std::shared_ptr<PQDatabase> &db)
 {
   auto deviceList = std::vector<tkm::msg::control::DeviceData>();
   bool status = true;
@@ -245,7 +253,7 @@ static bool doLoadDevices(const std::shared_ptr<PQDatabase> &db, const IDatabase
   return true;
 }
 
-static bool doCleanSessions(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doCleanSessions(const std::shared_ptr<PQDatabase> &db)
 {
   auto sessionList = std::vector<tkm::msg::control::SessionData>();
   bool status = true;
@@ -264,10 +272,11 @@ static bool doCleanSessions(const std::shared_ptr<PQDatabase> &db, const IDataba
           c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Hash)].as<std::string>());
       sessionData.set_name(
           c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Name)].as<std::string>());
-      sessionData.set_started(
-          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::StartTimestamp)].as<long>());
-      sessionData.set_ended(
-          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::EndTimestamp)].as<long>());
+      sessionData.set_started(static_cast<uint64_t>(
+          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::StartTimestamp)]
+              .as<long>()));
+      sessionData.set_ended(static_cast<uint64_t>(
+          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::EndTimestamp)].as<long>()));
 
       sessionList.push_back(sessionData);
     }
@@ -279,7 +288,10 @@ static bool doCleanSessions(const std::shared_ptr<PQDatabase> &db, const IDataba
   if (status) {
     for (auto &sessionData : sessionList) {
       if (sessionData.ended() == 0) {
-        IDatabase::Request dbrq{.action = IDatabase::Action::EndSession};
+        IDatabase::Request dbrq{.client = nullptr,
+                                .action = IDatabase::Action::EndSession,
+                                .args = std::map<Defaults::Arg, std::string>(),
+                                .bulkData = std::make_any<int>(0)};
         dbrq.args.emplace(Defaults::Arg::SessionHash, sessionData.hash());
         db->pushRequest(dbrq);
       }
@@ -293,7 +305,10 @@ static bool doCleanSessions(const std::shared_ptr<PQDatabase> &db, const IDataba
 
 static bool doGetDevices(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   auto deviceList = std::vector<tkm::msg::control::DeviceData>();
   bool status = true;
 
@@ -369,7 +384,10 @@ static bool doGetDevices(const std::shared_ptr<PQDatabase> &db, const IDatabase:
 
 static bool doGetSessions(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   auto sessionList = std::vector<tkm::msg::control::SessionData>();
   bool status = true;
 
@@ -398,10 +416,11 @@ static bool doGetSessions(const std::shared_ptr<PQDatabase> &db, const IDatabase
           c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Hash)].as<std::string>());
       sessionData.set_name(
           c[static_cast<pqxx::result::size_type>(Query::SessionColumn::Name)].as<std::string>());
-      sessionData.set_started(
-          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::StartTimestamp)].as<long>());
-      sessionData.set_ended(
-          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::EndTimestamp)].as<long>());
+      sessionData.set_started(static_cast<uint64_t>(
+          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::StartTimestamp)]
+              .as<long>()));
+      sessionData.set_ended(static_cast<uint64_t>(
+          c[static_cast<pqxx::result::size_type>(Query::SessionColumn::EndTimestamp)].as<long>()));
 
       sessionList.push_back(sessionData);
     }
@@ -451,9 +470,12 @@ static bool doGetSessions(const std::shared_ptr<PQDatabase> &db, const IDatabase
 
 static bool doAddDevice(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   bool status = true;
-  auto devId = -1;
+  long devId = -1;
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
@@ -520,9 +542,12 @@ static bool doAddDevice(const std::shared_ptr<PQDatabase> &db, const IDatabase::
 
 static bool doRemoveDevice(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   bool status = true;
-  auto devId = -1;
+  long devId = -1;
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
@@ -582,7 +607,7 @@ static bool doAddSession(const std::shared_ptr<PQDatabase> &db, const IDatabase:
 
   // We don't allow sessions with the same hash, so if a device is sending an existing session hash
   // we disconnect the device. Maybe is to harsh but this should not happen often in practice
-  auto sesId = -1;
+  long sesId = -1;
   try {
     auto result =
         db->runTransaction(tkmQuery.hasSession(Query::Type::PostgreSQL, sessionInfo.hash()));
@@ -604,8 +629,10 @@ static bool doAddSession(const std::shared_ptr<PQDatabase> &db, const IDatabase:
   bool status = true;
 
   try {
-    db->runTransaction(tkmQuery.addSession(
-        Query::Type::PostgreSQL, sessionInfo, rq.args.at(Defaults::Arg::DeviceHash), time(NULL)));
+    db->runTransaction(tkmQuery.addSession(Query::Type::PostgreSQL,
+                                           sessionInfo,
+                                           rq.args.at(Defaults::Arg::DeviceHash),
+                                           static_cast<uint64_t>(time(NULL))));
   } catch (std::exception &e) {
     logError() << "Database query fails: " << e.what();
     status = false;
@@ -620,9 +647,12 @@ static bool doAddSession(const std::shared_ptr<PQDatabase> &db, const IDatabase:
 
 static bool doRemSession(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
 {
-  Dispatcher::Request mrq{.client = rq.client, .action = Dispatcher::Action::SendStatus};
+  Dispatcher::Request mrq{.client = rq.client,
+                          .action = Dispatcher::Action::SendStatus,
+                          .args = std::map<Defaults::Arg, std::string>(),
+                          .bulkData = std::make_any<int>(0)};
   bool status = true;
-  auto sesId = -1;
+  long sesId = -1;
 
   if (rq.args.count(Defaults::Arg::RequestId)) {
     mrq.args.emplace(Defaults::Arg::RequestId, rq.args.at(Defaults::Arg::RequestId));
@@ -699,11 +729,11 @@ static bool doAddData(const std::shared_ptr<PQDatabase> &db, const IDatabase::Re
     throw std::runtime_error("Invalid arguments");
   }
 
-  auto writeProcAcct = [&db, &rq, &status](const std::string &sessionHash,
-                                           const tkm::msg::monitor::ProcAcct &acct,
-                                           uint64_t systemTime,
-                                           uint64_t monotonicTime,
-                                           uint64_t receiveTime) {
+  auto writeProcAcct = [&db, &status](const std::string &sessionHash,
+                                      const tkm::msg::monitor::ProcAcct &acct,
+                                      uint64_t systemTime,
+                                      uint64_t monotonicTime,
+                                      uint64_t receiveTime) {
     try {
       db->runTransaction(tkmQuery.addData(
           Query::Type::PostgreSQL, sessionHash, acct, systemTime, monotonicTime, receiveTime));
@@ -713,11 +743,11 @@ static bool doAddData(const std::shared_ptr<PQDatabase> &db, const IDatabase::Re
     }
   };
 
-  auto writeProcInfo = [&db, &rq, &status](const std::string &sessionHash,
-                                           const tkm::msg::monitor::ProcInfo &info,
-                                           uint64_t systemTime,
-                                           uint64_t monotonicTime,
-                                           uint64_t receiveTime) {
+  auto writeProcInfo = [&db, &status](const std::string &sessionHash,
+                                      const tkm::msg::monitor::ProcInfo &info,
+                                      uint64_t systemTime,
+                                      uint64_t monotonicTime,
+                                      uint64_t receiveTime) {
     try {
       db->runTransaction(tkmQuery.addData(
           Query::Type::PostgreSQL, sessionHash, info, systemTime, monotonicTime, receiveTime));
@@ -727,11 +757,11 @@ static bool doAddData(const std::shared_ptr<PQDatabase> &db, const IDatabase::Re
     }
   };
 
-  auto writeContextInfo = [&db, &rq, &status](const std::string &sessionHash,
-                                              const tkm::msg::monitor::ContextInfo &info,
-                                              uint64_t systemTime,
-                                              uint64_t monotonicTime,
-                                              uint64_t receiveTime) {
+  auto writeContextInfo = [&db, &status](const std::string &sessionHash,
+                                         const tkm::msg::monitor::ContextInfo &info,
+                                         uint64_t systemTime,
+                                         uint64_t monotonicTime,
+                                         uint64_t receiveTime) {
     try {
       db->runTransaction(tkmQuery.addData(
           Query::Type::PostgreSQL, sessionHash, info, systemTime, monotonicTime, receiveTime));
@@ -741,11 +771,11 @@ static bool doAddData(const std::shared_ptr<PQDatabase> &db, const IDatabase::Re
     }
   };
 
-  auto writeSysProcStat = [&db, &rq, &status](const std::string &sessionHash,
-                                              const tkm::msg::monitor::SysProcStat &sysProcStat,
-                                              uint64_t systemTime,
-                                              uint64_t monotonicTime,
-                                              uint64_t receiveTime) {
+  auto writeSysProcStat = [&db, &status](const std::string &sessionHash,
+                                         const tkm::msg::monitor::SysProcStat &sysProcStat,
+                                         uint64_t systemTime,
+                                         uint64_t monotonicTime,
+                                         uint64_t receiveTime) {
     try {
       db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
                                           sessionHash,
@@ -759,31 +789,30 @@ static bool doAddData(const std::shared_ptr<PQDatabase> &db, const IDatabase::Re
     }
   };
 
-  auto writeSysProcMemInfo =
-      [&db, &rq, &status](const std::string &sessionHash,
-                          const tkm::msg::monitor::SysProcMemInfo &sysProcMem,
-                          uint64_t systemTime,
-                          uint64_t monotonicTime,
-                          uint64_t receiveTime) {
-        try {
-          db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
-                                              sessionHash,
-                                              sysProcMem,
-                                              systemTime,
-                                              monotonicTime,
-                                              receiveTime));
-        } catch (std::exception &e) {
-          logError() << "Query failed to addData. Database query fails: " << e.what();
-          status = false;
-        }
-      };
+  auto writeSysProcMemInfo = [&db, &status](const std::string &sessionHash,
+                                            const tkm::msg::monitor::SysProcMemInfo &sysProcMem,
+                                            uint64_t systemTime,
+                                            uint64_t monotonicTime,
+                                            uint64_t receiveTime) {
+    try {
+      db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
+                                          sessionHash,
+                                          sysProcMem,
+                                          systemTime,
+                                          monotonicTime,
+                                          receiveTime));
+    } catch (std::exception &e) {
+      logError() << "Query failed to addData. Database query fails: " << e.what();
+      status = false;
+    }
+  };
 
   auto writeSysProcBuddyInfo =
-      [&db, &rq, &status](const std::string &sessionHash,
-                          const tkm::msg::monitor::SysProcBuddyInfo &sysProcBuddyInfo,
-                          uint64_t systemTime,
-                          uint64_t monotonicTime,
-                          uint64_t receiveTime) {
+      [&db, &status](const std::string &sessionHash,
+                     const tkm::msg::monitor::SysProcBuddyInfo &sysProcBuddyInfo,
+                     uint64_t systemTime,
+                     uint64_t monotonicTime,
+                     uint64_t receiveTime) {
         try {
           db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
                                               sessionHash,
@@ -797,50 +826,50 @@ static bool doAddData(const std::shared_ptr<PQDatabase> &db, const IDatabase::Re
         }
       };
 
-  auto writeSysProcWireless =
-      [&db, &rq, &status](const std::string &sessionHash,
-                          const tkm::msg::monitor::SysProcWireless &sysProcWireless,
-                          uint64_t systemTime,
-                          uint64_t monotonicTime,
-                          uint64_t receiveTime) {
-        try {
-          db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
-                                              sessionHash,
-                                              sysProcWireless,
-                                              systemTime,
-                                              monotonicTime,
-                                              receiveTime));
-        } catch (std::exception &e) {
-          logError() << "Query failed to addData. Database query fails: " << e.what();
-          status = false;
-        }
-      };
+  auto writeSysProcWireless = [&db,
+                               &status](const std::string &sessionHash,
+                                        const tkm::msg::monitor::SysProcWireless &sysProcWireless,
+                                        uint64_t systemTime,
+                                        uint64_t monotonicTime,
+                                        uint64_t receiveTime) {
+    try {
+      db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
+                                          sessionHash,
+                                          sysProcWireless,
+                                          systemTime,
+                                          monotonicTime,
+                                          receiveTime));
+    } catch (std::exception &e) {
+      logError() << "Query failed to addData. Database query fails: " << e.what();
+      status = false;
+    }
+  };
 
-  auto writeSysProcPressure =
-      [&db, &rq, &status](const std::string &sessionHash,
-                          const tkm::msg::monitor::SysProcPressure &sysProcPressure,
-                          uint64_t systemTime,
-                          uint64_t monotonicTime,
-                          uint64_t receiveTime) {
-        try {
-          db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
-                                              sessionHash,
-                                              sysProcPressure,
-                                              systemTime,
-                                              monotonicTime,
-                                              receiveTime));
-        } catch (std::exception &e) {
-          logError() << "Query failed to addData. Database query fails: " << e.what();
-          status = false;
-        }
-      };
+  auto writeSysProcPressure = [&db,
+                               &status](const std::string &sessionHash,
+                                        const tkm::msg::monitor::SysProcPressure &sysProcPressure,
+                                        uint64_t systemTime,
+                                        uint64_t monotonicTime,
+                                        uint64_t receiveTime) {
+    try {
+      db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
+                                          sessionHash,
+                                          sysProcPressure,
+                                          systemTime,
+                                          monotonicTime,
+                                          receiveTime));
+    } catch (std::exception &e) {
+      logError() << "Query failed to addData. Database query fails: " << e.what();
+      status = false;
+    }
+  };
 
   auto writeSysProcDiskStats =
-      [&db, &rq, &status](const std::string &sessionHash,
-                          const tkm::msg::monitor::SysProcDiskStats &sysProcDiskStats,
-                          uint64_t systemTime,
-                          uint64_t monotonicTime,
-                          uint64_t receiveTime) {
+      [&db, &status](const std::string &sessionHash,
+                     const tkm::msg::monitor::SysProcDiskStats &sysProcDiskStats,
+                     uint64_t systemTime,
+                     uint64_t monotonicTime,
+                     uint64_t receiveTime) {
         try {
           db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
                                               sessionHash,
@@ -854,11 +883,11 @@ static bool doAddData(const std::shared_ptr<PQDatabase> &db, const IDatabase::Re
         }
       };
 
-  auto writeProcEvent = [&db, &rq, &status](const std::string &sessionHash,
-                                            const tkm::msg::monitor::ProcEvent &procEvent,
-                                            uint64_t systemTime,
-                                            uint64_t monotonicTime,
-                                            uint64_t receiveTime) {
+  auto writeProcEvent = [&db, &status](const std::string &sessionHash,
+                                       const tkm::msg::monitor::ProcEvent &procEvent,
+                                       uint64_t systemTime,
+                                       uint64_t monotonicTime,
+                                       uint64_t receiveTime) {
     try {
       db->runTransaction(tkmQuery.addData(
           Query::Type::PostgreSQL, sessionHash, procEvent, systemTime, monotonicTime, receiveTime));
@@ -976,7 +1005,7 @@ static bool doAddData(const std::shared_ptr<PQDatabase> &db, const IDatabase::Re
   return true;
 }
 
-static bool doConnect(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doConnect(const std::shared_ptr<PQDatabase> &db)
 {
   logDebug() << "Handling DB Connect request";
 
@@ -989,9 +1018,10 @@ static bool doConnect(const std::shared_ptr<PQDatabase> &db, const IDatabase::Re
   return true;
 }
 
-static bool doDisconnect(const std::shared_ptr<PQDatabase> &db, const IDatabase::Request &rq)
+static bool doDisconnect(const std::shared_ptr<PQDatabase> &db)
 {
   logDebug() << "Handling DB Disconnect request";
+  static_cast<void>(db); // UNUSED
   return true;
 }
 

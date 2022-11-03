@@ -22,7 +22,9 @@ Command::Command()
     for (const Command::Request &request : m_requests) {
       switch (request.action) {
       case Command::Action::InitDatabase: {
-        Dispatcher::Request rq{.action = Dispatcher::Action::InitDatabase};
+        Dispatcher::Request rq{.action = Dispatcher::Action::InitDatabase,
+                               .bulkData = std::make_any<int>(0),
+                               .args = std::map<Defaults::Arg, std::string>()};
         if (request.args.count(Defaults::Arg::Forced)) {
           rq.args.emplace(tkm::Defaults::Arg::Forced, request.args.at(tkm::Defaults::Arg::Forced));
         }
@@ -30,7 +32,9 @@ Command::Command()
         break;
       }
       case Command::Action::QuitCollector: {
-        Dispatcher::Request rq{.action = Dispatcher::Action::QuitCollector};
+        Dispatcher::Request rq{.action = Dispatcher::Action::QuitCollector,
+                               .bulkData = std::make_any<int>(0),
+                               .args = std::map<Defaults::Arg, std::string>()};
         if (request.args.count(tkm::Defaults::Arg::Forced)) {
           rq.args.emplace(tkm::Defaults::Arg::Forced, request.args.at(tkm::Defaults::Arg::Forced));
         }
@@ -38,7 +42,9 @@ Command::Command()
         break;
       }
       case Command::Action::GetDevices: {
-        Dispatcher::Request rq{.action = Dispatcher::Action::GetDevices};
+        Dispatcher::Request rq{.action = Dispatcher::Action::GetDevices,
+                               .bulkData = std::make_any<int>(0),
+                               .args = std::map<Defaults::Arg, std::string>()};
         if (request.args.count(Defaults::Arg::Forced)) {
           rq.args.emplace(tkm::Defaults::Arg::Forced, request.args.at(tkm::Defaults::Arg::Forced));
         }
@@ -46,7 +52,9 @@ Command::Command()
         break;
       }
       case Command::Action::AddDevice: {
-        Dispatcher::Request rq{.action = Dispatcher::Action::AddDevice};
+        Dispatcher::Request rq{.action = Dispatcher::Action::AddDevice,
+                               .bulkData = std::make_any<int>(0),
+                               .args = std::map<Defaults::Arg, std::string>()};
 
         if (request.args.count(Defaults::Arg::Forced)) {
           rq.args.emplace(tkm::Defaults::Arg::Forced, request.args.at(tkm::Defaults::Arg::Forced));
@@ -60,7 +68,9 @@ Command::Command()
         break;
       }
       case Command::Action::RemoveDevice: {
-        Dispatcher::Request rq{.action = Dispatcher::Action::RemoveDevice};
+        Dispatcher::Request rq{.action = Dispatcher::Action::RemoveDevice,
+                               .bulkData = std::make_any<int>(0),
+                               .args = std::map<Defaults::Arg, std::string>()};
 
         if (request.args.count(Defaults::Arg::Forced)) {
           rq.args.emplace(tkm::Defaults::Arg::Forced, request.args.at(tkm::Defaults::Arg::Forced));
@@ -71,7 +81,9 @@ Command::Command()
         break;
       }
       case Command::Action::ConnectDevice: {
-        Dispatcher::Request rq{.action = Dispatcher::Action::ConnectDevice};
+        Dispatcher::Request rq{.action = Dispatcher::Action::ConnectDevice,
+                               .bulkData = std::make_any<int>(0),
+                               .args = std::map<Defaults::Arg, std::string>()};
 
         if (request.args.count(Defaults::Arg::Forced)) {
           rq.args.emplace(tkm::Defaults::Arg::Forced, request.args.at(tkm::Defaults::Arg::Forced));
@@ -82,7 +94,9 @@ Command::Command()
         break;
       }
       case Command::Action::DisconnectDevice: {
-        Dispatcher::Request rq{.action = Dispatcher::Action::DisconnectDevice};
+        Dispatcher::Request rq{.action = Dispatcher::Action::DisconnectDevice,
+                               .bulkData = std::make_any<int>(0),
+                               .args = std::map<Defaults::Arg, std::string>()};
 
         if (request.args.count(Defaults::Arg::Forced)) {
           rq.args.emplace(tkm::Defaults::Arg::Forced, request.args.at(tkm::Defaults::Arg::Forced));
@@ -93,7 +107,9 @@ Command::Command()
         break;
       }
       case Command::Action::StartCollecting: {
-        Dispatcher::Request rq{.action = Dispatcher::Action::StartCollecting};
+        Dispatcher::Request rq{.action = Dispatcher::Action::StartCollecting,
+                               .bulkData = std::make_any<int>(0),
+                               .args = std::map<Defaults::Arg, std::string>()};
 
         if (request.args.count(Defaults::Arg::Forced)) {
           rq.args.emplace(tkm::Defaults::Arg::Forced, request.args.at(tkm::Defaults::Arg::Forced));
@@ -104,7 +120,9 @@ Command::Command()
         break;
       }
       case Command::Action::StopCollecting: {
-        Dispatcher::Request rq{.action = Dispatcher::Action::StopCollecting};
+        Dispatcher::Request rq{.action = Dispatcher::Action::StopCollecting,
+                               .bulkData = std::make_any<int>(0),
+                               .args = std::map<Defaults::Arg, std::string>()};
 
         if (request.args.count(Defaults::Arg::Forced)) {
           rq.args.emplace(tkm::Defaults::Arg::Forced, request.args.at(tkm::Defaults::Arg::Forced));
@@ -115,7 +133,9 @@ Command::Command()
         break;
       }
       case Command::Action::GetSessions: {
-        Dispatcher::Request rq{.action = Dispatcher::Action::GetSessions};
+        Dispatcher::Request rq{.action = Dispatcher::Action::GetSessions,
+                               .bulkData = std::make_any<int>(0),
+                               .args = std::map<Defaults::Arg, std::string>()};
 
         if (request.args.count(Defaults::Arg::Forced)) {
           rq.args.emplace(tkm::Defaults::Arg::Forced, request.args.at(tkm::Defaults::Arg::Forced));
@@ -129,7 +149,9 @@ Command::Command()
         break;
       }
       case Command::Action::RemoveSession: {
-        Dispatcher::Request rq{.action = Dispatcher::Action::RemoveSession};
+        Dispatcher::Request rq{.action = Dispatcher::Action::RemoveSession,
+                               .bulkData = std::make_any<int>(0),
+                               .args = std::map<Defaults::Arg, std::string>()};
 
         if (request.args.count(Defaults::Arg::Forced)) {
           rq.args.emplace(tkm::Defaults::Arg::Forced, request.args.at(tkm::Defaults::Arg::Forced));
@@ -140,7 +162,9 @@ Command::Command()
         break;
       }
       case Command::Action::Quit: {
-        Dispatcher::Request rq{.action = Dispatcher::Action::Quit};
+        Dispatcher::Request rq{.action = Dispatcher::Action::Quit,
+                               .bulkData = std::make_any<int>(0),
+                               .args = std::map<Defaults::Arg, std::string>()};
         ControlApp()->getDispatcher()->pushRequest(rq);
         break;
       }
