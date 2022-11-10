@@ -377,7 +377,9 @@ auto Query::createTables(Query::Type type) -> std::string
           << m_procInfoColumn.at(ProcInfoColumn::CtxName) << " TEXT NOT NULL, "
           << m_procInfoColumn.at(ProcInfoColumn::CpuTime) << " INTEGER NOT NULL, "
           << m_procInfoColumn.at(ProcInfoColumn::CpuPercent) << " INTEGER NOT NULL, "
+          << m_procInfoColumn.at(ProcInfoColumn::MemVmSize) << " INTEGER NOT NULL, "
           << m_procInfoColumn.at(ProcInfoColumn::MemVmRSS) << " INTEGER NOT NULL, "
+          << m_procInfoColumn.at(ProcInfoColumn::MemShared) << " INTEGER NOT NULL, "
           << m_procInfoColumn.at(ProcInfoColumn::SessionId) << " INTEGER NOT NULL, ";
     } else {
       out << m_procInfoColumn.at(ProcInfoColumn::Id) << " SERIAL PRIMARY KEY, "
@@ -391,7 +393,9 @@ auto Query::createTables(Query::Type type) -> std::string
           << m_procInfoColumn.at(ProcInfoColumn::CtxName) << " TEXT NOT NULL, "
           << m_procInfoColumn.at(ProcInfoColumn::CpuTime) << " BIGINT NOT NULL, "
           << m_procInfoColumn.at(ProcInfoColumn::CpuPercent) << " BIGINT NOT NULL, "
+          << m_procInfoColumn.at(ProcInfoColumn::MemVmSize) << " BIGINT NOT NULL, "
           << m_procInfoColumn.at(ProcInfoColumn::MemVmRSS) << " BIGINT NOT NULL, "
+          << m_procInfoColumn.at(ProcInfoColumn::MemShared) << " BIGINT NOT NULL, "
           << m_procInfoColumn.at(ProcInfoColumn::SessionId) << " INTEGER NOT NULL, ";
     }
     out << "CONSTRAINT KFSession FOREIGN KEY(" << m_procInfoColumn.at(ProcInfoColumn::SessionId)
@@ -410,6 +414,7 @@ auto Query::createTables(Query::Type type) -> std::string
           << m_contextInfoColumn.at(ContextInfoColumn::TotalCpuTime) << " INTEGER NOT NULL, "
           << m_contextInfoColumn.at(ContextInfoColumn::TotalCpuPercent) << " INTEGER NOT NULL, "
           << m_contextInfoColumn.at(ContextInfoColumn::TotalMemVmRSS) << " INTEGER NOT NULL, "
+          << m_contextInfoColumn.at(ContextInfoColumn::TotalMemShared) << " INTEGER NOT NULL, "
           << m_contextInfoColumn.at(ContextInfoColumn::SessionId) << " INTEGER NOT NULL, ";
     } else {
       out << m_contextInfoColumn.at(ContextInfoColumn::Id) << " SERIAL PRIMARY KEY, "
@@ -421,6 +426,7 @@ auto Query::createTables(Query::Type type) -> std::string
           << m_contextInfoColumn.at(ContextInfoColumn::TotalCpuTime) << " BIGINT NOT NULL, "
           << m_contextInfoColumn.at(ContextInfoColumn::TotalCpuPercent) << " BIGINT NOT NULL, "
           << m_contextInfoColumn.at(ContextInfoColumn::TotalMemVmRSS) << " BIGINT NOT NULL, "
+          << m_contextInfoColumn.at(ContextInfoColumn::TotalMemShared) << " BIGINT NOT NULL, "
           << m_contextInfoColumn.at(ContextInfoColumn::SessionId) << " INTEGER NOT NULL, ";
     }
     out << "CONSTRAINT KFSession FOREIGN KEY("
@@ -1143,13 +1149,16 @@ auto Query::addData(Query::Type type,
           << m_procInfoColumn.at(ProcInfoColumn::CtxName) << ","
           << m_procInfoColumn.at(ProcInfoColumn::CpuTime) << ","
           << m_procInfoColumn.at(ProcInfoColumn::CpuPercent) << ","
+          << m_procInfoColumn.at(ProcInfoColumn::MemVmSize) << ","
           << m_procInfoColumn.at(ProcInfoColumn::MemVmRSS) << ","
+          << m_procInfoColumn.at(ProcInfoColumn::MemShared) << ","
           << m_procInfoColumn.at(ProcInfoColumn::SessionId) << ") VALUES ('" << systemTime << "', '"
           << monotonicTime << "', '" << receiveTime << "', '" << procEntry.comm() << "', '"
           << procEntry.pid() << "', '" << procEntry.ppid() << "', '"
           << std::to_string(procEntry.ctx_id()) << "', '" << procEntry.ctx_name() << "', '"
           << procEntry.cpu_time() << "', '" << procEntry.cpu_percent() << "', '"
-          << procEntry.mem_vmrss() << "', ";
+          << procEntry.mem_vmsize() << "', '" << procEntry.mem_vmrss() << "', '"
+          << procEntry.mem_shared() << "', ";
     }
 
     if (type == Query::Type::SQLite3) {
@@ -1186,11 +1195,12 @@ auto Query::addData(Query::Type type,
           << m_contextInfoColumn.at(ContextInfoColumn::TotalCpuTime) << ","
           << m_contextInfoColumn.at(ContextInfoColumn::TotalCpuPercent) << ","
           << m_contextInfoColumn.at(ContextInfoColumn::TotalMemVmRSS) << ","
+          << m_contextInfoColumn.at(ContextInfoColumn::TotalMemShared) << ","
           << m_contextInfoColumn.at(ContextInfoColumn::SessionId) << ") VALUES ('" << systemTime
           << "', '" << monotonicTime << "', '" << receiveTime << "', '"
           << std::to_string(ctxEntry.ctx_id()) << "', '" << ctxEntry.ctx_name() << "', '"
           << ctxEntry.total_cpu_time() << "', '" << ctxEntry.total_cpu_percent() << "', '"
-          << ctxEntry.total_mem_vmrss() << "', ";
+          << ctxEntry.total_mem_vmrss() << "', '" << ctxEntry.total_mem_shared() << "', ";
     }
 
     if (type == Query::Type::SQLite3) {
