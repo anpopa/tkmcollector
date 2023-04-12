@@ -16,7 +16,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-constexpr size_t GDescBufferSize = 8192;
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+
+constexpr size_t GDescBufferSize = 1024;
 namespace pbio = google::protobuf::io;
 
 namespace tkm
