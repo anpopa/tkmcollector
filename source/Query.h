@@ -436,9 +436,8 @@ public:
     CtxName,       // str: Context name
     CpuTime,       // int: Total cpu time
     CpuPercent,    // int: Cpu percent in interval
-    MemVmSize,     // int: VmSize memory usage
-    MemVmRSS,      // int: VmRSS memory usage
-    MemShared,     // int: Shared memory usage
+    MemRSS,        // int: RSS memory usage
+    MemPSS,        // int: PSS memory usage
     SessionId,     // int: Session id key
   };
   const std::map<ProcInfoColumn, std::string> m_procInfoColumn{
@@ -453,9 +452,8 @@ public:
       std::make_pair(ProcInfoColumn::CtxName, "ContextName"),
       std::make_pair(ProcInfoColumn::CpuTime, "CpuTime"),
       std::make_pair(ProcInfoColumn::CpuPercent, "CpuPercent"),
-      std::make_pair(ProcInfoColumn::MemVmSize, "VmSize"),
-      std::make_pair(ProcInfoColumn::MemVmRSS, "VmRSS"),
-      std::make_pair(ProcInfoColumn::MemShared, "MemShared"),
+      std::make_pair(ProcInfoColumn::MemRSS, "MemRSS"),
+      std::make_pair(ProcInfoColumn::MemPSS, "MemPSS"),
       std::make_pair(ProcInfoColumn::SessionId, "SessionId"),
   };
 
@@ -468,8 +466,8 @@ public:
     CtxName,         // str: Context name
     TotalCpuTime,    // int: Total cpu time
     TotalCpuPercent, // int: Total Cpu percent in interval
-    TotalMemVmRSS,   // int: Total VmRSS memory usage
-    TotalMemShared,  // int: Total processes shared memory
+    TotalMemRSS,     // int: Total RSS memory usage
+    TotalMemPSS,     // int: Total PSS shared memory
     SessionId,       // int: Session id key
   };
   const std::map<ContextInfoColumn, std::string> m_contextInfoColumn{
@@ -481,8 +479,8 @@ public:
       std::make_pair(ContextInfoColumn::CtxName, "ContextName"),
       std::make_pair(ContextInfoColumn::TotalCpuTime, "TotalCpuTime"),
       std::make_pair(ContextInfoColumn::TotalCpuPercent, "TotalCpuPercent"),
-      std::make_pair(ContextInfoColumn::TotalMemVmRSS, "TotalVmRSS"),
-      std::make_pair(ContextInfoColumn::TotalMemShared, "TotalMemShared"),
+      std::make_pair(ContextInfoColumn::TotalMemRSS, "TotalMemRSS"),
+      std::make_pair(ContextInfoColumn::TotalMemPSS, "TotalMemPSS"),
       std::make_pair(ContextInfoColumn::SessionId, "SessionId"),
   };
 

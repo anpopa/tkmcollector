@@ -25,7 +25,7 @@ set(CPACK_RPM_CHANGELOG_FILE "${CMAKE_SOURCE_DIR}/CHANGELOG")
 set(CPACK_RPM_PACKAGE_DESCRIPTION ${CPACK_PACKAGE_DESCRIPTION_SUMMARY})
 set(CPACK_RPM_PACKAGE_GROUP "Development/Tools")
 set(CPACK_RPM_PACKAGE_REQUIRES
-  "libtaskmonitor-bin >= 1.0.4, sqlite >= 3.36, protobuf >= 3.14.0")
+  "libtaskmonitor-bin >= 1.1.0, sqlite >= 3.36, protobuf >= 3.14.0")
 
 # DEB
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)

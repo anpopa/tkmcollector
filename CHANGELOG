@@ -1,3 +1,6 @@
+* Thu Jun 7 2023 Alin Popa <alin.popa@fxdata.ro> - 1.6.0
+- read RSS and PSS for process memory info
+
 * Thu Nov 10 2022 Alin Popa <alin.popa@fxdata.ro> - 1.5.4
 - Update to libtaskmonitor v1.0.4
 - Add VmSize and MemShared data support
