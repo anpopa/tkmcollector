@@ -208,6 +208,13 @@ public:
     MemAvail,        // int: MemAvail
     MemCached,       // int: MemCached
     MemAvailPercent, // int: MemAvailPercent
+    Active,          // int: Active memory
+    Inactive,        // int: Inactive memory
+    Slab,            // int: Slab
+    KReclaimable,    // int: KReclaimable
+    SReclaimable,    // int: SReclaimable
+    SUnreclaim,      // int: SUnreclaim
+    KernelStack,     // int: KernelStack
     SwapTotal,       // int: SwapTotal
     SwapFree,        // int: SwapFree
     SwapCached,      // int: SwapCached
@@ -226,6 +233,13 @@ public:
       std::make_pair(SysProcMemColumn::MemAvail, "MemAvail"),
       std::make_pair(SysProcMemColumn::MemCached, "MemCached"),
       std::make_pair(SysProcMemColumn::MemAvailPercent, "MemAvailPercent"),
+      std::make_pair(SysProcMemColumn::Active, "Active"),
+      std::make_pair(SysProcMemColumn::Inactive, "Inactive"),
+      std::make_pair(SysProcMemColumn::Slab, "Slab"),
+      std::make_pair(SysProcMemColumn::KReclaimable, "KReclaimable"),
+      std::make_pair(SysProcMemColumn::SReclaimable, "SReclaimable"),
+      std::make_pair(SysProcMemColumn::SUnreclaim, "SUnreclaim"),
+      std::make_pair(SysProcMemColumn::KernelStack, "KernelStack"),
       std::make_pair(SysProcMemColumn::SwapTotal, "SwapTotal"),
       std::make_pair(SysProcMemColumn::SwapFree, "SwapFree"),
       std::make_pair(SysProcMemColumn::SwapCached, "SwapCached"),
