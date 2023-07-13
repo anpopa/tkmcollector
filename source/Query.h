@@ -90,6 +90,12 @@ public:
                uint64_t receiveTime) -> std::string;
   auto addData(Query::Type type,
                const std::string &sessionHash,
+               const tkm::msg::monitor::SysProcVMStat &sysProcVMStat,
+               uint64_t systemTime,
+               uint64_t monotonicTime,
+               uint64_t receiveTime) -> std::string;
+  auto addData(Query::Type type,
+               const std::string &sessionHash,
                const tkm::msg::monitor::ProcAcct &procAcct,
                uint64_t systemTime,
                uint64_t monotonicTime,
@@ -351,6 +357,84 @@ public:
       std::make_pair(SysProcPressureColumn::SessionId, "SessionId"),
   };
 
+  enum class SysProcVMStatColumn {
+    Id,                       // int: Primary key
+    SystemTime,               // int: SystemTime
+    MonotonicTime,            // int: MonotonicTime
+    ReceiveTime,              // int: Receive timestamp
+    PGpgin,                   // int: pgpgin
+    PGpgout,                  // int: pgpgout
+    PSwpin,                   // int: pswpin
+    PSwpout,                  // int: pswpout
+    PGmajfault,               // int: pgmajfault
+    PGreuse,                  // int: pgreuse
+    PGStealKswapd,            // int: pgsteal_kswapd
+    PGStealDirect,            // int: pgsteal_direct
+    PGStealKhugepaged,        // int: pgsteal_khugepaged
+    PGStealAnon,              // int: pgsteal_anon
+    PGStealFile,              // int: pgsteal_file
+    PGScanKswapd,             // int: pgscan_kswapd
+    PGScanDirect,             // int: pgscan_direct
+    PGScanKhugepaged,         // int: pgscan_khugepaged
+    PGScanDirectThrottle,     // int: pgscan_direct_throttle
+    PGScanAnon,               // int: pgscan_anon
+    PGScanFile,               // int: pgscan_file
+    OOMKill,                  // int: oom_kill
+    CompactStall,             // int: compact_stall
+    CompactFail,              // int: compact_fail
+    CompactSuccess,           // int: compact_success
+    ThpFaultAlloc,            // int: thp_fault_alloc
+    ThpCollapseAlloc,         // int: thp_collapse_alloc
+    ThpCollapseAllocFailed,   // int: thp_collapse_alloc_failed
+    ThpFileAlloc,             // int: thp_file_alloc
+    ThpFileMapped,            // int: thp_file_mapped
+    ThpSplitPage,             // int: thp_split_page
+    ThpSplitPageFailed,       // int: thp_split_page_failed
+    ThpZeroPageAlloc,         // int: thp_zero_page_alloc
+    ThpZeroPageAllocFailed,   // int: thp_zero_page_alloc_failed
+    ThpSwpout,                // int: thp_swpout
+    ThpSwpoutFallback,        // int: thp_swpout_fallback
+    SessionId,                // int: Session id key
+  };
+  const std::map<SysProcVMStatColumn, std::string> m_sysProcVMStatColumn{
+      std::make_pair(SysProcVMStatColumn::Id, "Id"),
+      std::make_pair(SysProcVMStatColumn::SystemTime, "SystemTime"),
+      std::make_pair(SysProcVMStatColumn::MonotonicTime, "MonotonicTime"),
+      std::make_pair(SysProcVMStatColumn::ReceiveTime, "ReceiveTime"),
+      std::make_pair(SysProcVMStatColumn::PGpgin, "PGpgin"),
+      std::make_pair(SysProcVMStatColumn::PGpgout, "PGpgout"),
+      std::make_pair(SysProcVMStatColumn::PSwpin, "PSwpin"),
+      std::make_pair(SysProcVMStatColumn::PSwpout, "PSwpout"),
+      std::make_pair(SysProcVMStatColumn::PGmajfault, "PGmajfault"),
+      std::make_pair(SysProcVMStatColumn::PGreuse, "PGreuse"),
+      std::make_pair(SysProcVMStatColumn::PGStealKswapd, "PGStealKswapd"),
+      std::make_pair(SysProcVMStatColumn::PGStealDirect, "PGStealDirect"),
+      std::make_pair(SysProcVMStatColumn::PGStealKhugepaged, "PGStealKhugepaged"),
+      std::make_pair(SysProcVMStatColumn::PGStealAnon, "PGStealAnon"),
+      std::make_pair(SysProcVMStatColumn::PGStealFile, "PGStealFile"),
+      std::make_pair(SysProcVMStatColumn::PGScanKswapd, "PGScanKswapd"),
+      std::make_pair(SysProcVMStatColumn::PGScanDirect, "PGScanDirect"),
+      std::make_pair(SysProcVMStatColumn::PGScanKhugepaged, "PGScanKhugepaged"),
+      std::make_pair(SysProcVMStatColumn::PGScanDirectThrottle, "PGScanDirectThrottle"),
+      std::make_pair(SysProcVMStatColumn::PGScanAnon, "PGScanAnon"),
+      std::make_pair(SysProcVMStatColumn::PGScanFile, "PGScanFile"),
+      std::make_pair(SysProcVMStatColumn::OOMKill, "OOMKill"),
+      std::make_pair(SysProcVMStatColumn::CompactStall, "CompactStall"),
+      std::make_pair(SysProcVMStatColumn::CompactFail, "CompactFail"),
+      std::make_pair(SysProcVMStatColumn::CompactSuccess, "CompactSuccess"),
+      std::make_pair(SysProcVMStatColumn::ThpFaultAlloc, "ThpFaultAlloc"),
+      std::make_pair(SysProcVMStatColumn::ThpCollapseAlloc, "ThpCollapseAlloc"),
+      std::make_pair(SysProcVMStatColumn::ThpCollapseAllocFailed, "ThpCollapseAllocFailed"),
+      std::make_pair(SysProcVMStatColumn::ThpFileAlloc, "ThpFileAlloc"),
+      std::make_pair(SysProcVMStatColumn::ThpFileMapped, "ThpFileMapped"),
+      std::make_pair(SysProcVMStatColumn::ThpSplitPage, "ThpSplitPage"),
+      std::make_pair(SysProcVMStatColumn::ThpSplitPageFailed, "ThpSplitPageFailed"),
+      std::make_pair(SysProcVMStatColumn::ThpZeroPageAlloc, "ThpZeroPageAlloc"),
+      std::make_pair(SysProcVMStatColumn::ThpZeroPageAllocFailed, "ThpZeroPageAllocFailed"),
+      std::make_pair(SysProcVMStatColumn::ThpSwpout, "ThpSwpout"),
+      std::make_pair(SysProcVMStatColumn::ThpSwpoutFallback, "ThpSwpoutFallback"),
+      std::make_pair(SysProcVMStatColumn::SessionId, "SessionId"),
+  };
   enum class ProcAcctColumn {
     Id,                    // int: Primary key
     SystemTime,            // int: SystemTime
@@ -452,6 +536,7 @@ public:
     CpuPercent,    // int: Cpu percent in interval
     MemRSS,        // int: RSS memory usage
     MemPSS,        // int: PSS memory usage
+    FDCount,       // int: Open file descriptors count
     SessionId,     // int: Session id key
   };
   const std::map<ProcInfoColumn, std::string> m_procInfoColumn{
@@ -468,6 +553,7 @@ public:
       std::make_pair(ProcInfoColumn::CpuPercent, "CpuPercent"),
       std::make_pair(ProcInfoColumn::MemRSS, "MemRSS"),
       std::make_pair(ProcInfoColumn::MemPSS, "MemPSS"),
+      std::make_pair(ProcInfoColumn::FDCount, "FDCount"),
       std::make_pair(ProcInfoColumn::SessionId, "SessionId"),
   };
 
@@ -482,6 +568,7 @@ public:
     TotalCpuPercent, // int: Total Cpu percent in interval
     TotalMemRSS,     // int: Total RSS memory usage
     TotalMemPSS,     // int: Total PSS shared memory
+    TotalFDCount,    // int: Total open file descriptors count
     SessionId,       // int: Session id key
   };
   const std::map<ContextInfoColumn, std::string> m_contextInfoColumn{
@@ -495,6 +582,7 @@ public:
       std::make_pair(ContextInfoColumn::TotalCpuPercent, "TotalCpuPercent"),
       std::make_pair(ContextInfoColumn::TotalMemRSS, "TotalMemRSS"),
       std::make_pair(ContextInfoColumn::TotalMemPSS, "TotalMemPSS"),
+      std::make_pair(ContextInfoColumn::TotalFDCount, "TotalFDCount"),
       std::make_pair(ContextInfoColumn::SessionId, "SessionId"),
   };
 
@@ -564,6 +652,7 @@ public:
   const std::string m_sysProcPressureTableName = "tkmSysProcPressure";
   const std::string m_sysProcBuddyInfoTableName = "tkmSysProcBuddyInfo";
   const std::string m_sysProcWirelessTableName = "tkmSysProcWireless";
+  const std::string m_sysProcVMStatTableName = "tkmSysProcVMStat";
   const std::string m_procAcctTableName = "tkmProcAcct";
   const std::string m_procInfoTableName = "tkmProcInfo";
   const std::string m_procEventTableName = "tkmProcEvent";
