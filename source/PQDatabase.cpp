@@ -883,6 +883,25 @@ static bool doAddData(const std::shared_ptr<PQDatabase> &db, const IDatabase::Re
         }
       };
 
+  auto writeSysProcVMStat =
+      [&db, &status](const std::string &sessionHash,
+                     const tkm::msg::monitor::SysProcVMStat &sysProcVMStat,
+                     uint64_t systemTime,
+                     uint64_t monotonicTime,
+                     uint64_t receiveTime) {
+        try {
+          db->runTransaction(tkmQuery.addData(Query::Type::PostgreSQL,
+                                              sessionHash,
+                                              sysProcVMStat,
+                                              systemTime,
+                                              monotonicTime,
+                                              receiveTime));
+        } catch (std::exception &e) {
+          logError() << "Query failed to addData. Database query fails: " << e.what();
+          status = false;
+        }
+      };
+
   auto writeProcEvent = [&db, &status](const std::string &sessionHash,
                                        const tkm::msg::monitor::ProcEvent &procEvent,
                                        uint64_t systemTime,
@@ -996,6 +1015,16 @@ static bool doAddData(const std::shared_ptr<PQDatabase> &db, const IDatabase::Re
                          data.system_time_sec(),
                          data.monotonic_time_sec(),
                          data.receive_time_sec());
+    break;
+  }
+  case tkm::msg::monitor::Data_What_SysProcVMStat: {
+    tkm::msg::monitor::SysProcVMStat sysProcVMStat;
+    data.payload().UnpackTo(&sysProcVMStat);
+    writeSysProcVMStat(rq.args.at(Defaults::Arg::SessionHash),
+                       sysProcVMStat,
+                       data.system_time_sec(),
+                       data.monotonic_time_sec(),
+                       data.receive_time_sec());
     break;
   }
   default:
